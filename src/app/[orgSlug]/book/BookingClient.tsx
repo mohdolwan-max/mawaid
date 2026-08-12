@@ -1,0 +1,227 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { t, type Lang, type TKey } from "@/lib/i18n";
+import type { PublicService, PublicStaff } from "@/lib/publicOrg";
+import { fetchStaffAction, fetchSlotsAction, submitBookingAction } from "./actions";
+
+type Step = "service" | "staff" | "slot" | "contact" | "done";
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function BookingClient({
+  lang,
+  orgSlug,
+  services,
+}: {
+  lang: Lang;
+  orgSlug: string;
+  services: PublicService[];
+}) {
+  const [step, setStep] = useState<Step>("service");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<TKey | null>(null);
+
+  const [service, setService] = useState<PublicService | null>(null);
+  const [staffOptions, setStaffOptions] = useState<PublicStaff[]>([]);
+  const [staffId, setStaffId] = useState<string | null>(null);
+
+  const [date, setDate] = useState(todayISO());
+  const [slots, setSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const [cancelToken, setCancelToken] = useState<string | null>(null);
+
+  function chooseService(s: PublicService) {
+    setService(s);
+    setStaffId(null);
+    setError(null);
+    fetchStaffAction(orgSlug, s.id).then(setStaffOptions);
+    setStep("staff");
+  }
+
+  useEffect(() => {
+    if (step !== "slot" || !service) return;
+    // Canonical React data-fetching-in-an-effect pattern (loading flag set
+    // synchronously, result set in the .then()) — matches react.dev's own
+    // example; the stricter set-state-in-effect lint rule flags it anyway.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSlotsLoading(true);
+    setSelectedSlot(null);
+    fetchSlotsAction(orgSlug, service.id, date, staffId).then((s) => {
+      setSlots(s);
+      setSlotsLoading(false);
+    });
+  }, [step, service, date, staffId, orgSlug]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!service || !selectedSlot) return;
+    setPending(true);
+    setError(null);
+    const result = await submitBookingAction({
+      orgSlug,
+      serviceId: service.id,
+      startAt: selectedSlot,
+      staffId,
+      customerName: name,
+      customerPhone: phone,
+      customerEmail: email,
+      notes,
+    });
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error as TKey);
+      if (result.error === "book_slot_taken") {
+        setStep("slot");
+      }
+      return;
+    }
+    setCancelToken(result.cancelToken);
+    setStep("done");
+  }
+
+  return (
+    <div>
+      {step === "service" && (
+        <div className="card">
+          <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_service_step")}</p>
+          {services.map((s) => (
+            <div key={s.id} className="service-row" onClick={() => chooseService(s)}>
+              <div>
+                <strong>{s.name}</strong>
+                <p className="hint">
+                  {s.duration_minutes} {t(lang, "minutes")}
+                </p>
+              </div>
+              {s.price != null && (
+                <span className="num">
+                  {s.price} {t(lang, "sar")}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {step === "staff" && service && (
+        <div className="card">
+          <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_staff_step")}</p>
+          <div
+            className={`service-row ${staffId === null ? "selected" : ""}`}
+            onClick={() => setStaffId(null)}
+          >
+            {t(lang, "book_any_staff")}
+          </div>
+          {staffOptions.map((st) => (
+            <div
+              key={st.membership_id}
+              className={`service-row ${staffId === st.membership_id ? "selected" : ""}`}
+              onClick={() => setStaffId(st.membership_id)}
+            >
+              {st.email}
+            </div>
+          ))}
+          <div className="toolbar" style={{ marginTop: 10 }}>
+            <button className="btn ghost" onClick={() => setStep("service")}>
+              {t(lang, "back")}
+            </button>
+            <button className="btn" onClick={() => setStep("slot")}>
+              {t(lang, "next")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === "slot" && service && (
+        <div className="card">
+          <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_date_step")}</p>
+          <div className="field">
+            <input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          {slotsLoading ? (
+            <p className="hint">{t(lang, "loading")}</p>
+          ) : slots.length === 0 ? (
+            <p className="hint">{t(lang, "book_no_slots")}</p>
+          ) : (
+            <div className="slot-grid">
+              {slots.map((slotIso) => (
+                <button
+                  key={slotIso}
+                  type="button"
+                  className={`slot-btn ${selectedSlot === slotIso ? "selected" : ""}`}
+                  onClick={() => setSelectedSlot(slotIso)}
+                >
+                  {new Date(slotIso).toLocaleTimeString(lang === "ar" ? "ar-SA" : "en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="toolbar" style={{ marginTop: 10 }}>
+            <button className="btn ghost" onClick={() => setStep("staff")}>
+              {t(lang, "back")}
+            </button>
+            <button className="btn" disabled={!selectedSlot} onClick={() => setStep("contact")}>
+              {t(lang, "next")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === "contact" && (
+        <form className="card" onSubmit={handleSubmit}>
+          <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_contact_step")}</p>
+          <div className="field">
+            <label htmlFor="name">{t(lang, "customer_name")}</label>
+            <input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="phone">{t(lang, "customer_phone")}</label>
+            <input id="phone" dir="ltr" required value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="email">{t(lang, "customer_email")}</label>
+            <input id="email" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div className="field">
+            <label htmlFor="notes">{t(lang, "booking_notes")}</label>
+            <textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+          {error && <p className="error-text">{t(lang, error)}</p>}
+          <div className="toolbar">
+            <button type="button" className="btn ghost" onClick={() => setStep("slot")}>
+              {t(lang, "back")}
+            </button>
+            <button type="submit" className="btn" disabled={pending}>
+              {pending ? t(lang, "loading") : t(lang, "book_submit")}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {step === "done" && cancelToken && (
+        <div className="card" style={{ textAlign: "center" }}>
+          <h2 style={{ color: "var(--brand)", marginBottom: 6 }}>{t(lang, "book_success_title")}</h2>
+          <p className="hint" style={{ marginBottom: 16 }}>
+            {t(lang, "book_success_sub")}
+          </p>
+          <Link href={`/${orgSlug}/booking/${cancelToken}`} className="btn">
+            {t(lang, "book_manage_link")}
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}

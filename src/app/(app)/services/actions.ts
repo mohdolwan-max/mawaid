@@ -1,0 +1,37 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { requireOrgContext } from "@/lib/org";
+
+export async function addService(formData: FormData) {
+  const ctx = await requireOrgContext();
+  const supabase = await createClient();
+
+  const name = String(formData.get("name") ?? "").trim();
+  const duration = Number(formData.get("duration"));
+  const priceRaw = String(formData.get("price") ?? "").trim();
+
+  if (!name || !duration) return;
+
+  await supabase.from("services").insert({
+    org_id: ctx.orgId,
+    name,
+    duration_minutes: duration,
+    price: priceRaw === "" ? null : Number(priceRaw),
+  });
+
+  revalidatePath("/services");
+}
+
+export async function toggleServiceActive(serviceId: string, active: boolean) {
+  const supabase = await createClient();
+  await supabase.from("services").update({ active }).eq("id", serviceId);
+  revalidatePath("/services");
+}
+
+export async function deleteService(serviceId: string) {
+  const supabase = await createClient();
+  await supabase.from("services").delete().eq("id", serviceId);
+  revalidatePath("/services");
+}
