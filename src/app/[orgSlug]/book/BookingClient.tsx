@@ -51,10 +51,6 @@ export function BookingClient({
 
   useEffect(() => {
     if (step !== "slot" || !service) return;
-    // Canonical React data-fetching-in-an-effect pattern (loading flag set
-    // synchronously, result set in the .then()) — matches react.dev's own
-    // example; the stricter set-state-in-effect lint rule flags it anyway.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSlotsLoading(true);
     setSelectedSlot(null);
     fetchSlotsAction(orgSlug, service.id, date, staffId).then((s) => {
