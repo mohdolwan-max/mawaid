@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { t, type Lang } from "@/lib/i18n";
 
 // Public-surface only — never rendered inside the (app) owner layout.
-// حجوزاتي (/my) and حسابي (/account) tabs land with customer accounts in
-// Phase B.
 const TABS = [
   { href: "/", key: "nav_home" as const, icon: "🏠" },
   { href: "/search", key: "nav_search" as const, icon: "🔍" },
+  { href: "/my", key: "nav_my_bookings" as const, icon: "📅" },
+  { href: "/account", key: "nav_my_account" as const, icon: "👤" },
 ];
 
 export function BottomNav({ lang }: { lang: Lang }) {

@@ -13,6 +13,11 @@ const PROTECTED_PREFIXES = [
   "/onboarding",
 ];
 
+// Customer-facing pages that need a session. /account is deliberately NOT
+// here — it renders the login/signup UI itself when signed out (Wddk-style
+// "Account tab shows login"), so protecting it would loop.
+const CUSTOMER_PROTECTED_PREFIXES = ["/my"];
+
 // Optimistic-only auth check: looks for the presence of a Supabase auth
 // cookie without making a network call to Supabase's Auth server. Real,
 // authoritative verification happens on the page via requireOrgContext()'s
@@ -38,10 +43,20 @@ export function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isProtected = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
+  const isCustomerProtected = CUSTOMER_PROTECTED_PREFIXES.some(
+    (p) => path === p || path.startsWith(p + "/")
+  );
 
   if (!hasAuthCookie && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
+  }
+
+  if (!hasAuthCookie && isCustomerProtected) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/account";
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }

@@ -16,10 +16,12 @@ export function BookingClient({
   lang,
   orgSlug,
   services,
+  defaults,
 }: {
   lang: Lang;
   orgSlug: string;
   services: PublicService[];
+  defaults: { name: string; phone: string; email: string } | null;
 }) {
   const [step, setStep] = useState<Step>("service");
   const [pending, setPending] = useState(false);
@@ -34,9 +36,9 @@ export function BookingClient({
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState(defaults?.name ?? "");
+  const [phone, setPhone] = useState(defaults?.phone ?? "");
+  const [email, setEmail] = useState(defaults?.email ?? "");
   const [notes, setNotes] = useState("");
 
   const [cancelToken, setCancelToken] = useState<string | null>(null);
@@ -213,9 +215,16 @@ export function BookingClient({
           <p className="hint" style={{ marginBottom: 16 }}>
             {t(lang, "book_success_sub")}
           </p>
-          <Link href={`/${orgSlug}/booking/${cancelToken}`} className="btn">
-            {t(lang, "book_manage_link")}
-          </Link>
+          <div className="toolbar" style={{ justifyContent: "center" }}>
+            <Link href={`/${orgSlug}/booking/${cancelToken}`} className="btn">
+              {t(lang, "book_manage_link")}
+            </Link>
+            {defaults && (
+              <Link href="/my" className="btn ghost">
+                {t(lang, "view_my_bookings")}
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </div>
