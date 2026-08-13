@@ -136,7 +136,7 @@ export const T = {
     landing_sub: "منصة حجوزات إلكترونية للعيادات ومراكز التجميل — بدون تطبيق يثبته عميلك",
 
     // ---------- marketplace ----------
-    market_hero_title: "احجزي موعدك في ثوانٍ",
+    market_hero_title: "احجز موعدك في ثوانٍ",
     market_hero_sub: "عيادات ومراكز تجميل موثوقة، بأوقات متاحة فعلياً",
     market_search_placeholder: "ابحث عن عيادة أو مركز...",
     nav_home: "الرئيسية",
