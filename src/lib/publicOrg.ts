@@ -9,6 +9,12 @@ export type PublicOrg = {
   phone: string | null;
   logo_url: string | null;
   timezone: string;
+  category: string | null;
+  city: string | null;
+  district: string | null;
+  description: string | null;
+  cover_image_url: string | null;
+  price_tier: number | null;
 };
 
 export type PublicService = {

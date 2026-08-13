@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { BusinessHours } from "@/lib/types";
+import { CATEGORIES, CITIES } from "@/lib/directory";
 import { createOrgAction, saveHoursAction, finishOnboardingAction } from "./actions";
 
 const DEFAULT_HOURS: BusinessHours = {
@@ -47,6 +48,8 @@ export function OnboardingWizard({
   const [slugTouched, setSlugTouched] = useState(false);
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
+  const [category, setCategory] = useState("");
+  const [city, setCity] = useState("");
 
   // step 2
   const [hours, setHours] = useState<BusinessHours>(existingBusinessHours ?? DEFAULT_HOURS);
@@ -60,7 +63,7 @@ export function OnboardingWizard({
     e.preventDefault();
     setPending(true);
     setError(null);
-    const result = await createOrgAction({ name, slug, address, phone });
+    const result = await createOrgAction({ name, slug, address, phone, category, city });
     setPending(false);
     if ("error" in result) {
       setError(result.error);
@@ -134,6 +137,30 @@ export function OnboardingWizard({
               }}
             />
             <p className="hint">{t(lang, "org_slug_hint", { slug: slug || "..." })}</p>
+          </div>
+          <div className="grid2">
+            <div className="field">
+              <label htmlFor="org_category">{t(lang, "dir_category")}</label>
+              <select id="org_category" required value={category} onChange={(e) => setCategory(e.target.value)}>
+                <option value="">{t(lang, "choose_option")}</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c[lang]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="org_city">{t(lang, "dir_city")}</label>
+              <select id="org_city" required value={city} onChange={(e) => setCity(e.target.value)}>
+                <option value="">{t(lang, "choose_option")}</option>
+                {CITIES.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c[lang]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="field">
             <label htmlFor="org_address">{t(lang, "org_address")}</label>

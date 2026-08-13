@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { getPublicOrg, listPublicServices } from "@/lib/publicOrg";
+import { categoryLabel, cityLabel, priceTierLabel } from "@/lib/directory";
+import { BottomNav } from "@/components/marketplace/BottomNav";
 
 export default async function OrgPublicPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -12,9 +14,23 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
   if (!org) notFound();
 
   const services = await listPublicServices(orgSlug);
+  const category = categoryLabel(org.category, lang);
+  const location = [org.district, cityLabel(org.city, lang)].filter(Boolean).join(" · ");
+  const tier = priceTierLabel(org.price_tier);
 
   return (
     <div className="public-shell">
+      {org.cover_image_url && (
+        <div style={{ margin: "0 0 14px", borderRadius: 14, overflow: "hidden", height: 170 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL */}
+          <img
+            src={org.cover_image_url}
+            alt={org.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </div>
+      )}
+
       <div className="public-header">
         {org.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL, no fixed domain to allowlist
@@ -25,8 +41,19 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
         <div>
           <h1>{org.name}</h1>
           {org.address && <p>{org.address}</p>}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+            {category && <span className="chip neutral">{category}</span>}
+            {location && <span className="chip neutral">{location}</span>}
+            {tier && <span className="price-tier">{tier}</span>}
+          </div>
         </div>
       </div>
+
+      {org.description && (
+        <div className="card">
+          <p style={{ fontSize: 13, color: "var(--ink2)", whiteSpace: "pre-wrap" }}>{org.description}</p>
+        </div>
+      )}
 
       <div className="card">
         {services.length === 0 ? (
@@ -49,6 +76,8 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
       <Link href={`/${orgSlug}/book`} className="btn block">
         {t(lang, "book_now")}
       </Link>
+
+      <BottomNav lang={lang} />
     </div>
   );
 }

@@ -9,6 +9,8 @@ export async function createOrgAction(input: {
   slug: string;
   address: string;
   phone: string;
+  category: string;
+  city: string;
 }): Promise<{ orgId: string } | { error: string }> {
   const supabase = await createClient();
 
@@ -27,12 +29,15 @@ export async function createOrgAction(input: {
     return { error: "error_generic" };
   }
 
-  if (input.address.trim() || input.phone.trim()) {
-    await supabase
-      .from("organizations")
-      .update({ address: input.address.trim() || null, phone: input.phone.trim() || null })
-      .eq("id", orgId);
-  }
+  await supabase
+    .from("organizations")
+    .update({
+      address: input.address.trim() || null,
+      phone: input.phone.trim() || null,
+      category: input.category || null,
+      city: input.city || null,
+    })
+    .eq("id", orgId);
 
   return { orgId: orgId as string };
 }

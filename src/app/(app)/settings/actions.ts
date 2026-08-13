@@ -19,6 +19,45 @@ export async function saveOrgProfile(input: { name: string; address: string; pho
   revalidatePath("/settings");
 }
 
+export async function saveDirectoryProfile(input: {
+  isListed: boolean;
+  category: string;
+  city: string;
+  district: string;
+  description: string;
+  priceTier: number | null;
+}) {
+  const ctx = await requireOrgContext();
+  const supabase = await createClient();
+  await supabase
+    .from("organizations")
+    .update({
+      is_listed: input.isListed,
+      category: input.category || null,
+      city: input.city || null,
+      district: input.district.trim() || null,
+      description: input.description.trim() || null,
+      price_tier: input.priceTier,
+    })
+    .eq("id", ctx.orgId);
+  revalidatePath("/settings");
+  revalidatePath("/");
+  revalidatePath(`/${ctx.slug}`);
+}
+
+// Called after the browser uploads to the org-media bucket; persists the
+// resulting public URL on the org row.
+export async function saveMediaUrl(kind: "cover" | "logo", url: string) {
+  const ctx = await requireOrgContext();
+  const supabase = await createClient();
+  await supabase
+    .from("organizations")
+    .update(kind === "cover" ? { cover_image_url: url } : { logo_url: url })
+    .eq("id", ctx.orgId);
+  revalidatePath("/settings");
+  revalidatePath(`/${ctx.slug}`);
+}
+
 export async function saveBookingRules(input: {
   businessHours: BusinessHours;
   slotIntervalMinutes: number;

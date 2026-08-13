@@ -3,11 +3,32 @@
 import { useState } from "react";
 import { t } from "@/lib/i18n";
 import type { OrgContext, BusinessHours } from "@/lib/types";
-import { saveOrgProfile, saveBookingRules } from "./actions";
+import { CATEGORIES, CITIES } from "@/lib/directory";
+import { createClient } from "@/lib/supabase/client";
+import { saveOrgProfile, saveBookingRules, saveDirectoryProfile, saveMediaUrl } from "./actions";
 
 const DAY_KEYS = ["day_sun", "day_mon", "day_tue", "day_wed", "day_thu", "day_fri", "day_sat"] as const;
 
-export function SettingsClient({ ctx, canManage }: { ctx: OrgContext; canManage: boolean }) {
+export type DirectoryProfile = {
+  isListed: boolean;
+  category: string;
+  city: string;
+  district: string;
+  description: string;
+  priceTier: number | null;
+  coverImageUrl: string | null;
+  logoUrl: string | null;
+};
+
+export function SettingsClient({
+  ctx,
+  canManage,
+  directory,
+}: {
+  ctx: OrgContext;
+  canManage: boolean;
+  directory: DirectoryProfile;
+}) {
   const lang = ctx.lang;
   const [name, setName] = useState(ctx.name);
   const [address, setAddress] = useState(ctx.address ?? "");
@@ -22,6 +43,35 @@ export function SettingsClient({ ctx, canManage }: { ctx: OrgContext; canManage:
 
   const [copied, setCopied] = useState(false);
   const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/${ctx.slug}` : `/${ctx.slug}`;
+
+  // directory profile card state
+  const [isListed, setIsListed] = useState(directory.isListed);
+  const [category, setCategory] = useState(directory.category);
+  const [city, setCity] = useState(directory.city);
+  const [district, setDistrict] = useState(directory.district);
+  const [description, setDescription] = useState(directory.description);
+  const [priceTier, setPriceTier] = useState<number | null>(directory.priceTier);
+  const [coverUrl, setCoverUrl] = useState(directory.coverImageUrl);
+  const [logoUrl, setLogoUrl] = useState(directory.logoUrl);
+  const [savingDir, setSavingDir] = useState(false);
+  const [uploadingKind, setUploadingKind] = useState<"cover" | "logo" | null>(null);
+
+  async function handleUpload(kind: "cover" | "logo", file: File) {
+    setUploadingKind(kind);
+    try {
+      const supabase = createClient();
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${ctx.orgId}/${kind}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("org-media").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("org-media").getPublicUrl(path);
+      await saveMediaUrl(kind, data.publicUrl);
+      if (kind === "cover") setCoverUrl(data.publicUrl);
+      else setLogoUrl(data.publicUrl);
+    } finally {
+      setUploadingKind(null);
+    }
+  }
 
   return (
     <div>
@@ -70,6 +120,127 @@ export function SettingsClient({ ctx, canManage }: { ctx: OrgContext; canManage:
         {canManage && (
           <button type="submit" className="btn" disabled={savingProfile}>
             {savingProfile ? t(lang, "loading") : t(lang, "save")}
+          </button>
+        )}
+      </form>
+
+      <form
+        className="card"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setSavingDir(true);
+          await saveDirectoryProfile({ isListed, category, city, district, description, priceTier });
+          setSavingDir(false);
+        }}
+      >
+        <p style={{ fontWeight: 700 }}>{t(lang, "dir_profile_title")}</p>
+        <p className="hint" style={{ marginBottom: 12 }}>{t(lang, "dir_profile_sub")}</p>
+
+        <div className="field">
+          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <input
+              type="checkbox"
+              style={{ width: "auto" }}
+              disabled={!canManage}
+              checked={isListed}
+              onChange={(e) => setIsListed(e.target.checked)}
+            />
+            {t(lang, "dir_listed")}
+          </label>
+        </div>
+
+        <div className="grid3">
+          <div className="field">
+            <label htmlFor="d_category">{t(lang, "dir_category")}</label>
+            <select id="d_category" disabled={!canManage} value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">{t(lang, "choose_option")}</option>
+              {CATEGORIES.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c[lang]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="d_city">{t(lang, "dir_city")}</label>
+            <select id="d_city" disabled={!canManage} value={city} onChange={(e) => setCity(e.target.value)}>
+              <option value="">{t(lang, "choose_option")}</option>
+              {CITIES.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c[lang]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="d_district">{t(lang, "dir_district")}</label>
+            <input id="d_district" disabled={!canManage} value={district} onChange={(e) => setDistrict(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="field">
+          <label htmlFor="d_desc">{t(lang, "dir_description")}</label>
+          <textarea id="d_desc" rows={3} disabled={!canManage} value={description} onChange={(e) => setDescription(e.target.value)} />
+        </div>
+
+        <div className="field">
+          <label htmlFor="d_tier">{t(lang, "dir_price_tier")}</label>
+          <select
+            id="d_tier"
+            disabled={!canManage}
+            value={priceTier ?? ""}
+            onChange={(e) => setPriceTier(e.target.value === "" ? null : Number(e.target.value))}
+            style={{ maxWidth: 200 }}
+          >
+            <option value="">{t(lang, "dir_price_none")}</option>
+            <option value="1">$</option>
+            <option value="2">$$</option>
+            <option value="3">$$$</option>
+          </select>
+        </div>
+
+        {canManage && (
+          <div className="grid2">
+            <div className="field">
+              <label>{t(lang, "dir_cover")}</label>
+              {coverUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL
+                <img src={coverUrl} alt="" style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 8, marginBottom: 6 }} />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingKind !== null}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUpload("cover", file);
+                }}
+              />
+              {uploadingKind === "cover" && <p className="hint">{t(lang, "uploading")}</p>}
+            </div>
+            <div className="field">
+              <label>{t(lang, "dir_logo")}</label>
+              {logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL
+                <img src={logoUrl} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: "50%", marginBottom: 6 }} />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploadingKind !== null}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUpload("logo", file);
+                }}
+              />
+              {uploadingKind === "logo" && <p className="hint">{t(lang, "uploading")}</p>}
+            </div>
+          </div>
+        )}
+
+        {canManage && (
+          <button type="submit" className="btn" disabled={savingDir}>
+            {savingDir ? t(lang, "loading") : t(lang, "save")}
           </button>
         )}
       </form>
