@@ -203,6 +203,13 @@ export const T = {
     review_comment: "تعليقك (اختياري)",
     review_submit: "إرسال التقييم",
     review_thanks: "شكراً لتقييمك ✓",
+
+    // ---------- reminders ----------
+    reminder_cta: "🔔 ذكّرني قبل الموعد بـ30 دقيقة",
+    reminder_enabled: "التذكير مفعّل ✓",
+    reminder_ios_hint: "لتفعيل التذكيرات على الآيفون: أضف الموقع إلى الشاشة الرئيسية أولاً (مشاركة ← إضافة إلى الشاشة الرئيسية)",
+    reminder_push_title: "موعدك بعد قليل ⏰",
+    reminder_push_body: "موعدك في {org} ({service}) الساعة {time}",
   },
   en: {
     brand: "Mawaid",
@@ -392,6 +399,12 @@ export const T = {
     review_comment: "Your comment (optional)",
     review_submit: "Submit review",
     review_thanks: "Thanks for your review ✓",
+
+    reminder_cta: "🔔 Remind me 30 minutes before",
+    reminder_enabled: "Reminder enabled ✓",
+    reminder_ios_hint: "To enable reminders on iPhone: add this site to your Home Screen first (Share → Add to Home Screen)",
+    reminder_push_title: "Your appointment is coming up ⏰",
+    reminder_push_body: "Your appointment at {org} ({service}) at {time}",
   },
 } as const;
 

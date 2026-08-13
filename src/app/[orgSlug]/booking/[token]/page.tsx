@@ -5,6 +5,7 @@ import { getBookingByToken } from "@/lib/availability";
 import { canReview } from "@/lib/reviews";
 import { CancelButton } from "./CancelButton";
 import { ReviewForm } from "./ReviewForm";
+import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 
 export default async function BookingStatusPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -37,7 +38,12 @@ export default async function BookingStatusPage({ params }: { params: Promise<{ 
             {t(lang, `booking_status_${booking.status}` as TKey)}
           </span>
         </p>
-        {booking.status === "booked" && <CancelButton lang={lang} token={token} />}
+        {booking.status === "booked" && (
+          <div className="toolbar">
+            <CancelButton lang={lang} token={token} />
+            <ReminderOptIn lang={lang} cancelToken={token} />
+          </div>
+        )}
       </div>
 
       {reviewable && (

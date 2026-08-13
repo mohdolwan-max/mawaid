@@ -12,6 +12,12 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   title: "مواعيد — حجوزات العيادات ومراكز التجميل | Mawaid",
   description: "منصة حجوزات إلكترونية للعيادات ومراكز التجميل — بدون تطبيق يثبته عميلك.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "مواعيد",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {

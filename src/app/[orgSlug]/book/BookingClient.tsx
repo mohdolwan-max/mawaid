@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { PublicService, PublicStaff } from "@/lib/publicOrg";
+import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { fetchStaffAction, fetchSlotsAction, submitBookingAction } from "./actions";
 
 type Step = "service" | "staff" | "slot" | "contact" | "done";
@@ -215,7 +216,7 @@ export function BookingClient({
           <p className="hint" style={{ marginBottom: 16 }}>
             {t(lang, "book_success_sub")}
           </p>
-          <div className="toolbar" style={{ justifyContent: "center" }}>
+          <div className="toolbar" style={{ justifyContent: "center", marginBottom: 12 }}>
             <Link href={`/${orgSlug}/booking/${cancelToken}`} className="btn">
               {t(lang, "book_manage_link")}
             </Link>
@@ -225,6 +226,7 @@ export function BookingClient({
               </Link>
             )}
           </div>
+          <ReminderOptIn lang={lang} cancelToken={cancelToken} />
         </div>
       )}
     </div>

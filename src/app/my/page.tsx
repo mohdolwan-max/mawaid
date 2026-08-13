@@ -6,6 +6,7 @@ import { t, type Lang, type TKey } from "@/lib/i18n";
 import { getCustomerProfile, listMyBookings, type MyBooking } from "@/lib/customer";
 import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
+import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { CancelMyBooking } from "./CancelMyBooking";
 
 export default async function MyBookingsPage() {
@@ -31,6 +32,12 @@ export default async function MyBookingsPage() {
           {t(lang, "my_bookings_title")}
         </h2>
       </div>
+
+      {upcoming.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <ReminderOptIn lang={lang} cancelToken={null} />
+        </div>
+      )}
 
       {bookings.length === 0 ? (
         <div className="card" style={{ textAlign: "center" }}>
