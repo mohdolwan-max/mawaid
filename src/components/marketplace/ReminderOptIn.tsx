@@ -15,11 +15,30 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
 
 type State = "unsupported" | "idle" | "working" | "enabled" | "denied";
 
+async function subscribeAndSave(cancelToken: string | null): Promise<boolean> {
+  const registration = await navigator.serviceWorker.register("/sw.js");
+  await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+  });
+  const json = subscription.toJSON();
+  return savePushSubscription({
+    endpoint: subscription.endpoint,
+    p256dh: json.keys?.p256dh ?? "",
+    auth: json.keys?.auth ?? "",
+    cancelToken,
+  });
+}
+
 // "Remind me 30 minutes before" opt-in. Guests pass the booking's
 // cancelToken so the subscription ties to that appointment; signed-in
-// customers are linked server-side via their account. On iPhone this
-// only works after adding the site to the home screen (Apple limitation
-// for all web apps) — we show a hint instead of the button there.
+// customers are linked server-side via their account. The permission
+// prompt requires a user gesture (browser rule), so the FIRST time needs
+// a tap — but once permission is already granted on this browser, new
+// bookings are linked silently with no tap at all. On iPhone this only
+// works after adding the site to the home screen (Apple limitation for
+// all web apps) — we show a hint instead of the button there.
 export function ReminderOptIn({ lang, cancelToken }: { lang: Lang; cancelToken: string | null }) {
   const [state, setState] = useState<State>("idle");
   const [needsInstall, setNeedsInstall] = useState(false);
@@ -35,8 +54,19 @@ export function ReminderOptIn({ lang, cancelToken }: { lang: Lang; cancelToken: 
       setState("unsupported");
       return;
     }
-    if (Notification.permission === "denied") setState("denied");
-  }, []);
+    if (Notification.permission === "denied") {
+      setState("denied");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      // Already opted in on this browser — link this booking silently,
+      // no tap needed (subscribing again is idempotent; the server
+      // upserts by endpoint).
+      subscribeAndSave(cancelToken).then((ok) => {
+        if (ok) setState("enabled");
+      });
+    }
+  }, [cancelToken]);
 
   if (state === "unsupported") {
     return needsInstall ? <p className="hint">{t(lang, "reminder_ios_hint")}</p> : null;
@@ -60,19 +90,7 @@ export function ReminderOptIn({ lang, cancelToken }: { lang: Lang; cancelToken: 
             setState("denied");
             return;
           }
-          const registration = await navigator.serviceWorker.register("/sw.js");
-          await navigator.serviceWorker.ready;
-          const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
-          });
-          const json = subscription.toJSON();
-          const ok = await savePushSubscription({
-            endpoint: subscription.endpoint,
-            p256dh: json.keys?.p256dh ?? "",
-            auth: json.keys?.auth ?? "",
-            cancelToken,
-          });
+          const ok = await subscribeAndSave(cancelToken);
           setState(ok ? "enabled" : "idle");
         } catch {
           setState("idle");
