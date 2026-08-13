@@ -143,7 +143,7 @@ export const T = {
     nav_search: "بحث",
     nav_my_bookings: "حجوزاتي",
     nav_my_account: "حسابي",
-    sec_featured: "منشآت مميزة",
+    sec_featured: "الأعلى تقييماً",
     sec_in_city: "في {city}",
     sec_new: "جديد في مواعيد",
     see_all: "عرض الكل",
@@ -193,6 +193,16 @@ export const T = {
     my_browse_cta: "تصفح العيادات والمراكز",
     view_my_bookings: "عرض حجوزاتي",
     booking_details: "تفاصيل الحجز",
+
+    // ---------- reviews ----------
+    reviews_title: "التقييمات",
+    reviews_count: "{n} تقييم",
+    reviews_empty: "لا توجد تقييمات بعد",
+    review_cta: "قيّم زيارتك",
+    review_form_title: "كيف كانت زيارتك؟",
+    review_comment: "تعليقك (اختياري)",
+    review_submit: "إرسال التقييم",
+    review_thanks: "شكراً لتقييمك ✓",
   },
   en: {
     brand: "Mawaid",
@@ -325,7 +335,7 @@ export const T = {
     nav_search: "Search",
     nav_my_bookings: "Bookings",
     nav_my_account: "Account",
-    sec_featured: "Featured",
+    sec_featured: "Top rated",
     sec_in_city: "In {city}",
     sec_new: "New on Mawaid",
     see_all: "See all",
@@ -373,6 +383,15 @@ export const T = {
     my_browse_cta: "Browse clinics & centers",
     view_my_bookings: "View my bookings",
     booking_details: "Booking details",
+
+    reviews_title: "Reviews",
+    reviews_count: "{n} reviews",
+    reviews_empty: "No reviews yet",
+    review_cta: "Rate your visit",
+    review_form_title: "How was your visit?",
+    review_comment: "Your comment (optional)",
+    review_submit: "Submit review",
+    review_thanks: "Thanks for your review ✓",
   },
 } as const;
 

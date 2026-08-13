@@ -91,6 +91,11 @@ function BookingGroup({
               <Link href={`/${b.org_slug}/booking/${b.cancel_token}`} className="btn ghost sm">
                 {t(lang, "booking_details")}
               </Link>
+              {b.status === "completed" && !b.has_review && (
+                <Link href={`/${b.org_slug}/booking/${b.cancel_token}`} className="btn sm">
+                  {t(lang, "review_cta")}
+                </Link>
+              )}
               {showCancel && b.status === "booked" && <CancelMyBooking lang={lang} token={b.cancel_token} />}
             </div>
           </div>

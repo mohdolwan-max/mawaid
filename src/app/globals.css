@@ -755,6 +755,58 @@ label {
   flex: 1;
 }
 
+/* ---------- reviews ---------- */
+.stars {
+  display: inline-flex;
+  gap: 2px;
+  direction: ltr;
+}
+.stars button {
+  background: none;
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  padding: 2px;
+  color: #d3d6dd;
+  line-height: 1;
+}
+.stars button.on {
+  color: #f5b301;
+}
+.stars.readonly span {
+  font-size: 14px;
+  color: #f5b301;
+}
+.stars.readonly span.off {
+  color: #d3d6dd;
+}
+.review-row {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f1f4;
+}
+.review-row:last-child {
+  border-bottom: none;
+}
+.review-row .rv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.review-row .rv-name {
+  font-weight: 700;
+  font-size: 13px;
+}
+.review-row .rv-date {
+  font-size: 11px;
+  color: var(--ink2);
+}
+.review-row p {
+  font-size: 13px;
+  color: var(--ink2);
+}
+
 .bottom-nav {
   display: none;
 }

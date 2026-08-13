@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { getPublicOrg, listPublicServices } from "@/lib/publicOrg";
+import { getOrgReviews, getOrgRatingSummary } from "@/lib/reviews";
 import { categoryLabel, cityLabel, priceTierLabel } from "@/lib/directory";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 
@@ -13,7 +14,11 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
   const org = await getPublicOrg(orgSlug);
   if (!org) notFound();
 
-  const services = await listPublicServices(orgSlug);
+  const [services, reviews, ratingSummary] = await Promise.all([
+    listPublicServices(orgSlug),
+    getOrgReviews(orgSlug),
+    getOrgRatingSummary(orgSlug),
+  ]);
   const category = categoryLabel(org.category, lang);
   const location = [org.district, cityLabel(org.city, lang)].filter(Boolean).join(" · ");
   const tier = priceTierLabel(org.price_tier);
@@ -41,7 +46,13 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
         <div>
           <h1>{org.name}</h1>
           {org.address && <p>{org.address}</p>}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6, alignItems: "center" }}>
+            {ratingSummary.avg_rating != null && (
+              <span className="rating-badge">
+                ★ {Number(ratingSummary.avg_rating).toFixed(1)} ·{" "}
+                {t(lang, "reviews_count", { n: ratingSummary.review_count })}
+              </span>
+            )}
             {category && <span className="chip neutral">{category}</span>}
             {location && <span className="chip neutral">{location}</span>}
             {tier && <span className="price-tier">{tier}</span>}
@@ -76,6 +87,32 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
       <Link href={`/${orgSlug}/book`} className="btn block">
         {t(lang, "book_now")}
       </Link>
+
+      {reviews.length > 0 && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <p style={{ fontWeight: 700, marginBottom: 6 }}>{t(lang, "reviews_title")}</p>
+          {reviews.map((r, i) => (
+            <div key={i} className="review-row">
+              <div className="rv-head">
+                <span className="rv-name">{r.customer_name}</span>
+                <span className="stars readonly" aria-label={`${r.rating}/5`}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <span key={n} className={n <= r.rating ? "" : "off"}>
+                      ★
+                    </span>
+                  ))}
+                </span>
+              </div>
+              {r.comment && <p>{r.comment}</p>}
+              <span className="rv-date">
+                {new Date(r.created_at).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+                  dateStyle: "medium",
+                })}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <BottomNav lang={lang} />
     </div>

@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import { getLang } from "@/lib/lang";
 import { t, type TKey } from "@/lib/i18n";
 import { getBookingByToken } from "@/lib/availability";
+import { canReview } from "@/lib/reviews";
 import { CancelButton } from "./CancelButton";
+import { ReviewForm } from "./ReviewForm";
 
 export default async function BookingStatusPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -11,6 +13,7 @@ export default async function BookingStatusPage({ params }: { params: Promise<{ 
   const booking = await getBookingByToken(token);
   if (!booking) notFound();
 
+  const reviewable = booking.status === "completed" ? await canReview(token) : false;
   const start = new Date(booking.start_at);
 
   return (
@@ -36,6 +39,12 @@ export default async function BookingStatusPage({ params }: { params: Promise<{ 
         </p>
         {booking.status === "booked" && <CancelButton lang={lang} token={token} />}
       </div>
+
+      {reviewable && (
+        <div className="card">
+          <ReviewForm lang={lang} token={token} />
+        </div>
+      )}
     </div>
   );
 }

@@ -18,6 +18,7 @@ export type MyBooking = {
   end_at: string;
   status: string;
   cancel_token: string;
+  has_review: boolean;
 };
 
 // The customers row is the source of truth for "this auth user is a
