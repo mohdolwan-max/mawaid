@@ -35,12 +35,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+  // .trim(): Vercel's env-var UI (and copy/paste in general) can silently
+  // include a trailing newline/space, which web-push's base64url validator
+  // rejects with a synchronous throw — that previously crashed this route
+  // with an unhandled exception (empty 500, no logged message).
+  const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
+  const vapidPrivate = process.env.VAPID_PRIVATE_KEY?.trim();
   if (!vapidPublic || !vapidPrivate) {
     return NextResponse.json({ error: "vapid_not_configured" }, { status: 500 });
   }
-  webpush.setVapidDetails("mailto:info@mawaid.app", vapidPublic, vapidPrivate);
+  try {
+    webpush.setVapidDetails("mailto:info@mawaid.app", vapidPublic, vapidPrivate);
+  } catch (err) {
+    return NextResponse.json(
+      { error: "vapid_invalid", detail: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
