@@ -6,9 +6,14 @@ import { canReview } from "@/lib/reviews";
 import { CancelButton } from "./CancelButton";
 import { ReviewForm } from "./ReviewForm";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
+import { BackBar } from "@/components/marketplace/BackBar";
 
-export default async function BookingStatusPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export default async function BookingStatusPage({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; token: string }>;
+}) {
+  const { orgSlug, token } = await params;
   const lang = await getLang();
 
   const booking = await getBookingByToken(token);
@@ -19,6 +24,7 @@ export default async function BookingStatusPage({ params }: { params: Promise<{ 
 
   return (
     <div className="public-shell">
+      <BackBar href={`/${orgSlug}`} title="" />
       <div className="card">
         <h1 style={{ color: "var(--brand)", marginBottom: 6 }}>{booking.org_name}</h1>
         <p>

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getLang } from "@/lib/lang";
 import { getPublicOrg, listPublicServices } from "@/lib/publicOrg";
 import { getCustomerProfile } from "@/lib/customer";
+import { BackBar } from "@/components/marketplace/BackBar";
 import { BookingClient } from "./BookingClient";
 
 export default async function BookPage({ params }: { params: Promise<{ orgSlug: string }> }) {
@@ -15,11 +16,7 @@ export default async function BookPage({ params }: { params: Promise<{ orgSlug: 
 
   return (
     <div className="public-shell">
-      <div className="public-header">
-        <div>
-          <h1>{org.name}</h1>
-        </div>
-      </div>
+      <BackBar href={`/${orgSlug}`} title={org.name} />
       <BookingClient
         lang={lang}
         orgSlug={orgSlug}

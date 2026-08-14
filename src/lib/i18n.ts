@@ -210,6 +210,12 @@ export const T = {
     reminder_ios_hint: "لتفعيل التذكيرات على الآيفون: أضف الموقع إلى الشاشة الرئيسية أولاً (مشاركة ← إضافة إلى الشاشة الرئيسية)",
     reminder_push_title: "موعدك بعد قليل ⏰",
     reminder_push_body: "موعدك في {org} ({service}) الساعة {time}",
+
+    // ---------- booking wizard steps ----------
+    step_service: "الخدمة",
+    step_staff: "الموظف",
+    step_time: "الوقت",
+    step_info: "بياناتك",
   },
   en: {
     brand: "Mawaid",
@@ -405,6 +411,11 @@ export const T = {
     reminder_ios_hint: "To enable reminders on iPhone: add this site to your Home Screen first (Share → Add to Home Screen)",
     reminder_push_title: "Your appointment is coming up ⏰",
     reminder_push_body: "Your appointment at {org} ({service}) at {time}",
+
+    step_service: "Service",
+    step_staff: "Staff",
+    step_time: "Time",
+    step_info: "Details",
   },
 } as const;
 

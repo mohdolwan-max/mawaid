@@ -9,8 +9,30 @@ import { fetchStaffAction, fetchSlotsAction, submitBookingAction } from "./actio
 
 type Step = "service" | "staff" | "slot" | "contact" | "done";
 
+const STEP_ORDER: Step[] = ["service", "staff", "slot", "contact"];
+const STEP_LABELS: TKey[] = ["step_service", "step_staff", "step_time", "step_info"];
+
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function StepsBar({ lang, step }: { lang: Lang; step: Step }) {
+  if (step === "done") return null;
+  const current = STEP_ORDER.indexOf(step);
+
+  return (
+    <div className="steps-bar">
+      {STEP_ORDER.map((s, i) => (
+        <div key={s} style={{ display: "contents" }}>
+          {i > 0 && <div className={`connector ${i <= current ? "done" : ""}`} />}
+          <div className={`step ${i === current ? "active" : i < current ? "done" : ""}`}>
+            <span className="dot">{i < current ? "✓" : i + 1}</span>
+            <span className="lbl">{t(lang, STEP_LABELS[i])}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function BookingClient({
@@ -91,8 +113,10 @@ export function BookingClient({
 
   return (
     <div>
+      <StepsBar lang={lang} step={step} />
+
       {step === "service" && (
-        <div className="card">
+        <div className="card wizard-step">
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_service_step")}</p>
           {services.map((s) => (
             <div key={s.id} className="service-row" onClick={() => chooseService(s)}>
@@ -109,11 +133,16 @@ export function BookingClient({
               )}
             </div>
           ))}
+          <div className="toolbar" style={{ marginTop: 10 }}>
+            <Link href={`/${orgSlug}`} className="btn ghost">
+              {t(lang, "back")}
+            </Link>
+          </div>
         </div>
       )}
 
       {step === "staff" && service && (
-        <div className="card">
+        <div className="card wizard-step">
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_staff_step")}</p>
           <div
             className={`service-row ${staffId === null ? "selected" : ""}`}
@@ -142,7 +171,7 @@ export function BookingClient({
       )}
 
       {step === "slot" && service && (
-        <div className="card">
+        <div className="card wizard-step">
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_date_step")}</p>
           <div className="field">
             <input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -180,7 +209,7 @@ export function BookingClient({
       )}
 
       {step === "contact" && (
-        <form className="card" onSubmit={handleSubmit}>
+        <form className="card wizard-step" onSubmit={handleSubmit}>
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_contact_step")}</p>
           <div className="field">
             <label htmlFor="name">{t(lang, "customer_name")}</label>
@@ -211,7 +240,7 @@ export function BookingClient({
       )}
 
       {step === "done" && cancelToken && (
-        <div className="card" style={{ textAlign: "center" }}>
+        <div className="card wizard-step" style={{ textAlign: "center" }}>
           <h2 style={{ color: "var(--brand)", marginBottom: 6 }}>{t(lang, "book_success_title")}</h2>
           <p className="hint" style={{ marginBottom: 16 }}>
             {t(lang, "book_success_sub")}

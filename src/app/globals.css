@@ -183,6 +183,36 @@ body {
   font-size: 12.5px;
 }
 
+/* ---------- motion ---------- */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pop-in {
+  0% {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* ---------- cards & tiles ---------- */
 .card {
   position: relative;
@@ -193,6 +223,7 @@ body {
   padding: 18px;
   margin-bottom: 16px;
   box-shadow: var(--shadow);
+  animation: fade-up 0.35s ease both;
 }
 .tiles {
   display: grid;
@@ -294,9 +325,16 @@ tbody tr:hover {
   font-weight: 700;
   font-size: 13.5px;
   cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
 }
 .btn:hover {
   background: var(--brand2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 110, 92, 0.25);
+}
+.btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
 }
 .btn:disabled {
   opacity: 0.6;
@@ -458,13 +496,20 @@ label {
   margin-bottom: 10px;
   cursor: pointer;
   background: var(--white);
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 .service-row:hover {
   border-color: var(--brand);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 110, 92, 0.12);
+}
+.service-row:active {
+  transform: translateY(0) scale(0.99);
 }
 .service-row.selected {
   border-color: var(--brand);
   background: var(--cream);
+  box-shadow: inset 3px 0 0 var(--brand);
 }
 .slot-grid {
   display: grid;
@@ -482,14 +527,125 @@ label {
   color: var(--ink);
   cursor: pointer;
   direction: ltr;
+  transition: border-color 0.15s ease, transform 0.12s ease, background 0.15s ease, color 0.15s ease;
+  animation: pop-in 0.25s ease both;
 }
 .slot-btn:hover {
   border-color: var(--brand);
+  transform: translateY(-2px);
+}
+.slot-btn:active {
+  transform: scale(0.95);
 }
 .slot-btn.selected {
   background: var(--brand);
   border-color: var(--brand);
   color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(15, 110, 92, 0.35);
+}
+
+/* ---------- booking wizard chrome ---------- */
+.back-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  margin-bottom: 6px;
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--brand);
+  font-size: 17px;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.back-btn:hover {
+  background: var(--cream);
+  border-color: var(--brand);
+  transform: translateX(0) scale(1.06);
+}
+/* The arrow glyph itself: points "backwards" per direction */
+.back-btn::before {
+  content: "→";
+}
+[dir="ltr"] .back-btn::before {
+  content: "←";
+}
+.back-bar h1 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--brand);
+}
+
+.steps-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 18px;
+}
+.steps-bar .step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 68px;
+}
+.steps-bar .step .dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  background: #e8eaef;
+  color: var(--ink2);
+  transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+.steps-bar .step .lbl {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink2);
+  transition: color 0.25s ease;
+}
+.steps-bar .step.done .dot {
+  background: var(--good-bg);
+  color: var(--good-ink);
+}
+.steps-bar .step.active .dot {
+  background: var(--brand);
+  color: #fff;
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(15, 110, 92, 0.35);
+}
+.steps-bar .step.active .lbl {
+  color: var(--brand);
+}
+.steps-bar .connector {
+  flex: 1;
+  max-width: 40px;
+  height: 2px;
+  background: var(--line);
+  margin-bottom: 18px;
+  transition: background 0.25s ease;
+}
+.steps-bar .connector.done {
+  background: var(--good-ink);
+}
+
+.wizard-step {
+  animation: fade-up 0.3s ease both;
 }
 
 @media (max-width: 700px) {
@@ -665,9 +821,19 @@ label {
   text-decoration: none;
   color: var(--ink);
   display: block;
+  animation: fade-up 0.35s ease both;
+  transition: border-color 0.15s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 .org-card:hover {
   border-color: var(--brand);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(15, 110, 92, 0.14);
+}
+.org-card .oc-cover img.cover {
+  transition: transform 0.3s ease;
+}
+.org-card:hover .oc-cover img.cover {
+  transform: scale(1.05);
 }
 .org-card .oc-cover {
   height: 120px;

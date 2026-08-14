@@ -6,6 +6,7 @@ import { getPublicOrg, listPublicServices } from "@/lib/publicOrg";
 import { getOrgReviews, getOrgRatingSummary } from "@/lib/reviews";
 import { categoryLabel, cityLabel, priceTierLabel } from "@/lib/directory";
 import { BottomNav } from "@/components/marketplace/BottomNav";
+import { BackBar } from "@/components/marketplace/BackBar";
 
 export default async function OrgPublicPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -25,6 +26,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
 
   return (
     <div className="public-shell">
+      <BackBar href="/" title="" />
       {org.cover_image_url && (
         <div style={{ margin: "0 0 14px", borderRadius: 14, overflow: "hidden", height: 170 }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL */}
