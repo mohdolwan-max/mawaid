@@ -993,7 +993,13 @@ label {
 }
 
 .org-card {
-  width: 220px;
+  /* Fixed 220px was fine on common phone widths (room to spare, see the
+     .hrow edge-fade above), but on a narrower real device the card can
+     end up wider than the visible row — clipped hard against the
+     screen edge with no room left for that fade to read as "scroll for
+     more". Capping to a share of the viewport keeps a card's right
+     edge always inside the fade zone. */
+  width: min(220px, 78vw);
   flex-shrink: 0;
   background: var(--white);
   border: 1px solid #eeeff2;
