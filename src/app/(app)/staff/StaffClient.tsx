@@ -1,24 +1,30 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
-import type { Service, StaffMember } from "@/lib/types";
+import type { BusinessHours, Service, StaffMember, StaffTimeOff } from "@/lib/types";
 import { inviteStaff, toggleStaffService } from "./actions";
+import { StaffScheduleEditor } from "./StaffScheduleEditor";
 
 export function StaffClient({
   lang,
   staff,
   services,
   assignments,
+  timeOff,
+  orgHours,
   canManage,
 }: {
   lang: Lang;
   staff: StaffMember[];
   services: Service[];
   assignments: { staff_membership_id: string; service_id: string }[];
+  timeOff: StaffTimeOff[];
+  orgHours: BusinessHours;
   canManage: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const isAssigned = (membershipId: string, serviceId: string) =>
     assignments.some((a) => a.staff_membership_id === membershipId && a.service_id === serviceId);
@@ -55,6 +61,7 @@ export function StaffClient({
               <th>{t(lang, "staff_role_staff")}</th>
               <th></th>
               {canManage && <th>{t(lang, "staff_services_label")}</th>}
+              {canManage && <th></th>}
             </tr>
           </thead>
           <tbody>
@@ -93,12 +100,41 @@ export function StaffClient({
                     )}
                   </td>
                 )}
+                {canManage && (
+                  <td>
+                    {!member.pending && (
+                      <button
+                        type="button"
+                        className="btn ghost sm"
+                        onClick={() =>
+                          setExpanded(expanded === member.membership_id ? null : member.membership_id)
+                        }
+                      >
+                        {t(lang, "staff_schedule_btn")}
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <p className="hint">{t(lang, "staff_any_service")}</p>
+
+      {canManage &&
+        staff
+          .filter((m) => m.membership_id === expanded)
+          .map((m) => (
+            <StaffScheduleEditor
+              key={m.membership_id}
+              lang={lang}
+              membershipId={m.membership_id}
+              orgHours={orgHours}
+              staffHours={m.business_hours}
+              timeOff={timeOff.filter((o) => o.staff_membership_id === m.membership_id)}
+            />
+          ))}
     </div>
   );
 }

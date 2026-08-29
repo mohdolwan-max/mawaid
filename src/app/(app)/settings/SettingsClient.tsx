@@ -5,9 +5,8 @@ import { t } from "@/lib/i18n";
 import type { OrgContext, BusinessHours } from "@/lib/types";
 import { CATEGORIES, CITIES } from "@/lib/directory";
 import { createClient } from "@/lib/supabase/client";
+import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
 import { saveOrgProfile, saveBookingRules, saveDirectoryProfile, saveMediaUrl } from "./actions";
-
-const DAY_KEYS = ["day_sun", "day_mon", "day_tue", "day_wed", "day_thu", "day_fri", "day_sat"] as const;
 
 export type DirectoryProfile = {
   isListed: boolean;
@@ -260,43 +259,7 @@ export function SettingsClient({
         }}
       >
         <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "settings_hours")}</p>
-        {DAY_KEYS.map((dayKey, idx) => {
-          const key = String(idx);
-          const day = hours[key];
-          return (
-            <div key={key} className="field" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 90, fontSize: 12.5, fontWeight: 600 }}>{t(lang, dayKey)}</span>
-              <label style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 0 }}>
-                <input
-                  type="checkbox"
-                  style={{ width: "auto" }}
-                  disabled={!canManage}
-                  checked={!day.closed}
-                  onChange={(e) => setHours({ ...hours, [key]: { ...day, closed: !e.target.checked } })}
-                />
-                {t(lang, "open")}
-              </label>
-              {!day.closed && (
-                <>
-                  <input
-                    type="time"
-                    dir="ltr"
-                    disabled={!canManage}
-                    value={day.open}
-                    onChange={(e) => setHours({ ...hours, [key]: { ...day, open: e.target.value } })}
-                  />
-                  <input
-                    type="time"
-                    dir="ltr"
-                    disabled={!canManage}
-                    value={day.close}
-                    onChange={(e) => setHours({ ...hours, [key]: { ...day, close: e.target.value } })}
-                  />
-                </>
-              )}
-            </div>
-          );
-        })}
+        <BusinessHoursGrid lang={lang} hours={hours} onChange={setHours} disabled={!canManage} />
 
         <p style={{ fontWeight: 700, margin: "16px 0 10px" }}>{t(lang, "settings_booking_rules")}</p>
         <div className="grid3">

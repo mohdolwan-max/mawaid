@@ -56,6 +56,20 @@ export const CITIES: { key: CityKey; ar: string; en: string }[] = [
   { key: "jerash", ar: "جرش", en: "Jerash" },
 ];
 
+// Categories promoted on the home page's rows + given a tiebreaker boost
+// in search ordering — a pure display/business decision (V2 blueprint
+// "Beauty & Wellness first"), NOT a filter: every category stays fully
+// browsable via /search and bookable directly. Reversible by editing this
+// one constant, no migration needed.
+export const FEATURED_CATEGORIES: CategoryKey[] = [
+  "dental",
+  "derma",
+  "laser",
+  "salon_women",
+  "barber",
+  "spa",
+];
+
 export function categoryLabel(key: string | null, lang: Lang): string {
   const cat = CATEGORIES.find((c) => c.key === key);
   return cat ? cat[lang] : "";

@@ -38,6 +38,18 @@ export type StaffMember = {
   email: string;
   role: Role;
   pending: boolean;
+  display_name: string | null;
+  bio: string | null;
+  photo_url: string | null;
+  business_hours: BusinessHours | null; // null = inherits the org's hours
+};
+
+export type StaffTimeOff = {
+  id: string;
+  staff_membership_id: string;
+  starts_at: string;
+  ends_at: string;
+  reason: string | null;
 };
 
 export type BookingStatus = "booked" | "cancelled" | "completed" | "no_show";

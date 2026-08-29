@@ -1,7 +1,7 @@
 import { getLang } from "@/lib/lang";
 import { getCity } from "@/lib/city";
 import { t } from "@/lib/i18n";
-import { cityLabel } from "@/lib/directory";
+import { cityLabel, FEATURED_CATEGORIES } from "@/lib/directory";
 import { listDirectoryOrgs } from "@/lib/directoryServer";
 import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
@@ -13,13 +13,15 @@ import { PublicFooter } from "@/components/marketplace/PublicFooter";
 export default async function MarketplaceHome() {
   const [lang, city] = await Promise.all([getLang(), getCity()]);
 
-  const [featured, inCity, newest] = await Promise.all([
-    listDirectoryOrgs({ limit: 12 }),
-    listDirectoryOrgs({ city, limit: 12 }),
-    listDirectoryOrgs({ limit: 12, offset: 0 }),
+  // Every row on this page is scoped to the selected city — the whole
+  // point of the city selector is that changing it changes what you see.
+  const [topRated, newest] = await Promise.all([
+    listDirectoryOrgs({ city, limit: 12, featuredCategories: FEATURED_CATEGORIES, featuredOnly: true }),
+    listDirectoryOrgs({ city, limit: 12, offset: 0, featuredCategories: FEATURED_CATEGORIES, featuredOnly: true }),
   ]);
 
-  const nothingListed = featured.length === 0 && inCity.length === 0;
+  const nothingListed = topRated.length === 0 && newest.length === 0;
+  const cityName = cityLabel(city, lang);
 
   return (
     <div className="market-shell">
@@ -37,14 +39,18 @@ export default async function MarketplaceHome() {
         <div className="empty">{t(lang, "market_empty")}</div>
       ) : (
         <>
-          <CardRow title={t(lang, "sec_featured")} seeAllHref="/search" orgs={featured} lang={lang} />
           <CardRow
-            title={t(lang, "sec_in_city", { city: cityLabel(city, lang) })}
+            title={t(lang, "sec_featured", { city: cityName })}
             seeAllHref={`/search?city=${city}`}
-            orgs={inCity}
+            orgs={topRated}
             lang={lang}
           />
-          <CardRow title={t(lang, "sec_new")} seeAllHref="/search" orgs={newest} lang={lang} />
+          <CardRow
+            title={t(lang, "sec_new", { city: cityName })}
+            seeAllHref={`/search?city=${city}`}
+            orgs={newest}
+            lang={lang}
+          />
         </>
       )}
 

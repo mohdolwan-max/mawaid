@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { getCity } from "@/lib/city";
 import { t } from "@/lib/i18n";
-import { CATEGORIES, CITIES } from "@/lib/directory";
+import { CATEGORIES, CITIES, FEATURED_CATEGORIES } from "@/lib/directory";
 import { listDirectoryOrgs } from "@/lib/directoryServer";
 import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
@@ -30,6 +30,9 @@ export default async function SearchPage({
     search: q,
     limit: PAGE_SIZE + 1, // +1 to know whether a next page exists
     offset,
+    // Tiebreaker only (featuredOnly defaults to false) — search stays
+    // fully browsable across every category, just nudges featured ones up.
+    featuredCategories: FEATURED_CATEGORIES,
   });
   const hasMore = orgs.length > PAGE_SIZE;
   const visible = hasMore ? orgs.slice(0, PAGE_SIZE) : orgs;

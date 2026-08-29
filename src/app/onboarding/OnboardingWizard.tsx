@@ -4,19 +4,8 @@ import { useState } from "react";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { BusinessHours } from "@/lib/types";
 import { CATEGORIES, CITIES } from "@/lib/directory";
+import { BusinessHoursGrid, DEFAULT_BUSINESS_HOURS } from "@/components/BusinessHoursGrid";
 import { createOrgAction, saveHoursAction, finishOnboardingAction } from "./actions";
-
-const DEFAULT_HOURS: BusinessHours = {
-  "0": { open: "09:00", close: "21:00", closed: false },
-  "1": { open: "09:00", close: "21:00", closed: false },
-  "2": { open: "09:00", close: "21:00", closed: false },
-  "3": { open: "09:00", close: "21:00", closed: false },
-  "4": { open: "09:00", close: "21:00", closed: false },
-  "5": { open: "09:00", close: "21:00", closed: true },
-  "6": { open: "09:00", close: "21:00", closed: false },
-};
-
-const DAY_KEYS = ["day_sun", "day_mon", "day_tue", "day_wed", "day_thu", "day_fri", "day_sat"] as const;
 
 function slugify(input: string): string {
   return input
@@ -52,7 +41,7 @@ export function OnboardingWizard({
   const [city, setCity] = useState("");
 
   // step 2
-  const [hours, setHours] = useState<BusinessHours>(existingBusinessHours ?? DEFAULT_HOURS);
+  const [hours, setHours] = useState<BusinessHours>(existingBusinessHours ?? DEFAULT_BUSINESS_HOURS);
 
   // step 3
   const [svcName, setSvcName] = useState("");
@@ -180,42 +169,7 @@ export function OnboardingWizard({
       {step === 2 && (
         <form onSubmit={handleStep2}>
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "business_hours_title")}</p>
-          {DAY_KEYS.map((dayKey, idx) => {
-            const key = String(idx);
-            const day = hours[key];
-            return (
-              <div key={key} className="field" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 90, fontSize: 12.5, fontWeight: 600 }}>{t(lang, dayKey)}</span>
-                <label style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 0 }}>
-                  <input
-                    type="checkbox"
-                    style={{ width: "auto" }}
-                    checked={!day.closed}
-                    onChange={(e) =>
-                      setHours({ ...hours, [key]: { ...day, closed: !e.target.checked } })
-                    }
-                  />
-                  {t(lang, "open")}
-                </label>
-                {!day.closed && (
-                  <>
-                    <input
-                      type="time"
-                      dir="ltr"
-                      value={day.open}
-                      onChange={(e) => setHours({ ...hours, [key]: { ...day, open: e.target.value } })}
-                    />
-                    <input
-                      type="time"
-                      dir="ltr"
-                      value={day.close}
-                      onChange={(e) => setHours({ ...hours, [key]: { ...day, close: e.target.value } })}
-                    />
-                  </>
-                )}
-              </div>
-            );
-          })}
+          <BusinessHoursGrid lang={lang} hours={hours} onChange={setHours} />
           {error && <p className="error-text">{t(lang, error as TKey)}</p>}
           <button type="submit" className="btn block" disabled={pending}>
             {pending ? t(lang, "loading") : t(lang, "next")}
