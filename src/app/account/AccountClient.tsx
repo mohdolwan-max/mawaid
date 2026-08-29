@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import type { CustomerProfile } from "@/lib/customer";
@@ -68,6 +69,9 @@ function AuthTabs({ lang, next }: { lang: Lang; next: string | null }) {
           <button type="submit" className="btn block" disabled={loginPending}>
             {loginPending ? t(lang, "loading") : t(lang, "cust_login_tab")}
           </button>
+          <p className="hint" style={{ marginTop: 10 }}>
+            <Link href="/forgot-password?next=/account">{t(lang, "forgot_password_link")}</Link>
+          </p>
         </form>
       ) : (
         <form action={signupAction}>

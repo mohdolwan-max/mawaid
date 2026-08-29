@@ -13,6 +13,9 @@ export default async function LoginPage() {
         <p className="sub">{t(lang, "brand")}</p>
         <LoginForm lang={lang} />
         <p className="hint" style={{ marginTop: 14 }}>
+          <Link href="/forgot-password">{t(lang, "forgot_password_link")}</Link>
+        </p>
+        <p className="hint">
           {t(lang, "no_account")} <Link href="/signup">{t(lang, "signup_link")}</Link>
         </p>
         <p className="hint">
