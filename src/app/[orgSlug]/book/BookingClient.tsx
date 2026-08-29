@@ -63,6 +63,7 @@ export function BookingClient({
   const [phone, setPhone] = useState(defaults?.phone ?? "");
   const [email, setEmail] = useState(defaults?.email ?? "");
   const [notes, setNotes] = useState("");
+  const [honeypot, setHoneypot] = useState("");
 
   const [cancelToken, setCancelToken] = useState<string | null>(null);
 
@@ -87,6 +88,12 @@ export function BookingClient({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!service || !selectedSlot) return;
+    if (honeypot.trim() !== "") {
+      // Silently pretend it worked — don't tip off the bot.
+      setCancelToken("00000000-0000-0000-0000-000000000000");
+      setStep("done");
+      return;
+    }
     setPending(true);
     setError(null);
     const result = await submitBookingAction({
@@ -128,7 +135,7 @@ export function BookingClient({
               </div>
               {s.price != null && (
                 <span className="num">
-                  {s.price} {t(lang, "sar")}
+                  {s.price} {t(lang, "currency")}
                 </span>
               )}
             </div>
@@ -211,6 +218,20 @@ export function BookingClient({
       {step === "contact" && (
         <form className="card wizard-step" onSubmit={handleSubmit}>
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_contact_step")}</p>
+          {/* Honeypot: invisible to real users, but bots that autofill every
+              field on a form tend to fill this one too. Server-side rate
+              limiting (0010_security_hardening.sql) is the real backstop;
+              this just quietly short-circuits the common case. */}
+          <input
+            type="text"
+            name="website"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+          />
           <div className="field">
             <label htmlFor="name">{t(lang, "customer_name")}</label>
             <input id="name" required value={name} onChange={(e) => setName(e.target.value)} />

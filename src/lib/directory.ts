@@ -18,42 +18,42 @@ export type CategoryKey =
   | "physio"
   | "general";
 
-export const CATEGORIES: { key: CategoryKey; ar: string; en: string; emoji: string }[] = [
-  { key: "dental", ar: "أسنان", en: "Dental", emoji: "🦷" },
-  { key: "derma", ar: "جلدية", en: "Dermatology", emoji: "🧴" },
-  { key: "laser", ar: "ليزر وتجميل", en: "Laser & Aesthetics", emoji: "✨" },
-  { key: "salon_women", ar: "صالون نسائي", en: "Ladies Salon", emoji: "💇‍♀️" },
-  { key: "barber", ar: "حلاقة رجالية", en: "Barbershop", emoji: "💈" },
-  { key: "spa", ar: "سبا ومساج", en: "Spa & Massage", emoji: "💆" },
-  { key: "optics", ar: "بصريات", en: "Optics", emoji: "👓" },
-  { key: "kids", ar: "أطفال", en: "Pediatrics", emoji: "🧸" },
-  { key: "physio", ar: "علاج طبيعي", en: "Physiotherapy", emoji: "🦵" },
-  { key: "general", ar: "عام", en: "General", emoji: "🏥" },
+export const CATEGORIES: { key: CategoryKey; ar: string; en: string; emoji: string; color: string }[] = [
+  { key: "dental", ar: "أسنان", en: "Dental", emoji: "🦷", color: "#e6f4ff" },
+  { key: "derma", ar: "جلدية", en: "Dermatology", emoji: "🧴", color: "#fdeef2" },
+  { key: "laser", ar: "ليزر وتجميل", en: "Laser & Aesthetics", emoji: "✨", color: "#f2ecfb" },
+  { key: "salon_women", ar: "صالون نسائي", en: "Ladies Salon", emoji: "💇‍♀️", color: "#fdf0e6" },
+  { key: "barber", ar: "حلاقة رجالية", en: "Barbershop", emoji: "💈", color: "#eaf1fb" },
+  { key: "spa", ar: "سبا ومساج", en: "Spa & Massage", emoji: "💆", color: "#e9f7f2" },
+  { key: "optics", ar: "بصريات", en: "Optics", emoji: "👓", color: "#fef6e0" },
+  { key: "kids", ar: "أطفال", en: "Pediatrics", emoji: "🧸", color: "#fef0f0" },
+  { key: "physio", ar: "علاج طبيعي", en: "Physiotherapy", emoji: "🦵", color: "#eef7e9" },
+  { key: "general", ar: "عام", en: "General", emoji: "🏥", color: "#f0f2f5" },
 ];
 
 export type CityKey =
-  | "riyadh"
-  | "jeddah"
-  | "makkah"
-  | "madinah"
-  | "dammam"
-  | "khobar"
-  | "taif"
-  | "buraidah"
-  | "abha"
-  | "tabuk";
+  | "amman"
+  | "zarqa"
+  | "irbid"
+  | "russeifa"
+  | "aqaba"
+  | "salt"
+  | "mafraq"
+  | "karak"
+  | "madaba"
+  | "jerash";
 
 export const CITIES: { key: CityKey; ar: string; en: string }[] = [
-  { key: "riyadh", ar: "الرياض", en: "Riyadh" },
-  { key: "jeddah", ar: "جدة", en: "Jeddah" },
-  { key: "makkah", ar: "مكة المكرمة", en: "Makkah" },
-  { key: "madinah", ar: "المدينة المنورة", en: "Madinah" },
-  { key: "dammam", ar: "الدمام", en: "Dammam" },
-  { key: "khobar", ar: "الخبر", en: "Khobar" },
-  { key: "taif", ar: "الطائف", en: "Taif" },
-  { key: "buraidah", ar: "بريدة", en: "Buraidah" },
-  { key: "abha", ar: "أبها", en: "Abha" },
-  { key: "tabuk", ar: "تبوك", en: "Tabuk" },
+  { key: "amman", ar: "عمّان", en: "Amman" },
+  { key: "zarqa", ar: "الزرقاء", en: "Zarqa" },
+  { key: "irbid", ar: "إربد", en: "Irbid" },
+  { key: "russeifa", ar: "الرصيفة", en: "Russeifa" },
+  { key: "aqaba", ar: "العقبة", en: "Aqaba" },
+  { key: "salt", ar: "السلط", en: "Salt" },
+  { key: "mafraq", ar: "المفرق", en: "Mafraq" },
+  { key: "karak", ar: "الكرك", en: "Karak" },
+  { key: "madaba", ar: "مادبا", en: "Madaba" },
+  { key: "jerash", ar: "جرش", en: "Jerash" },
 ];
 
 export function categoryLabel(key: string | null, lang: Lang): string {

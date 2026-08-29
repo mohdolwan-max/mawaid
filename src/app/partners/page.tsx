@@ -18,6 +18,15 @@ export default async function PartnersPage() {
         <p className="hint" style={{ marginTop: 14 }}>
           <Link href="/login">{t(lang, "login_title")}</Link>
         </p>
+        <div className="toolbar" style={{ justifyContent: "center", marginTop: 10 }}>
+          <Link href="/privacy" className="hint" style={{ textDecoration: "none" }}>
+            {t(lang, "footer_privacy")}
+          </Link>
+          <span className="hint">·</span>
+          <Link href="/terms" className="hint" style={{ textDecoration: "none" }}>
+            {t(lang, "footer_terms")}
+          </Link>
+        </div>
       </div>
     </div>
   );

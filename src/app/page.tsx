@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { getCity } from "@/lib/city";
 import { t } from "@/lib/i18n";
@@ -9,6 +8,7 @@ import { BottomNav } from "@/components/marketplace/BottomNav";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { CategoryChips } from "@/components/marketplace/CategoryChips";
 import { CardRow } from "@/components/marketplace/CardRow";
+import { PublicFooter } from "@/components/marketplace/PublicFooter";
 
 export default async function MarketplaceHome() {
   const [lang, city] = await Promise.all([getLang(), getCity()]);
@@ -48,11 +48,7 @@ export default async function MarketplaceHome() {
         </>
       )}
 
-      <footer style={{ marginTop: 30, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>
-        <Link href="/partners" className="mh-link">
-          {t(lang, "partners_link")}
-        </Link>
-      </footer>
+      <PublicFooter lang={lang} />
 
       <BottomNav lang={lang} />
     </div>

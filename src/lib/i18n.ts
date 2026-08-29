@@ -21,7 +21,7 @@ export const T = {
     active: "مفعّل",
     inactive: "غير مفعّل",
     minutes: "دقيقة",
-    sar: "ريال",
+    currency: "د.أ",
 
     // ---------- auth ----------
     login_title: "تسجيل الدخول",
@@ -101,6 +101,7 @@ export const T = {
     booking_notes: "ملاحظات (اختياري)",
     book_submit: "تأكيد الحجز",
     book_slot_taken: "للأسف تم حجز هذا الموعد للتو، اختر وقتاً آخر",
+    book_rate_limited: "لديك عدد كبير من الحجوزات الحديثة، حاول مرة أخرى بعد قليل",
     book_success_title: "تم تأكيد حجزك ✓",
     book_success_sub: "سنراك في الموعد المحدد",
     book_manage_link: "إدارة حجزي",
@@ -154,6 +155,9 @@ export const T = {
     load_more: "عرض المزيد",
     partners_link: "هل تملك عيادة أو مركز تجميل؟ انضم إلى مواعيد",
     market_empty: "لا توجد منشآت مدرجة بعد",
+    footer_privacy: "سياسة الخصوصية",
+    footer_terms: "شروط الاستخدام",
+    footer_rights: "© {year} مواعيد. جميع الحقوق محفوظة.",
 
     // ---------- directory profile (settings) ----------
     dir_profile_title: "الملف العام في الدليل",
@@ -236,7 +240,7 @@ export const T = {
     active: "Active",
     inactive: "Inactive",
     minutes: "min",
-    sar: "SAR",
+    currency: "JOD",
 
     login_title: "Login",
     signup_title: "Create your clinic/center account",
@@ -310,6 +314,7 @@ export const T = {
     booking_notes: "Notes (optional)",
     book_submit: "Confirm booking",
     book_slot_taken: "Sorry, this slot was just taken — pick another time",
+    book_rate_limited: "You've made a lot of bookings recently — please try again shortly",
     book_success_title: "Your booking is confirmed ✓",
     book_success_sub: "See you at the scheduled time",
     book_manage_link: "Manage my booking",
@@ -346,7 +351,7 @@ export const T = {
     market_search_placeholder: "Search for a clinic or center...",
     nav_home: "Home",
     nav_search: "Search",
-    nav_my_bookings: "Bookings",
+    nav_my_bookings: "My Bookings",
     nav_my_account: "Account",
     sec_featured: "Top rated",
     sec_in_city: "In {city}",
@@ -359,6 +364,9 @@ export const T = {
     load_more: "Load more",
     partners_link: "Own a clinic or beauty center? Join Mawaid",
     market_empty: "No listed businesses yet",
+    footer_privacy: "Privacy Policy",
+    footer_terms: "Terms of Use",
+    footer_rights: "© {year} Mawaid. All rights reserved.",
 
     dir_profile_title: "Public directory profile",
     dir_profile_sub: "Control how your business appears in explore and search",

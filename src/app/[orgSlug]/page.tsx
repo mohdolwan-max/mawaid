@@ -80,7 +80,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
                   {s.duration_minutes} {t(lang, "minutes")}
                 </p>
               </div>
-              {s.price != null && <span className="num">{s.price} {t(lang, "sar")}</span>}
+              {s.price != null && <span className="num">{s.price} {t(lang, "currency")}</span>}
             </div>
           ))
         )}

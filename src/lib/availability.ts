@@ -62,6 +62,7 @@ export async function bookAppointment(input: {
 function parseRpcError(message?: string): string {
   if (!message) return "error_generic";
   if (message.includes("slot_taken")) return "book_slot_taken";
+  if (message.includes("rate_limited")) return "book_rate_limited";
   return "error_generic";
 }
 

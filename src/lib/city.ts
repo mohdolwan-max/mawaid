@@ -9,5 +9,5 @@ export const CITY_COOKIE = "mawaid_city";
 export async function getCity(): Promise<CityKey> {
   const store = await cookies();
   const value = store.get(CITY_COOKIE)?.value;
-  return CITIES.some((c) => c.key === value) ? (value as CityKey) : "riyadh";
+  return CITIES.some((c) => c.key === value) ? (value as CityKey) : "amman";
 }

@@ -7,6 +7,7 @@ import { listDirectoryOrgs } from "@/lib/directoryServer";
 import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { OrgCard } from "@/components/marketplace/OrgCard";
+import { PublicFooter } from "@/components/marketplace/PublicFooter";
 
 const PAGE_SIZE = 24;
 
@@ -93,6 +94,7 @@ export default async function SearchPage({
         </div>
       )}
 
+      <PublicFooter lang={lang} />
       <BottomNav lang={lang} />
     </div>
   );
