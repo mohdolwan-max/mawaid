@@ -930,7 +930,13 @@ label {
   align-items: center;
   justify-content: center;
   font-size: 26px;
+  overflow: hidden;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cat-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .cat-card:hover .cat-icon {
   transform: translateY(-3px);
