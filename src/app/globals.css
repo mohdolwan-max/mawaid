@@ -770,6 +770,32 @@ label {
   gap: 10px;
   padding: 14px 0;
 }
+/* Hidden by default (mobile relies on .bottom-nav instead, see its own
+   700px breakpoint) — shown as a header row once the bottom tab bar
+   disappears, so desktop/tablet still has a way to reach these pages. */
+.header-nav-links {
+  display: none;
+}
+@media (min-width: 701px) {
+  .header-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .header-nav-links a {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--side-ink);
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .header-nav-links a:hover {
+    background: #f3f4f6;
+    color: var(--brand);
+  }
+}
 .market-header .mh-brand {
   font-size: 21px;
   font-weight: 800;
