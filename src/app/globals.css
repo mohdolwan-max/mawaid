@@ -765,6 +765,8 @@ label {
   overflow-x: auto;
   scrollbar-width: none;
   padding: 4px 2px 16px;
+  mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
 }
 .cat-chip-row::-webkit-scrollbar {
   display: none;
@@ -835,6 +837,11 @@ label {
   padding-bottom: 16px;
   scrollbar-width: thin;
   scrollbar-color: #c9ccd4 transparent;
+  /* Symmetric edge fade (direction-agnostic, works in both RTL/LTR) so a
+     partially-visible card at the edge reads as "scroll for more", not
+     as a rendering glitch. */
+  mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
 }
 .hrow > * {
   scroll-snap-align: start;
