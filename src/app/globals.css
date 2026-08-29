@@ -822,6 +822,55 @@ label {
   align-items: center;
   gap: 8px;
 }
+.market-header .mh-start {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #d9dbe1;
+  background: var(--white);
+  color: var(--side-ink);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.icon-btn:hover {
+  background: #f3f4f6;
+}
+.menu-panel {
+  min-width: 190px;
+}
+.menu-panel a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 0.12s ease;
+}
+.menu-panel a:hover {
+  background: var(--cream);
+}
+.menu-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 6px 4px;
+}
+.notif-panel {
+  min-width: 220px;
+  text-align: center;
+}
 /* Every header-row control (city select, language toggle, search
    button) shares this exact box model so they read as one consistent
    row of pills, never mismatched heights/padding. */
@@ -904,6 +953,12 @@ label {
   color: #fff;
 }
 
+.market-greeting {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 2px 0 10px;
+}
 .hero-banner {
   background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 55%, #4db6ac 100%);
   border-radius: 16px;
@@ -937,6 +992,48 @@ label {
 }
 .hero-banner .btn:hover {
   background: #08382f;
+}
+
+/* ---------- scrollable-row arrow controls ---------- */
+.scroll-row-wrap {
+  position: relative;
+}
+.scroll-arrow {
+  display: none;
+}
+@media (min-width: 701px) {
+  /* Touch/trackpad can already swipe these rows — the arrows exist
+     because a plain desktop mouse wheel only scrolls vertically, so
+     under 701px (touch-first devices) they'd just be visual clutter. */
+  .scroll-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 40%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--white);
+    color: var(--brand);
+    box-shadow: 0 4px 12px rgba(16, 24, 40, 0.12);
+    cursor: pointer;
+    z-index: 5;
+  }
+  .scroll-arrow:hover {
+    background: var(--cream);
+  }
+  .scroll-arrow.start {
+    inset-inline-start: -14px;
+  }
+  .scroll-arrow.end {
+    inset-inline-end: -14px;
+  }
+  [dir="rtl"] .scroll-arrow svg {
+    transform: scaleX(-1);
+  }
 }
 
 .cat-chip-row {

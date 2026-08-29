@@ -141,6 +141,7 @@ export const T = {
     landing_sub: "منصة حجوزات إلكترونية للعيادات ومراكز التجميل — بدون تطبيق يثبته عميلك",
 
     // ---------- marketplace ----------
+    market_greeting: "مرحباً بك",
     market_hero_title: "احجز موعدك في ثوانٍ",
     market_hero_sub: "عيادات ومراكز تجميل موثوقة، بأوقات متاحة فعلياً",
     market_search_placeholder: "ابحث عن عيادة أو مركز...",
@@ -148,6 +149,10 @@ export const T = {
     nav_search: "بحث",
     nav_my_bookings: "حجوزاتي",
     nav_my_account: "حسابي",
+    menu_label: "القائمة",
+    menu_partners: "أضف عيادتك",
+    notifications_label: "الإشعارات",
+    no_notifications: "لا توجد إشعارات جديدة",
     sec_featured: "الأعلى تقييماً في {city}",
     sec_in_city: "في {city}",
     sec_new: "جديد في {city}",
@@ -367,6 +372,7 @@ export const T = {
     landing_cta: "Create your clinic's booking page for free",
     landing_sub: "Online booking for clinics and beauty centers — no app for your customer to install",
 
+    market_greeting: "Welcome",
     market_hero_title: "Book your appointment in seconds",
     market_hero_sub: "Trusted clinics and beauty centers, with real-time availability",
     market_search_placeholder: "Search for a clinic or center...",
@@ -374,6 +380,10 @@ export const T = {
     nav_search: "Search",
     nav_my_bookings: "My Bookings",
     nav_my_account: "Account",
+    menu_label: "Menu",
+    menu_partners: "List your clinic",
+    notifications_label: "Notifications",
+    no_notifications: "No new notifications yet",
     sec_featured: "Top rated in {city}",
     sec_in_city: "In {city}",
     sec_new: "New in {city}",

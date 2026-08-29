@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Lang } from "@/lib/i18n";
 import { CATEGORIES } from "@/lib/directory";
 import { BuildingIcon } from "@/components/icons";
+import { ScrollRow } from "./ScrollRow";
 
 // Wddk-style category picker: a colored icon "image" tile with the label
 // underneath, not an inline pill. Categories with a real photo (see
@@ -10,7 +11,7 @@ import { BuildingIcon } from "@/components/icons";
 // back to a plain line icon rather than an emoji.
 export function CategoryChips({ lang, active }: { lang: Lang; active?: string | null }) {
   return (
-    <div className="cat-chip-row">
+    <ScrollRow className="cat-chip-row">
       {CATEGORIES.map((cat) => (
         <Link
           key={cat.key}
@@ -30,6 +31,6 @@ export function CategoryChips({ lang, active }: { lang: Lang; active?: string | 
           <span className="cat-label">{cat[lang]}</span>
         </Link>
       ))}
-    </div>
+    </ScrollRow>
   );
 }

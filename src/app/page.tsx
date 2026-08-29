@@ -27,6 +27,8 @@ export default async function MarketplaceHome() {
     <div className="market-shell">
       <PublicNav lang={lang} city={city} />
 
+      <p className="market-greeting">{t(lang, "market_greeting")}</p>
+
       <div className="hero-banner">
         <h1>{t(lang, "market_hero_title")}</h1>
         <p>{t(lang, "market_hero_sub")}</p>
