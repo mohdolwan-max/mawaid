@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/services", key: "nav_services" as const },
   { href: "/staff", key: "nav_staff" as const },
   { href: "/bookings", key: "nav_bookings" as const },
+  { href: "/reviews", key: "reviews_title" as const },
   { href: "/settings", key: "nav_settings" as const },
 ];
 

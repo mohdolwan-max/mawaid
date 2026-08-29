@@ -89,3 +89,16 @@ export async function saveBookingRules(input: {
     .eq("org_id", ctx.orgId);
   revalidatePath("/settings");
 }
+
+// Soft-delete only (see 0020_close_organization.sql) — the RPC itself
+// re-checks ownership server-side, this isn't the only guard.
+// requireOrgContext() already redirects to /auth/signout on the next
+// request once organizations.deleted_at is set, but the caller
+// navigates there directly right after this resolves rather than
+// waiting on a stale page to reload into that redirect.
+export async function closeOrganization() {
+  await requireOrgContext();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("close_organization");
+  if (error) throw error;
+}

@@ -52,6 +52,15 @@ export type StaffTimeOff = {
   reason: string | null;
 };
 
+export type OrgReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  customer_name: string;
+  created_at: string;
+  hidden_at: string | null;
+};
+
 export type BookingStatus = "booked" | "cancelled" | "completed" | "no_show";
 
 export type Appointment = {

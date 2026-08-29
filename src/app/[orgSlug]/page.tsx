@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getLang } from "@/lib/lang";
@@ -9,6 +10,42 @@ import { isSafeHttpUrl } from "@/lib/url";
 import { PinIcon } from "@/components/icons";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
+
+// Every page previously shared the root layout's static title/description,
+// so sharing a clinic's link on WhatsApp (a primary growth channel for
+// this kind of local-business app) showed the generic app name/blurb
+// instead of that clinic's own name and photo.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ orgSlug: string }>;
+}): Promise<Metadata> {
+  const { orgSlug } = await params;
+  const org = await getPublicOrg(orgSlug);
+  if (!org) return {};
+
+  const lang = await getLang();
+  const title = `${org.name} | ${t(lang, "brand")}`;
+  const description = org.description || t(lang, "market_hero_sub");
+  const image = org.cover_image_url || org.logo_url;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
+}
 
 export default async function OrgPublicPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { t } from "@/lib/i18n";
+import { t, type Lang } from "@/lib/i18n";
 import type { OrgContext, BusinessHours } from "@/lib/types";
 import { CATEGORIES, CITIES } from "@/lib/directory";
 import { createClient } from "@/lib/supabase/client";
 import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
-import { saveOrgProfile, saveBookingRules, saveDirectoryProfile, saveMediaUrl } from "./actions";
+import { saveOrgProfile, saveBookingRules, saveDirectoryProfile, saveMediaUrl, closeOrganization } from "./actions";
 
 export type DirectoryProfile = {
   isListed: boolean;
@@ -57,8 +57,26 @@ export function SettingsClient({
   const [logoUrl, setLogoUrl] = useState(directory.logoUrl);
   const [savingDir, setSavingDir] = useState(false);
   const [uploadingKind, setUploadingKind] = useState<"cover" | "logo" | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // "accept=image/*" on the <input> is only a UI hint — a script or a
+  // renamed file can bypass it, and org-media is a public bucket with
+  // no server-side size/type limit configured (storage.buckets), so
+  // this is the only real gate against an oversized or non-image
+  // upload landing there.
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+  const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
   async function handleUpload(kind: "cover" | "logo", file: File) {
+    setUploadError(null);
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setUploadError(t(lang, "upload_invalid_type"));
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setUploadError(t(lang, "upload_too_large"));
+      return;
+    }
     setUploadingKind(kind);
     try {
       const supabase = createClient();
@@ -214,6 +232,7 @@ export function SettingsClient({
           </select>
         </div>
 
+        {canManage && uploadError && <p className="error-text">{uploadError}</p>}
         {canManage && (
           <div className="grid2">
             <div className="field">
@@ -322,6 +341,49 @@ export function SettingsClient({
           </button>
         )}
       </form>
+
+      {canManage && <DangerZone lang={lang} />}
+    </div>
+  );
+}
+
+function DangerZone({ lang }: { lang: Lang }) {
+  const [confirming, setConfirming] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  return (
+    <div className="card" style={{ borderColor: "var(--bad-ink)" }}>
+      <p style={{ fontWeight: 700, color: "var(--bad-ink)", marginBottom: 4 }}>
+        {t(lang, "danger_zone_title")}
+      </p>
+      <p className="hint" style={{ marginBottom: 12 }}>{t(lang, "close_org_hint")}</p>
+      {!confirming ? (
+        <button type="button" className="btn ghost" onClick={() => setConfirming(true)}>
+          {t(lang, "close_org_cta")}
+        </button>
+      ) : (
+        <div>
+          <p style={{ marginBottom: 10 }}>{t(lang, "close_org_confirm")}</p>
+          <div className="toolbar">
+            <button
+              type="button"
+              className="btn"
+              style={{ background: "var(--bad-ink)" }}
+              disabled={closing}
+              onClick={async () => {
+                setClosing(true);
+                await closeOrganization();
+                window.location.href = "/auth/signout";
+              }}
+            >
+              {closing ? t(lang, "loading") : t(lang, "close_org_confirm_cta")}
+            </button>
+            <button type="button" className="btn ghost" disabled={closing} onClick={() => setConfirming(false)}>
+              {t(lang, "cancel")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

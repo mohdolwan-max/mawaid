@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type PublicOrg = {
@@ -27,11 +28,14 @@ export type PublicService = {
 
 export type PublicStaff = { membership_id: string; email: string };
 
-export async function getPublicOrg(slug: string): Promise<PublicOrg | null> {
+// Wrapped in React's cache() so generateMetadata() and the page
+// component (both call this for the same slug in the same request)
+// share one query instead of hitting the RPC twice.
+export const getPublicOrg = cache(async (slug: string): Promise<PublicOrg | null> => {
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_public_org", { p_slug: slug }).maybeSingle();
   return (data as PublicOrg) ?? null;
-}
+});
 
 export async function listPublicServices(slug: string): Promise<PublicService[]> {
   const supabase = await createClient();

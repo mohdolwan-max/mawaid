@@ -506,6 +506,24 @@ label {
   text-align: center;
   color: var(--ink2);
 }
+/* not-found / error boundary pages */
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  max-width: 380px;
+  margin: 0 auto;
+}
+.empty-state h1 {
+  color: var(--brand);
+  font-size: 19px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.empty-state p {
+  color: var(--ink2);
+  font-size: 13px;
+  margin-bottom: 20px;
+}
 .hint {
   font-size: 11px;
   color: var(--ink2);
