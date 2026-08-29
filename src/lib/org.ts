@@ -1,7 +1,9 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { LANG_COOKIE } from "@/lib/lang";
 import type { OrgContext } from "@/lib/types";
 
 type MyContextRow = {
@@ -53,6 +55,15 @@ export const requireOrgContext = cache(async (): Promise<OrgContext> => {
     redirect("/auth/signout");
   }
 
+  // org_settings.lang is the org's saved default (used e.g. for outbound
+  // customer emails, see src/lib/email.ts), but nothing ever updates it —
+  // the sidebar's language toggle is a personal, per-browser preference
+  // like the public marketplace's, not a shared org setting. The
+  // mawaid_lang cookie (same one togglePublicLang/toggleLang write) wins
+  // when present; the org default is only the fallback for a first visit.
+  const cookieLang = (await cookies()).get(LANG_COOKIE)?.value;
+  const lang = cookieLang === "en" || cookieLang === "ar" ? cookieLang : row.lang;
+
   const ctx: OrgContext = {
     orgId: row.org_id,
     name: row.org_name,
@@ -60,7 +71,7 @@ export const requireOrgContext = cache(async (): Promise<OrgContext> => {
     address: row.org_address,
     phone: row.org_phone,
     logoUrl: row.org_logo_url,
-    lang: row.lang,
+    lang,
     timezone: row.timezone,
     businessHours: row.business_hours,
     slotIntervalMinutes: row.slot_interval_minutes,

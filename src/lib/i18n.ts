@@ -111,6 +111,7 @@ export const T = {
     booking_not_found: "لم يتم العثور على الحجز",
 
     // ---------- owner bookings dashboard ----------
+    dash_overview_sub: "نظرة سريعة على حجوزات عيادتك",
     bookings_title: "الحجوزات",
     bookings_today: "حجوزات اليوم",
     bookings_upcoming: "الحجوزات القادمة",
@@ -336,6 +337,7 @@ export const T = {
     booking_cancel_confirm: "Cancel this booking?",
     booking_not_found: "Booking not found",
 
+    dash_overview_sub: "A quick look at your clinic's bookings",
     bookings_title: "Bookings",
     bookings_today: "Today's bookings",
     bookings_upcoming: "Upcoming bookings",

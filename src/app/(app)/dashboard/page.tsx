@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { t } from "@/lib/i18n";
 import { todayYMD, nowIso } from "@/lib/date";
+import { PublicLinkCard } from "./PublicLinkCard";
 
 export default async function DashboardPage() {
   const ctx = await requireOrgContext();
@@ -27,35 +27,30 @@ export default async function DashboardPage() {
     .eq("status", "booked")
     .gte("start_at", nowIso());
 
-  const publicUrl = `/${ctx.slug}`;
-
   return (
     <div>
-      <div className="page-head">
+      <div className="dash-hero">
         <div>
           <h2>{t(ctx.lang, "nav_dashboard")}</h2>
+          <p>{t(ctx.lang, "dash_overview_sub")}</p>
         </div>
+        <div className="dash-hero-emoji">👋</div>
       </div>
 
       <div className="tiles">
         <div className="tile">
+          <div className="tile-icon" style={{ background: "var(--good-bg)" }}>📅</div>
           <div className="t-label">{t(ctx.lang, "bookings_today")}</div>
           <div className="t-value">{todayCount ?? 0}</div>
         </div>
         <div className="tile">
+          <div className="tile-icon" style={{ background: "var(--tint)" }}>⏳</div>
           <div className="t-label">{t(ctx.lang, "bookings_upcoming")}</div>
           <div className="t-value">{upcomingCount ?? 0}</div>
         </div>
       </div>
 
-      <div className="card">
-        <label>{t(ctx.lang, "public_link_label")}</label>
-        <p>
-          <Link href={publicUrl} target="_blank">
-            {publicUrl}
-          </Link>
-        </p>
-      </div>
+      <PublicLinkCard lang={ctx.lang} slug={ctx.slug} />
     </div>
   );
 }

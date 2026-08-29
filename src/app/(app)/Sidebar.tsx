@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import { toggleLang } from "./actions";
 
@@ -15,6 +16,8 @@ const LINKS = [
 
 export function Sidebar({ lang, orgName }: { lang: Lang; orgName: string }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [, startTransition] = useTransition();
 
   return (
     <aside className="sidebar">
@@ -34,7 +37,15 @@ export function Sidebar({ lang, orgName }: { lang: Lang; orgName: string }) {
         ))}
       </nav>
       <div className="side-foot">
-        <button className="lang-btn" onClick={() => toggleLang(lang)}>
+        <button
+          className="lang-btn"
+          onClick={() =>
+            startTransition(async () => {
+              await toggleLang(lang);
+              router.refresh();
+            })
+          }
+        >
           {t(lang, "lang_toggle")}
         </button>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- intentional full navigation to a Route Handler (GET /auth/signout), not an app route */}
