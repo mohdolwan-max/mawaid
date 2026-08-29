@@ -22,20 +22,19 @@ export const CATEGORIES: {
   key: CategoryKey;
   ar: string;
   en: string;
-  emoji: string;
   color: string;
   icon?: string;
 }[] = [
-  { key: "dental", ar: "أسنان", en: "Dental", emoji: "🦷", color: "#e6f4ff", icon: "/icons/dental.webp" },
-  { key: "derma", ar: "جلدية", en: "Dermatology", emoji: "🧴", color: "#fdeef2", icon: "/icons/derma.webp" },
-  { key: "laser", ar: "ليزر وتجميل", en: "Laser & Aesthetics", emoji: "✨", color: "#f2ecfb", icon: "/icons/laser.webp" },
-  { key: "salon_women", ar: "صالون نسائي", en: "Ladies Salon", emoji: "💇‍♀️", color: "#fdf0e6", icon: "/icons/beauty.webp" },
-  { key: "barber", ar: "حلاقة رجالية", en: "Barbershop", emoji: "💈", color: "#eaf1fb", icon: "/icons/barber.webp" },
-  { key: "spa", ar: "سبا ومساج", en: "Spa & Massage", emoji: "💆", color: "#e9f7f2", icon: "/icons/spa.webp" },
-  { key: "optics", ar: "بصريات", en: "Optics", emoji: "👓", color: "#fef6e0", icon: "/icons/opti.webp" },
-  { key: "kids", ar: "أطفال", en: "Pediatrics", emoji: "🧸", color: "#fef0f0", icon: "/icons/baby.webp" },
-  { key: "physio", ar: "علاج طبيعي", en: "Physiotherapy", emoji: "🦵", color: "#eef7e9", icon: "/icons/physio.webp" },
-  { key: "general", ar: "عام", en: "General", emoji: "🏥", color: "#f0f2f5" },
+  { key: "dental", ar: "أسنان", en: "Dental", color: "#e6f4ff", icon: "/icons/dental.webp" },
+  { key: "derma", ar: "جلدية", en: "Dermatology", color: "#fdeef2", icon: "/icons/derma.webp" },
+  { key: "laser", ar: "ليزر وتجميل", en: "Laser & Aesthetics", color: "#f2ecfb", icon: "/icons/laser.webp" },
+  { key: "salon_women", ar: "صالون نسائي", en: "Ladies Salon", color: "#fdf0e6", icon: "/icons/beauty.webp" },
+  { key: "barber", ar: "حلاقة رجالية", en: "Barbershop", color: "#eaf1fb", icon: "/icons/barber.webp" },
+  { key: "spa", ar: "سبا ومساج", en: "Spa & Massage", color: "#e9f7f2", icon: "/icons/spa.webp" },
+  { key: "optics", ar: "بصريات", en: "Optics", color: "#fef6e0", icon: "/icons/opti.webp" },
+  { key: "kids", ar: "أطفال", en: "Pediatrics", color: "#fef0f0", icon: "/icons/baby.webp" },
+  { key: "physio", ar: "علاج طبيعي", en: "Physiotherapy", color: "#eef7e9", icon: "/icons/physio.webp" },
+  { key: "general", ar: "عام", en: "General", color: "#f0f2f5" },
 ];
 
 export type CityKey =

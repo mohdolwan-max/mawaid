@@ -2,6 +2,7 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { t } from "@/lib/i18n";
 import { todayYMD, nowIso } from "@/lib/date";
+import { CalendarIcon, ClockIcon } from "@/components/icons";
 import { PublicLinkCard } from "./PublicLinkCard";
 
 export default async function DashboardPage() {
@@ -34,17 +35,20 @@ export default async function DashboardPage() {
           <h2>{t(ctx.lang, "nav_dashboard")}</h2>
           <p>{t(ctx.lang, "dash_overview_sub")}</p>
         </div>
-        <div className="dash-hero-emoji">👋</div>
       </div>
 
       <div className="tiles">
         <div className="tile">
-          <div className="tile-icon" style={{ background: "var(--good-bg)" }}>📅</div>
+          <div className="tile-icon" style={{ background: "var(--good-bg)", color: "var(--good-ink)" }}>
+            <CalendarIcon size={19} />
+          </div>
           <div className="t-label">{t(ctx.lang, "bookings_today")}</div>
           <div className="t-value">{todayCount ?? 0}</div>
         </div>
         <div className="tile">
-          <div className="tile-icon" style={{ background: "var(--tint)" }}>⏳</div>
+          <div className="tile-icon" style={{ background: "var(--tint)", color: "var(--brand)" }}>
+            <ClockIcon size={19} />
+          </div>
           <div className="t-label">{t(ctx.lang, "bookings_upcoming")}</div>
           <div className="t-value">{upcomingCount ?? 0}</div>
         </div>

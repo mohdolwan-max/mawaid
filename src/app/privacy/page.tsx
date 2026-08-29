@@ -4,7 +4,7 @@ import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
 
-export const metadata = { title: "سياسة الخصوصية | مواعيد" };
+export const metadata = { title: "سياسة الخصوصية | موعد" };
 
 export default async function PrivacyPage() {
   const [lang, city] = await Promise.all([getLang(), getCity()]);
@@ -30,7 +30,7 @@ function PrivacyAr() {
       <p className="hint" style={{ marginBottom: 18 }}>آخر تحديث: أغسطس 2026</p>
 
       <p style={{ marginBottom: 14 }}>
-        منصة &quot;مواعيد&quot; تربط بين العملاء والعيادات ومراكز التجميل لإتمام الحجوزات إلكترونياً.
+        منصة &quot;موعد&quot; تربط بين العملاء والعيادات ومراكز التجميل لإتمام الحجوزات إلكترونياً.
         هذه السياسة توضح البيانات التي نجمعها وكيف نستخدمها ونحميها.
       </p>
 
@@ -88,7 +88,7 @@ function PrivacyEn() {
       <p className="hint" style={{ marginBottom: 18 }}>Last updated: August 2026</p>
 
       <p style={{ marginBottom: 14 }}>
-        Mawaid connects customers with clinics and beauty centers for online appointment booking.
+        Maw3ed connects customers with clinics and beauty centers for online appointment booking.
         This policy explains what data we collect, how we use it, and how we protect it.
       </p>
 

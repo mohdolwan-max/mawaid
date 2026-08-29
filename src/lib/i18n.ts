@@ -2,7 +2,7 @@ export type Lang = "ar" | "en";
 
 export const T = {
   ar: {
-    brand: "مواعيد",
+    brand: "موعد",
     tagline: "احجز موعدك في عيادتك أو مركز التجميل المفضل، أونلاين",
 
     // ---------- common ----------
@@ -38,7 +38,7 @@ export const T = {
     auth_error: "بيانات الدخول غير صحيحة",
 
     // ---------- onboarding ----------
-    onboarding_title: "أهلاً بك 👋 لنجهّز عيادتك أو مركزك",
+    onboarding_title: "أهلاً بك، لنجهّز عيادتك أو مركزك",
     onboarding_step: "الخطوة {n} من 3",
     org_name: "اسم العيادة / المركز",
     org_slug: "رابط الحجز الخاص بك",
@@ -157,11 +157,11 @@ export const T = {
     filter_all_categories: "كل التصنيفات",
     filter_all_cities: "كل المدن",
     load_more: "عرض المزيد",
-    partners_link: "هل تملك عيادة أو مركز تجميل؟ انضم إلى مواعيد",
+    partners_link: "هل تملك عيادة أو مركز تجميل؟ انضم إلى موعد",
     market_empty: "لا توجد منشآت مدرجة بعد",
     footer_privacy: "سياسة الخصوصية",
     footer_terms: "شروط الاستخدام",
-    footer_rights: "© {year} مواعيد. جميع الحقوق محفوظة.",
+    footer_rights: "© {year} موعد. جميع الحقوق محفوظة.",
 
     // ---------- directory profile (settings) ----------
     dir_profile_title: "الملف العام في الدليل",
@@ -213,10 +213,10 @@ export const T = {
     review_thanks: "شكراً لتقييمك ✓",
 
     // ---------- reminders ----------
-    reminder_cta: "🔔 ذكّرني قبل الموعد بـ30 دقيقة",
+    reminder_cta: "ذكّرني قبل الموعد بـ30 دقيقة",
     reminder_enabled: "التذكير مفعّل ✓",
     reminder_ios_hint: "لتفعيل التذكيرات على الآيفون: أضف الموقع إلى الشاشة الرئيسية أولاً (مشاركة ← إضافة إلى الشاشة الرئيسية)",
-    reminder_push_title: "موعدك بعد قليل ⏰",
+    reminder_push_title: "موعدك بعد قليل",
     reminder_push_body: "موعدك في {org} ({service}) الساعة {time}",
 
     // ---------- booking wizard steps ----------
@@ -239,7 +239,7 @@ export const T = {
     time_off_empty: "لا توجد إجازات مسجّلة",
   },
   en: {
-    brand: "Mawaid",
+    brand: "Maw3ed",
     tagline: "Book your appointment at your favorite clinic or beauty center, online",
 
     save: "Save",
@@ -272,7 +272,7 @@ export const T = {
     signout: "Sign out",
     auth_error: "Invalid login credentials",
 
-    onboarding_title: "Welcome 👋 Let's set up your clinic or center",
+    onboarding_title: "Welcome, let's set up your clinic or center",
     onboarding_step: "Step {n} of 3",
     org_name: "Clinic / center name",
     org_slug: "Your booking link",
@@ -383,11 +383,11 @@ export const T = {
     filter_all_categories: "All categories",
     filter_all_cities: "All cities",
     load_more: "Load more",
-    partners_link: "Own a clinic or beauty center? Join Mawaid",
+    partners_link: "Own a clinic or beauty center? Join Maw3ed",
     market_empty: "No listed businesses yet",
     footer_privacy: "Privacy Policy",
     footer_terms: "Terms of Use",
-    footer_rights: "© {year} Mawaid. All rights reserved.",
+    footer_rights: "© {year} Maw3ed. All rights reserved.",
 
     dir_profile_title: "Public directory profile",
     dir_profile_sub: "Control how your business appears in explore and search",
@@ -435,10 +435,10 @@ export const T = {
     review_submit: "Submit review",
     review_thanks: "Thanks for your review ✓",
 
-    reminder_cta: "🔔 Remind me 30 minutes before",
+    reminder_cta: "Remind me 30 minutes before",
     reminder_enabled: "Reminder enabled ✓",
     reminder_ios_hint: "To enable reminders on iPhone: add this site to your Home Screen first (Share → Add to Home Screen)",
-    reminder_push_title: "Your appointment is coming up ⏰",
+    reminder_push_title: "Your appointment is coming up",
     reminder_push_body: "Your appointment at {org} ({service}) at {time}",
 
     step_service: "Service",

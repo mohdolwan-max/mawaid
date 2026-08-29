@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { t, type Lang } from "@/lib/i18n";
+import { SearchIcon, CalendarIcon, UserIcon } from "@/components/icons";
 import { CitySelector } from "./CitySelector";
 import { LangToggle } from "./LangToggle";
 
@@ -15,9 +16,15 @@ export function PublicNav({ lang, city }: { lang: Lang; city: string }) {
         {t(lang, "brand")}
       </Link>
       <nav className="header-nav-links">
-        <Link href="/search">🔍 {t(lang, "nav_search")}</Link>
-        <Link href="/my">📅 {t(lang, "nav_my_bookings")}</Link>
-        <Link href="/account">👤 {t(lang, "nav_my_account")}</Link>
+        <Link href="/search">
+          <SearchIcon size={15} /> {t(lang, "nav_search")}
+        </Link>
+        <Link href="/my">
+          <CalendarIcon size={15} /> {t(lang, "nav_my_bookings")}
+        </Link>
+        <Link href="/account">
+          <UserIcon size={15} /> {t(lang, "nav_my_account")}
+        </Link>
       </nav>
       <div className="mh-side">
         <CitySelector lang={lang} city={city} />

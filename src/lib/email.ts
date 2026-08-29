@@ -36,7 +36,7 @@ export async function sendBookingConfirmation(input: {
   const subject = isAr ? `تأكيد حجزك في ${input.orgName}` : `Your booking at ${input.orgName} is confirmed`;
   const html = `
     <div dir="${isAr ? "rtl" : "ltr"}" style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-      <h2 style="color:#0f6e5c;">${isAr ? "تم تأكيد حجزك ✓" : "Booking confirmed ✓"}</h2>
+      <h2 style="color:#146c63;">${isAr ? "تم تأكيد حجزك ✓" : "Booking confirmed ✓"}</h2>
       <p>${isAr ? `مرحباً ${input.toName}،` : `Hi ${input.toName},`}</p>
       <p><strong>${input.orgName}</strong> — ${input.serviceName}</p>
       <p>${when}</p>

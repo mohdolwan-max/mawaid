@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
+import { LinkIcon } from "@/components/icons";
 
 export function PublicLinkCard({ lang, slug }: { lang: Lang; slug: string }) {
   const [copied, setCopied] = useState(false);
@@ -11,7 +12,9 @@ export function PublicLinkCard({ lang, slug }: { lang: Lang; slug: string }) {
 
   return (
     <div className="card link-card">
-      <div className="link-card-icon">🔗</div>
+      <div className="link-card-icon">
+        <LinkIcon size={18} />
+      </div>
       <div className="link-card-body">
         <label>{t(lang, "public_link_label")}</label>
         <Link href={path} target="_blank" className="link-card-url">

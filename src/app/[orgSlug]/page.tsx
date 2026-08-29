@@ -6,6 +6,7 @@ import { getPublicOrg, listPublicServices } from "@/lib/publicOrg";
 import { getOrgReviews, getOrgRatingSummary } from "@/lib/reviews";
 import { categoryLabel, cityLabel, priceTierLabel } from "@/lib/directory";
 import { isSafeHttpUrl } from "@/lib/url";
+import { PinIcon } from "@/components/icons";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
 
@@ -57,7 +58,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
               {org.address}
               {mapsUrl && (
                 <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="directions-link">
-                  📍 {t(lang, "get_directions")}
+                  <PinIcon size={14} /> {t(lang, "get_directions")}
                 </a>
               )}
             </p>

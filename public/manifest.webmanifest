@@ -1,11 +1,11 @@
 {
-  "name": "مواعيد",
-  "short_name": "مواعيد",
+  "name": "موعد",
+  "short_name": "موعد",
   "description": "حجوزات العيادات ومراكز التجميل",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fafafc",
-  "theme_color": "#0f6e5c",
+  "background_color": "#F7F6F2",
+  "theme_color": "#146C63",
   "lang": "ar",
   "dir": "rtl",
   "icons": [

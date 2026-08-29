@@ -4,7 +4,7 @@ import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
 
-export const metadata = { title: "شروط الاستخدام | مواعيد" };
+export const metadata = { title: "شروط الاستخدام | موعد" };
 
 export default async function TermsPage() {
   const [lang, city] = await Promise.all([getLang(), getCity()]);
@@ -30,12 +30,12 @@ function TermsAr() {
       <p className="hint" style={{ marginBottom: 18 }}>آخر تحديث: أغسطس 2026</p>
 
       <p style={{ marginBottom: 14 }}>
-        باستخدامك منصة &quot;مواعيد&quot; فإنك توافق على الشروط التالية. إذا كنت لا توافق عليها، يرجى عدم استخدام المنصة.
+        باستخدامك منصة &quot;موعد&quot; فإنك توافق على الشروط التالية. إذا كنت لا توافق عليها، يرجى عدم استخدام المنصة.
       </p>
 
       <h2 style={sectionStyle}>طبيعة الخدمة</h2>
       <p style={{ marginBottom: 14 }}>
-        &quot;مواعيد&quot; منصة تقنية تتيح للعملاء اكتشاف العيادات ومراكز التجميل وحجز موعد لديها إلكترونياً.
+        &quot;موعد&quot; منصة تقنية تتيح للعملاء اكتشاف العيادات ومراكز التجميل وحجز موعد لديها إلكترونياً.
         المنصة وسيط تقني بين العميل والمنشأة، والمنشأة هي المسؤولة عن الخدمة الطبية أو التجميلية المقدَّمة فعلياً وجودتها والالتزام بمواعيدها.
       </p>
 
@@ -87,12 +87,12 @@ function TermsEn() {
       <p className="hint" style={{ marginBottom: 18 }}>Last updated: August 2026</p>
 
       <p style={{ marginBottom: 14 }}>
-        By using Mawaid, you agree to the following terms. If you do not agree, please do not use the platform.
+        By using Maw3ed, you agree to the following terms. If you do not agree, please do not use the platform.
       </p>
 
       <h2 style={sectionStyle}>Nature of the service</h2>
       <p style={{ marginBottom: 14 }}>
-        Mawaid is a technical platform that lets customers discover clinics and beauty centers and book
+        Maw3ed is a technical platform that lets customers discover clinics and beauty centers and book
         appointments online. The platform is a technical intermediary between the customer and the
         business; the business is responsible for the actual medical/aesthetic service, its quality, and
         keeping its scheduled appointments.
