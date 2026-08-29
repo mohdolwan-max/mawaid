@@ -3,20 +3,32 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { isSafeHttpUrl } from "@/lib/url";
 import type { BusinessHours } from "@/lib/types";
 
-export async function saveOrgProfile(input: { name: string; address: string; phone: string }) {
+export async function saveOrgProfile(input: {
+  name: string;
+  address: string;
+  phone: string;
+  mapsUrl: string;
+}) {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
+  const mapsUrl = input.mapsUrl.trim();
   await supabase
     .from("organizations")
     .update({
       name: input.name.trim(),
       address: input.address.trim() || null,
       phone: input.phone.trim() || null,
+      // Silently drops anything that isn't a real http(s) link (e.g. a
+      // "javascript:" scheme) rather than erroring — this is rendered as
+      // a real <a href> for anonymous visitors later, see src/lib/url.ts.
+      maps_url: mapsUrl && isSafeHttpUrl(mapsUrl) ? mapsUrl : null,
     })
     .eq("id", ctx.orgId);
   revalidatePath("/settings");
+  revalidatePath(`/${ctx.slug}`);
 }
 
 export async function saveDirectoryProfile(input: {

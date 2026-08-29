@@ -15,6 +15,7 @@ export type PublicOrg = {
   description: string | null;
   cover_image_url: string | null;
   price_tier: number | null;
+  maps_url: string | null;
 };
 
 export type PublicService = {

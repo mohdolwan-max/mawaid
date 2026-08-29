@@ -5,6 +5,7 @@ import { t } from "@/lib/i18n";
 import { getPublicOrg, listPublicServices } from "@/lib/publicOrg";
 import { getOrgReviews, getOrgRatingSummary } from "@/lib/reviews";
 import { categoryLabel, cityLabel, priceTierLabel } from "@/lib/directory";
+import { isSafeHttpUrl } from "@/lib/url";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
 
@@ -23,6 +24,10 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
   const category = categoryLabel(org.category, lang);
   const location = [org.district, cityLabel(org.city, lang)].filter(Boolean).join(" · ");
   const tier = priceTierLabel(org.price_tier);
+  // Defense in depth: saveOrgProfile already rejects non-http(s) schemes
+  // before this ever reaches the database, but this is rendered as a
+  // real <a href> for anonymous visitors, so re-check here too.
+  const mapsUrl = org.maps_url && isSafeHttpUrl(org.maps_url) ? org.maps_url : null;
 
   return (
     <div className="public-shell">
@@ -47,7 +52,16 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
         )}
         <div>
           <h1>{org.name}</h1>
-          {org.address && <p>{org.address}</p>}
+          {(org.address || mapsUrl) && (
+            <p className="org-address">
+              {org.address}
+              {mapsUrl && (
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="directions-link">
+                  📍 {t(lang, "get_directions")}
+                </a>
+              )}
+            </p>
+          )}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6, alignItems: "center" }}>
             {ratingSummary.avg_rating != null && (
               <span className="rating-badge">

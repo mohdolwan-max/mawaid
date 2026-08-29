@@ -7,12 +7,12 @@ export default async function SettingsPage() {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
 
-  // Directory columns aren't part of get_my_context() (kept out of the
-  // hot auth path) — fetched directly here under the members-select RLS
-  // policy.
+  // Directory columns (and maps_url) aren't part of get_my_context()
+  // (kept out of the hot auth path) — fetched directly here under the
+  // members-select RLS policy.
   const { data: dir } = await supabase
     .from("organizations")
-    .select("is_listed, category, city, district, description, price_tier, cover_image_url, logo_url")
+    .select("is_listed, category, city, district, description, price_tier, cover_image_url, logo_url, maps_url")
     .eq("id", ctx.orgId)
     .single();
 
@@ -34,7 +34,12 @@ export default async function SettingsPage() {
           <h2>{t(ctx.lang, "settings_title")}</h2>
         </div>
       </div>
-      <SettingsClient ctx={ctx} canManage={ctx.role === "owner"} directory={directory} />
+      <SettingsClient
+        ctx={ctx}
+        canManage={ctx.role === "owner"}
+        directory={directory}
+        mapsUrl={dir?.maps_url ?? ""}
+      />
     </div>
   );
 }

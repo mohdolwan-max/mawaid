@@ -23,15 +23,18 @@ export function SettingsClient({
   ctx,
   canManage,
   directory,
+  mapsUrl: initialMapsUrl,
 }: {
   ctx: OrgContext;
   canManage: boolean;
   directory: DirectoryProfile;
+  mapsUrl: string;
 }) {
   const lang = ctx.lang;
   const [name, setName] = useState(ctx.name);
   const [address, setAddress] = useState(ctx.address ?? "");
   const [phone, setPhone] = useState(ctx.phone ?? "");
+  const [mapsUrl, setMapsUrl] = useState(initialMapsUrl);
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [hours, setHours] = useState<BusinessHours>(ctx.businessHours);
@@ -97,7 +100,7 @@ export function SettingsClient({
         onSubmit={async (e) => {
           e.preventDefault();
           setSavingProfile(true);
-          await saveOrgProfile({ name, address, phone });
+          await saveOrgProfile({ name, address, phone, mapsUrl });
           setSavingProfile(false);
         }}
       >
@@ -115,6 +118,19 @@ export function SettingsClient({
             <label htmlFor="s_phone">{t(lang, "org_phone")}</label>
             <input id="s_phone" dir="ltr" value={phone} disabled={!canManage} onChange={(e) => setPhone(e.target.value)} />
           </div>
+        </div>
+        <div className="field">
+          <label htmlFor="s_maps_url">{t(lang, "org_maps_url")}</label>
+          <input
+            id="s_maps_url"
+            dir="ltr"
+            type="url"
+            placeholder="https://maps.app.goo.gl/..."
+            value={mapsUrl}
+            disabled={!canManage}
+            onChange={(e) => setMapsUrl(e.target.value)}
+          />
+          <p className="hint">{t(lang, "org_maps_url_hint")}</p>
         </div>
         {canManage && (
           <button type="submit" className="btn" disabled={savingProfile}>
