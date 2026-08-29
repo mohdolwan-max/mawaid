@@ -23,7 +23,12 @@ export default async function ServicesPage() {
           <p>{t(ctx.lang, "services_sub")}</p>
         </div>
       </div>
-      <ServicesClient lang={ctx.lang} services={(services as Service[]) ?? []} canManage={ctx.role === "owner"} />
+      <ServicesClient
+        lang={ctx.lang}
+        services={(services as Service[]) ?? []}
+        orgId={ctx.orgId}
+        canManage={ctx.role === "owner"}
+      />
     </div>
   );
 }

@@ -24,6 +24,7 @@ export type PublicService = {
   name: string;
   duration_minutes: number;
   price: number | null;
+  photo_url: string | null;
 };
 
 export type PublicStaff = { membership_id: string; email: string };

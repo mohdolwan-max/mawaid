@@ -30,6 +30,7 @@ export type Service = {
   price: number | null;
   active: boolean;
   sort_order: number;
+  photo_url: string | null;
 };
 
 export type StaffMember = {

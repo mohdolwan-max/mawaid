@@ -35,3 +35,15 @@ export async function deleteService(serviceId: string) {
   await supabase.from("services").delete().eq("id", serviceId);
   revalidatePath("/services");
 }
+
+// Called after the browser uploads to the org-media bucket (same
+// bucket/path convention as the org cover/logo in Settings — see
+// SettingsClient.tsx's handleUpload).
+export async function saveServicePhoto(serviceId: string, url: string) {
+  const ctx = await requireOrgContext();
+  const supabase = await createClient();
+  const { error } = await supabase.from("services").update({ photo_url: url }).eq("id", serviceId);
+  if (error) throw error;
+  revalidatePath("/services");
+  revalidatePath(`/${ctx.slug}`);
+}

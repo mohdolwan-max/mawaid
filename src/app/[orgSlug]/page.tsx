@@ -126,7 +126,13 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
         ) : (
           services.map((s) => (
             <div key={s.id} className="service-row" style={{ cursor: "default" }}>
-              <div>
+              <div className="service-row-photo">
+                {s.photo_url && (
+                  // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL
+                  <img src={s.photo_url} alt="" />
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
                 <strong>{s.name}</strong>
                 <p className="hint">
                   {s.duration_minutes} {t(lang, "minutes")}

@@ -5,6 +5,7 @@ import { t, type Lang } from "@/lib/i18n";
 import type { OrgContext, BusinessHours } from "@/lib/types";
 import { CATEGORIES, CITIES } from "@/lib/directory";
 import { createClient } from "@/lib/supabase/client";
+import { validateImageFile } from "@/lib/imageUpload";
 import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
 import { saveOrgProfile, saveBookingRules, saveDirectoryProfile, saveMediaUrl, closeOrganization } from "./actions";
 
@@ -59,22 +60,11 @@ export function SettingsClient({
   const [uploadingKind, setUploadingKind] = useState<"cover" | "logo" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // "accept=image/*" on the <input> is only a UI hint — a script or a
-  // renamed file can bypass it, and org-media is a public bucket with
-  // no server-side size/type limit configured (storage.buckets), so
-  // this is the only real gate against an oversized or non-image
-  // upload landing there.
-  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-  const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-
   async function handleUpload(kind: "cover" | "logo", file: File) {
     setUploadError(null);
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setUploadError(t(lang, "upload_invalid_type"));
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      setUploadError(t(lang, "upload_too_large"));
+    const validationError = validateImageFile(file, lang);
+    if (validationError) {
+      setUploadError(validationError);
       return;
     }
     setUploadingKind(kind);
