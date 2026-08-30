@@ -71,14 +71,17 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-size: 14px;
-  /* Safety net for an RTL-first app: any stray element that overhangs
-     the inline-start edge would otherwise create a huge horizontally
-     scrollable blank region (this is exactly how the booking wizard's
-     honeypot stranded mobile users — see .visually-hidden below).
-     `clip` rather than `hidden` so it never turns body into a scroll
-     container and breaks position: sticky. */
-  overflow-x: clip;
 }
+/* NOTE: there is deliberately no `overflow-x: clip/hidden` guard on
+   html/body here. An earlier version of this file shipped one as a
+   "safety net" against inline-start overhang; it was measured and it
+   does nothing. At a 375px RTL viewport with an abspos element at
+   left:-9999px, all four of {body,html,both} × {clip,hidden} left the
+   full 9999px of overflow reachable — an absolutely positioned box
+   that overhangs the inline-start edge is not clipped by an ancestor's
+   overflow. Containment has to happen at the source, which is what
+   .visually-hidden below is for. Don't re-add the net; it only buys
+   false confidence. */
 
 /* Hides an element from sight while keeping it in the accessibility and
    form-submission trees. Uses the clip technique deliberately: the

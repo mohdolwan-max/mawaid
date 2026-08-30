@@ -118,17 +118,29 @@ export function BookingClient({
     }
     setPending(true);
     setError(null);
-    const result = await submitBookingAction({
-      orgSlug,
-      serviceId: service.id,
-      startAt: selectedSlot,
-      staffId,
-      customerName: name,
-      customerPhone: phone,
-      customerEmail: email,
-      notes,
-    });
-    setPending(false);
+    let result;
+    try {
+      result = await submitBookingAction({
+        orgSlug,
+        serviceId: service.id,
+        startAt: selectedSlot,
+        staffId,
+        customerName: name,
+        customerPhone: phone,
+        customerEmail: email,
+        notes,
+      });
+    } catch {
+      // Without this the button spun forever on any rejection (dropped
+      // connection mid-submit), with no error and no way forward.
+      // Deliberately NOT "booking failed": bookAppointment() commits
+      // before anything downstream can throw, so the appointment may
+      // well exist — telling the customer it failed invites a duplicate.
+      setError("book_unconfirmed");
+      return;
+    } finally {
+      setPending(false);
+    }
     if (!result.ok) {
       setError(result.error as TKey);
       if (result.error === "book_slot_taken") {
@@ -240,18 +252,21 @@ export function BookingClient({
       )}
 
       {step === "contact" && (
-        <form className="card wizard-step" onSubmit={handleSubmit} style={{ position: "relative" }}>
+        <form className="card wizard-step" onSubmit={handleSubmit}>
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_contact_step")}</p>
           {/* Honeypot: invisible to real users, but bots that autofill every
               field on a form tend to fill this one too. Server-side rate
               limiting (0010_security_hardening.sql) is the real backstop;
               this just quietly short-circuits the common case.
               Hidden via .visually-hidden, NOT the old left:-9999px idiom —
-              that assumes LTR, and in RTL it grew the page ~10,000px to the
-              left, so phones landed on a blank screen at this step with no
-              way back (desktop escaped it: a scrollbar to drag back). The
-              form is position:relative so this is contained by the card
-              rather than the initial containing block. */}
+              that assumes LTR, and in RTL the scrollable region grows the
+              other way, so it added ~10,000px of real scrollable blankness.
+              Measured on a 375px RTL viewport: scrollWidth 375 -> 10355 the
+              moment this step rendered, and the phone parked itself at
+              scrollLeft -1125 on its own, leaving the user on a blank
+              screen. Desktop had the same overflow but stayed at scrollLeft
+              0 unless you deliberately scrolled, which is why it only ever
+              reproduced on a phone. */}
           <input
             type="text"
             name="website"

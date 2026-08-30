@@ -40,25 +40,35 @@ export async function submitBookingAction(input: {
   });
 
   if (result.ok && input.customerEmail) {
-    // Fire-and-forget-ish: awaited so errors are logged, but a failed
-    // email never fails the booking itself (see src/lib/email.ts).
-    const [org, services, lang] = await Promise.all([
-      getPublicOrg(input.orgSlug),
-      listPublicServices(input.orgSlug),
-      getLang(),
-    ]);
-    const service = services.find((s) => s.id === input.serviceId);
-    if (org && service) {
-      await sendBookingConfirmation({
-        toEmail: input.customerEmail,
-        toName: input.customerName,
-        orgName: org.name,
-        serviceName: service.name,
-        startAt: input.startAt,
-        timezone: org.timezone,
-        lang,
-        manageUrl: `https://${process.env.NEXT_PUBLIC_SITE_HOST ?? "mawaidy.vercel.app"}/${input.orgSlug}/booking/${result.cancelToken}`,
-      });
+    // Everything below runs AFTER book_appointment() has already
+    // committed the row. sendBookingConfirmation() swallows its own
+    // provider errors, but the lookups around it (and the
+    // toLocaleString/timeZone formatting inside it) can still throw —
+    // and a throw here would reject the whole Server Action, so the
+    // customer would be told the booking failed while it actually
+    // exists, and would very likely book a second time. Log and move
+    // on: a missing confirmation email is far cheaper than a duplicate.
+    try {
+      const [org, services, lang] = await Promise.all([
+        getPublicOrg(input.orgSlug),
+        listPublicServices(input.orgSlug),
+        getLang(),
+      ]);
+      const service = services.find((s) => s.id === input.serviceId);
+      if (org && service) {
+        await sendBookingConfirmation({
+          toEmail: input.customerEmail,
+          toName: input.customerName,
+          orgName: org.name,
+          serviceName: service.name,
+          startAt: input.startAt,
+          timezone: org.timezone,
+          lang,
+          manageUrl: `https://${process.env.NEXT_PUBLIC_SITE_HOST ?? "mawaidy.vercel.app"}/${input.orgSlug}/booking/${result.cancelToken}`,
+        });
+      }
+    } catch (err) {
+      console.error("Booking committed, but the confirmation email step failed", err);
     }
   }
 
