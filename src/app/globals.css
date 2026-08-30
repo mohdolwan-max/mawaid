@@ -1195,13 +1195,9 @@ label {
 }
 
 .org-card {
-  /* Fixed 220px was fine on common phone widths (room to spare, see the
-     .hrow edge-fade above), but on a narrower real device the card can
-     end up wider than the visible row — clipped hard against the
-     screen edge with no room left for that fade to read as "scroll for
-     more". Capping to a share of the viewport keeps a card's right
-     edge always inside the fade zone. */
-  width: min(220px, 78vw);
+  /* Desktop keeps a fixed-width card; phones show two side by side
+     instead — see the max-width:700px block at the end of this file. */
+  width: 220px;
   flex-shrink: 0;
   background: var(--white);
   border: 1px solid #eeeff2;
@@ -1427,5 +1423,36 @@ label {
   .bottom-nav .bn-icon {
     display: flex;
     line-height: 1;
+  }
+}
+
+/* ---------- phones: two clinic cards side by side ---------- */
+@media (max-width: 700px) {
+  /* Two cards fill the row with ~22px to spare, so a sliver of the third
+     still shows through the .hrow edge fade and the row keeps reading as
+     scrollable. The 100% resolves against the flex container's visible
+     content box, not its (much wider) scroll width. */
+  .hrow .org-card {
+    width: calc((100% - 34px) / 2);
+  }
+  /* Search results reuse the same card in a grid — keep the same two-up
+     rhythm there instead of one oversized card per row. */
+  .search-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* At half width the cover would otherwise dominate the card, and the
+     footer has to wrap or the rating badge gets squeezed off the edge. */
+  .org-card .oc-cover {
+    height: 96px;
+  }
+  .org-card .oc-body {
+    padding: 8px 10px 10px;
+  }
+  .org-card .oc-name {
+    font-size: 13px;
+  }
+  .org-card .oc-foot {
+    flex-wrap: wrap;
+    gap: 4px;
   }
 }
