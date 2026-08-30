@@ -5,8 +5,69 @@ import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { BusinessHours, Service, StaffMember, StaffTimeOff } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
-import { addStaffMember, removeStaffMember, inviteStaff, toggleStaffService } from "./actions";
+import { addStaffMember, removeStaffMember, renameStaffMember, inviteStaff, toggleStaffService } from "./actions";
 import { StaffScheduleEditor } from "./StaffScheduleEditor";
+
+// Inline rename. Until this existed nothing in the app could set
+// display_name at all, so every staff member was nameless and the
+// customer-facing picker had only their email to fall back on.
+function NameCell({ lang, member }: { lang: Lang; member: StaffMember }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(member.display_name ?? "");
+  const [phone, setPhone] = useState(member.phone ?? "");
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="btn ghost sm"
+        style={{ fontWeight: 700 }}
+        onClick={() => setEditing(true)}
+      >
+        {staffOwnerLabel(member, lang)}
+      </button>
+    );
+  }
+
+  return (
+    <div className="toolbar" style={{ gap: 4 }}>
+      <input
+        value={name}
+        autoFocus
+        placeholder={t(lang, "staff_name_label")}
+        onChange={(e) => setName(e.target.value)}
+        style={{ minWidth: 120 }}
+      />
+      <input
+        value={phone}
+        dir="ltr"
+        inputMode="tel"
+        placeholder={t(lang, "staff_phone_label")}
+        onChange={(e) => setPhone(e.target.value)}
+        style={{ minWidth: 110 }}
+      />
+      <button
+        type="button"
+        className="btn sm"
+        disabled={saving || !name.trim()}
+        onClick={async () => {
+          setSaving(true);
+          await renameStaffMember(member.membership_id, name, phone);
+          setSaving(false);
+          setEditing(false);
+          router.refresh();
+        }}
+      >
+        {t(lang, "save")}
+      </button>
+      <button type="button" className="btn ghost sm" onClick={() => setEditing(false)}>
+        {t(lang, "cancel")}
+      </button>
+    </div>
+  );
+}
 
 export function StaffClient({
   lang,
@@ -110,7 +171,13 @@ export function StaffClient({
           <tbody>
             {staff.map((member) => (
               <tr key={member.membership_id ?? member.email}>
-                <td>{staffOwnerLabel(member, lang)}</td>
+                <td>
+                  {member.pending || !canManage ? (
+                    staffOwnerLabel(member, lang)
+                  ) : (
+                    <NameCell lang={lang} member={member} />
+                  )}
+                </td>
                 <td dir="ltr">{member.phone ?? "—"}</td>
                 <td>{t(lang, member.role === "owner" ? "staff_role_owner" : "staff_role_staff")}</td>
                 <td>
@@ -184,6 +251,10 @@ export function StaffClient({
         </table>
       </div>
       <p className="hint">{t(lang, "staff_any_service")}</p>
+
+      {canManage && staff.some((m) => !m.pending && !m.display_name) && (
+        <p className="hint">{t(lang, "staff_needs_name_hint")}</p>
+      )}
 
       {canManage &&
         staff

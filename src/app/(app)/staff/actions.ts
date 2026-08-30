@@ -12,7 +12,16 @@ export async function inviteStaff(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   if (!email) return;
 
-  await supabase.rpc("invite_staff", { p_org_id: ctx.orgId, p_email: email, p_role: "staff" });
+  // Optional link: when the owner invites someone who is ALREADY listed
+  // by name, the invite claims that row on acceptance instead of creating
+  // a second bookable copy of the same person (see 0022).
+  const membershipId = String(formData.get("membershipId") ?? "").trim();
+  await supabase.rpc("invite_staff", {
+    p_org_id: ctx.orgId,
+    p_email: email,
+    p_role: "staff",
+    p_membership_id: membershipId || null,
+  });
   revalidatePath("/staff");
 }
 
@@ -45,6 +54,22 @@ export async function removeStaffMember(membershipId: string) {
     // The RPC refuses rather than cascading away real bookings.
     return { error: error.message.includes("staff_has_bookings") ? ("staff_has_bookings" as const) : ("error_generic" as const) };
   }
+  revalidatePath("/staff");
+  return {};
+}
+
+// update_staff_profile has existed since 0013 but was never called from
+// anywhere, which is why every membership still has display_name NULL and
+// the public staff picker had nothing to show but the email address.
+export async function renameStaffMember(membershipId: string, name: string, phone: string) {
+  await requireOrgContext();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_staff_profile", {
+    p_membership_id: membershipId,
+    p_display_name: name.trim() || null,
+    p_phone: phone.trim() || null,
+  });
+  if (error) return { error: "error_generic" as const };
   revalidatePath("/staff");
   return {};
 }

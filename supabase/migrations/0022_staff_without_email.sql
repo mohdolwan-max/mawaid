@@ -214,10 +214,20 @@ security definer
 stable
 set search_path = public
 as $$
-  select m.id, nullif(trim(coalesce(m.display_name, '')), '')
+  select m.id, m.display_name
   from public.memberships m
   join public.organizations o on o.id = m.org_id
   where o.slug = p_org_slug and o.deleted_at is null
+    -- Only people who actually have a name. display_name was added in
+    -- 0013 with no backfill and its only writer (update_staff_profile)
+    -- was never wired to any UI, so EVERY row predating this migration
+    -- has it NULL — without this filter every existing clinic would show
+    -- the customer a list of identical "موظف" entries, which is worse
+    -- for choosing than the email it replaces. Capacity is unaffected:
+    -- an unnamed person is still booked through "any available staff",
+    -- because get_available_slots with p_staff_id null scans every
+    -- membership regardless of name.
+    and nullif(trim(coalesce(m.display_name, '')), '') is not null
     and (
       not exists (select 1 from public.staff_services ss where ss.service_id = p_service_id)
       or exists (
@@ -230,3 +240,179 @@ $$;
 
 revoke all on function public.list_public_staff_for_service(text, uuid) from public;
 grant execute on function public.list_public_staff_for_service(text, uuid) to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- Linking an email invite to an existing account-less staff row.
+--
+-- Without this, the natural flow silently creates a DUPLICATE person:
+-- add "Ahmad" by name (user_id null), then invite Ahmad by email, and on
+-- acceptance get_my_context (0003) runs
+--   insert into memberships (org_id, user_id, role) ...
+--   on conflict (org_id, user_id) do nothing
+-- whose arbiter is unique (org_id, user_id) — NULLs are distinct, so it
+-- can never match the account-less row, and nothing anywhere else ever
+-- assigns user_id to an existing row. Ahmad ends up as two memberships.
+--
+-- That is not merely untidy: appointments.resource_id is
+-- generated always as coalesce(staff_id, org_id) and the no-overlap GIST
+-- exclusion is keyed on it (0004), so two membership ids are two
+-- independent resources and the constraint cannot stop one real person
+-- being booked twice at the same minute. His schedule, time off and
+-- service assignments also stay on the row he cannot edit, since every
+-- self-service check keys on user_id = auth.uid().
+-- ---------------------------------------------------------------------
+alter table public.invitations
+  add column membership_id uuid references public.memberships(id) on delete cascade;
+
+create unique index invitations_membership_id_idx
+  on public.invitations (membership_id) where membership_id is not null;
+
+drop function public.invite_staff(uuid, text, text);
+
+create function public.invite_staff(
+  p_org_id uuid,
+  p_email text,
+  p_role text default 'staff',
+  p_membership_id uuid default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+begin
+  if not public.is_org_owner(p_org_id) then
+    raise exception 'not_authorized';
+  end if;
+
+  if p_role not in ('owner', 'staff') then
+    raise exception 'invalid_role';
+  end if;
+
+  -- Only ever link a row that belongs to this org and has no login yet,
+  -- so an invite can never be pointed at somebody else's account.
+  if p_membership_id is not null and not exists (
+    select 1 from public.memberships m
+    where m.id = p_membership_id and m.org_id = p_org_id and m.user_id is null
+  ) then
+    raise exception 'invalid_staff_link';
+  end if;
+
+  insert into public.invitations (org_id, email, role, membership_id)
+  values (p_org_id, lower(trim(p_email)), p_role, p_membership_id)
+  on conflict (org_id, email) do update
+    set role = excluded.role,
+        membership_id = excluded.membership_id,
+        accepted_at = null
+  returning id into v_id;
+
+  return v_id;
+end;
+$$;
+
+revoke all on function public.invite_staff(uuid, text, text, uuid) from public;
+grant execute on function public.invite_staff(uuid, text, text, uuid) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- get_my_context(): adopt a linked account-less staff row on invite
+-- acceptance, instead of inserting a duplicate membership. Signature and
+-- return type are unchanged, so create or replace is correct here (no
+-- DROP). Body is the 0003 version with only the acceptance block changed.
+-- ---------------------------------------------------------------------
+create or replace function public.get_my_context()
+returns table (
+  org_id uuid,
+  org_name text,
+  org_slug text,
+  org_address text,
+  org_phone text,
+  org_logo_url text,
+  lang text,
+  timezone text,
+  business_hours jsonb,
+  slot_interval_minutes int,
+  min_notice_minutes int,
+  max_advance_days int,
+  wizard_done boolean,
+  role text,
+  deleted_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_org_id uuid;
+  v_role text;
+  v_email text;
+  v_invite record;
+  v_adopted int;
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+
+  select m.org_id, m.role into v_org_id, v_role
+  from public.memberships m
+  where m.user_id = auth.uid()
+  limit 1;
+
+  if v_org_id is null then
+    select u.email into v_email from auth.users u where u.id = auth.uid();
+
+    if v_email is not null then
+      select * into v_invite
+      from public.invitations
+      where email = lower(v_email) and accepted_at is null
+      order by created_at
+      limit 1;
+
+      if found then
+        v_adopted := 0;
+
+        -- If the invite was linked to a staff row created by name, claim
+        -- THAT row rather than inserting a second one for the same person.
+        if v_invite.membership_id is not null then
+          update public.memberships
+             set user_id = auth.uid(),
+                 role = v_invite.role
+           where id = v_invite.membership_id
+             and org_id = v_invite.org_id   -- link must belong to the inviting org
+             and user_id is null;           -- never take over a row that already has a login
+          get diagnostics v_adopted = row_count;
+        end if;
+
+        -- Plain (unlinked) invite, or a linked row that was claimed or
+        -- deleted between invite and acceptance. get_my_context is the
+        -- app bootstrap, so this path must never fail the login.
+        if v_adopted = 0 then
+          insert into public.memberships (org_id, user_id, role)
+          values (v_invite.org_id, auth.uid(), v_invite.role)
+          on conflict (org_id, user_id) do nothing;
+        end if;
+
+        update public.invitations set accepted_at = now() where id = v_invite.id;
+
+        v_org_id := v_invite.org_id;
+        v_role := v_invite.role;
+      end if;
+    end if;
+  end if;
+
+  if v_org_id is null then
+    return;
+  end if;
+
+  return query
+    select
+      o.id, o.name, o.slug, o.address, o.phone, o.logo_url,
+      s.lang, s.timezone, s.business_hours, s.slot_interval_minutes,
+      s.min_notice_minutes, s.max_advance_days, s.wizard_done,
+      v_role, o.deleted_at
+    from public.organizations o
+    join public.org_settings s on s.org_id = o.id
+    where o.id = v_org_id;
+end;
+$$;
