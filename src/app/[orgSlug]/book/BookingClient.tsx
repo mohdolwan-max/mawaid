@@ -240,21 +240,27 @@ export function BookingClient({
       )}
 
       {step === "contact" && (
-        <form className="card wizard-step" onSubmit={handleSubmit}>
+        <form className="card wizard-step" onSubmit={handleSubmit} style={{ position: "relative" }}>
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_contact_step")}</p>
           {/* Honeypot: invisible to real users, but bots that autofill every
               field on a form tend to fill this one too. Server-side rate
               limiting (0010_security_hardening.sql) is the real backstop;
-              this just quietly short-circuits the common case. */}
+              this just quietly short-circuits the common case.
+              Hidden via .visually-hidden, NOT the old left:-9999px idiom —
+              that assumes LTR, and in RTL it grew the page ~10,000px to the
+              left, so phones landed on a blank screen at this step with no
+              way back (desktop escaped it: a scrollbar to drag back). The
+              form is position:relative so this is contained by the card
+              rather than the initial containing block. */}
           <input
             type="text"
             name="website"
+            className="visually-hidden"
             value={honeypot}
             onChange={(e) => setHoneypot(e.target.value)}
             tabIndex={-1}
             autoComplete="off"
             aria-hidden="true"
-            style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
           />
           <div className="field">
             <label htmlFor="name">{t(lang, "customer_name")}</label>

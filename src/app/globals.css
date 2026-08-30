@@ -71,6 +71,33 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-size: 14px;
+  /* Safety net for an RTL-first app: any stray element that overhangs
+     the inline-start edge would otherwise create a huge horizontally
+     scrollable blank region (this is exactly how the booking wizard's
+     honeypot stranded mobile users — see .visually-hidden below).
+     `clip` rather than `hidden` so it never turns body into a scroll
+     container and breaks position: sticky. */
+  overflow-x: clip;
+}
+
+/* Hides an element from sight while keeping it in the accessibility and
+   form-submission trees. Uses the clip technique deliberately: the
+   older `position:absolute; left:-9999px` idiom assumes LTR, and in an
+   RTL document the scrollable overflow region grows LEFTWARD instead —
+   turning that -9999px into ~10,000px of real, scrollable emptiness
+   that phones happily scroll into, leaving the user on a blank screen.
+   This stays 1px in flow and overflows nothing, in either direction. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 /* Brand kit pairs Poppins with English, Cairo with Arabic. :lang(en)
    matches <html lang="en"> (set per-request in layout.tsx) and
