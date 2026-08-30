@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
-import { bookAppointment, type BookResult } from "@/lib/availability";
+import { bookAppointment, getAvailableSlots, type BookResult } from "@/lib/availability";
 import type { BookingStatus } from "@/lib/types";
 
 export async function setBookingStatus(id: string, status: BookingStatus) {
@@ -13,10 +13,22 @@ export async function setBookingStatus(id: string, status: BookingStatus) {
   revalidatePath("/dashboard");
 }
 
+// Same availability source the customer booking page uses, so the owner
+// picks from real bookable slots instead of typing a time and finding out
+// from an error that it is outside business hours or already taken.
+export async function fetchOwnerSlotsAction(
+  serviceId: string,
+  date: string,
+  staffId: string | null
+): Promise<string[]> {
+  const ctx = await requireOrgContext();
+  return getAvailableSlots(ctx.slug, serviceId, date, staffId);
+}
+
 export async function addManualBooking(input: {
   serviceId: string;
   staffId: string | null;
-  startAtLocal: string; // "YYYY-MM-DDTHH:mm", interpreted in the org's own timezone
+  startAt: string; // a real UTC instant, straight from get_available_slots
   customerName: string;
   customerPhone: string;
   customerEmail: string;
@@ -24,14 +36,10 @@ export async function addManualBooking(input: {
 }): Promise<BookResult> {
   const ctx = await requireOrgContext();
 
-  // Convert the wall-clock local input into a UTC instant using the org's
-  // own timezone (ctx.timezone, already loaded by requireOrgContext()).
-  const startAtIso = localWallClockToIso(input.startAtLocal, ctx.timezone);
-
   const result = await bookAppointment({
     orgSlug: ctx.slug,
     serviceId: input.serviceId,
-    startAt: startAtIso,
+    startAt: input.startAt,
     staffId: input.staffId,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
@@ -42,24 +50,4 @@ export async function addManualBooking(input: {
   revalidatePath("/bookings");
   revalidatePath("/dashboard");
   return result;
-}
-
-// Interprets a "YYYY-MM-DDTHH:mm" string as wall-clock time in `tz` and
-// returns the equivalent UTC ISO instant. Using the offset of "now" in
-// that timezone is a good-enough approximation for the handful of
-// timezones this app targets (no DST transitions mid-scheduling-window).
-function localWallClockToIso(local: string, tz: string): string {
-  const [datePart, timePart] = local.split("T");
-  const asUtcGuess = new Date(`${datePart}T${timePart}:00Z`);
-  const tzOffsetLabel = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    timeZoneName: "shortOffset",
-  })
-    .formatToParts(asUtcGuess)
-    .find((p) => p.type === "timeZoneName")?.value;
-  const match = tzOffsetLabel?.match(/GMT([+-]\d+)(?::(\d+))?/);
-  const offsetHours = match ? Number(match[1]) : 0;
-  const offsetMinutes = match?.[2] ? Number(match[2]) : 0;
-  const totalOffsetMs = (offsetHours * 60 + Math.sign(offsetHours || 1) * offsetMinutes) * 60 * 1000;
-  return new Date(asUtcGuess.getTime() - totalOffsetMs).toISOString();
 }

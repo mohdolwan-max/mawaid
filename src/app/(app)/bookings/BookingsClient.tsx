@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import { todayYMD } from "@/lib/date";
 import type { Appointment, Service, StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
-import { setBookingStatus, addManualBooking } from "./actions";
+import { setBookingStatus, addManualBooking, fetchOwnerSlotsAction } from "./actions";
 
 export function BookingsClient({
   lang,
@@ -21,6 +22,7 @@ export function BookingsClient({
   timezone: string;
 }) {
   const [showForm, setShowForm] = useState(false);
+  const router = useRouter();
 
   const today = todayYMD(timezone);
   const todays = appointments.filter((a) => a.start_at.startsWith(today) && a.status === "booked");
@@ -39,7 +41,14 @@ export function BookingsClient({
           lang={lang}
           services={services}
           staff={staff}
-          onDone={() => setShowForm(false)}
+          timezone={timezone}
+          onDone={() => {
+            setShowForm(false);
+            // revalidatePath() in the action does not repaint a route
+            // reached through a plain handler, so the new booking would
+            // sit invisible until a manual reload.
+            router.refresh();
+          }}
         />
       )}
 
@@ -50,6 +59,8 @@ export function BookingsClient({
 }
 
 function BookingSection({ title, lang, rows }: { title: string; lang: Lang; rows: Appointment[] }) {
+  const router = useRouter();
+
   return (
     <div className="card">
       <p style={{ fontWeight: 700, marginBottom: 10 }}>{title}</p>
@@ -81,13 +92,13 @@ function BookingSection({ title, lang, rows }: { title: string; lang: Lang; rows
                   </td>
                   <td>
                     <div className="toolbar">
-                      <button className="btn ghost sm" onClick={() => setBookingStatus(a.id, "completed")}>
+                      <button className="btn ghost sm" onClick={async () => { await setBookingStatus(a.id, "completed"); router.refresh(); }}>
                         {t(lang, "booking_status_completed")}
                       </button>
-                      <button className="btn ghost sm" onClick={() => setBookingStatus(a.id, "no_show")}>
+                      <button className="btn ghost sm" onClick={async () => { await setBookingStatus(a.id, "no_show"); router.refresh(); }}>
                         {t(lang, "booking_status_no_show")}
                       </button>
-                      <button className="btn danger sm" onClick={() => setBookingStatus(a.id, "cancelled")}>
+                      <button className="btn danger sm" onClick={async () => { await setBookingStatus(a.id, "cancelled"); router.refresh(); }}>
                         {t(lang, "cancel")}
                       </button>
                     </div>
@@ -106,16 +117,21 @@ function ManualBookingForm({
   lang,
   services,
   staff,
+  timezone,
   onDone,
 }: {
   lang: Lang;
   services: Service[];
   staff: StaffMember[];
+  timezone: string;
   onDone: () => void;
 }) {
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
   const [staffId, setStaffId] = useState("");
-  const [startAtLocal, setStartAtLocal] = useState("");
+  const [date, setDate] = useState(todayYMD(timezone));
+  const [slots, setSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [startAt, setStartAt] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -123,14 +139,39 @@ function ManualBookingForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<TKey | null>(null);
 
+  // Reload availability whenever the service, staff or day changes —
+  // each of those changes which slots are actually bookable.
+  useEffect(() => {
+    if (!serviceId) return;
+    let cancelled = false;
+    setSlotsLoading(true);
+    setStartAt(null);
+    fetchOwnerSlotsAction(serviceId, date, staffId || null)
+      .then((s) => {
+        if (cancelled) return;
+        setSlots(s);
+        setSlotsLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSlots([]);
+        setSlotsLoading(false);
+        setError("error_generic");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [serviceId, staffId, date]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!startAt) return;
     setPending(true);
     setError(null);
     const result = await addManualBooking({
       serviceId,
       staffId: staffId || null,
-      startAtLocal,
+      startAt,
       customerName: name,
       customerPhone: phone,
       customerEmail: email,
@@ -172,16 +213,42 @@ function ManualBookingForm({
         </div>
       </div>
       <div className="field">
-        <label htmlFor="m_start">{t(lang, "book_date_step")}</label>
+        <label htmlFor="m_date">{t(lang, "book_date_step")}</label>
         <input
-          id="m_start"
-          type="datetime-local"
+          id="m_date"
+          type="date"
           dir="ltr"
-          required
-          value={startAtLocal}
-          onChange={(e) => setStartAtLocal(e.target.value)}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
         />
       </div>
+      {/* The same availability grid the customer sees, rather than a free
+          datetime field: book_appointment rejects out-of-hours and taken
+          times anyway, so typing one only ever produced an error. Times
+          render in the ORG timezone, not the browser's, so an owner who
+          is travelling does not read the wrong hour. */}
+      {slotsLoading ? (
+        <p className="hint">{t(lang, "loading")}</p>
+      ) : slots.length === 0 ? (
+        <p className="hint">{t(lang, "book_no_slots")}</p>
+      ) : (
+        <div className="slot-grid">
+          {slots.map((slotIso) => (
+            <button
+              key={slotIso}
+              type="button"
+              className={`slot-btn ${startAt === slotIso ? "selected" : ""}`}
+              onClick={() => setStartAt(slotIso)}
+            >
+              {new Date(slotIso).toLocaleTimeString(lang === "ar" ? "ar-SA" : "en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                timeZone: timezone,
+              })}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="grid2">
         <div className="field">
           <label htmlFor="m_name">{t(lang, "customer_name")}</label>
@@ -201,7 +268,7 @@ function ManualBookingForm({
         <textarea id="m_notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
       {error && <p className="error-text">{t(lang, error)}</p>}
-      <button type="submit" className="btn" disabled={pending}>
+      <button type="submit" className="btn" disabled={pending || !startAt}>
         {pending ? t(lang, "loading") : t(lang, "save")}
       </button>
     </form>
