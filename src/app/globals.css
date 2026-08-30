@@ -1103,8 +1103,6 @@ label {
   overflow-x: auto;
   scrollbar-width: none;
   padding: 4px 2px 16px;
-  mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
 }
 .cat-chip-row::-webkit-scrollbar {
   display: none;
@@ -1187,8 +1185,6 @@ label {
   /* Symmetric edge fade (direction-agnostic, works in both RTL/LTR) so a
      partially-visible card at the edge reads as "scroll for more", not
      as a rendering glitch. */
-  mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
 }
 .hrow > * {
   scroll-snap-align: start;
@@ -1455,4 +1451,32 @@ label {
     flex-wrap: wrap;
     gap: 4px;
   }
+}
+
+/* Edge fade for scrollable rows — applied by ScrollRow ONLY on a side
+   that actually has more content off-screen. It used to be hardcoded on
+   both edges of every row, which made a row holding a single card (a
+   city with one clinic) look like the card had been chopped off at both
+   ends. `to right` fades the LEFT edge, `to left` fades the RIGHT edge,
+   so start/end swap under RTL. */
+.scroll-fade-start {
+  mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 100%);
+}
+.scroll-fade-end {
+  mask-image: linear-gradient(to left, transparent 0, #000 20px, #000 100%);
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 20px, #000 100%);
+}
+[dir="rtl"] .scroll-fade-start {
+  mask-image: linear-gradient(to left, transparent 0, #000 20px, #000 100%);
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 20px, #000 100%);
+}
+[dir="rtl"] .scroll-fade-end {
+  mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 100%);
+}
+/* Symmetric, so it needs no RTL variant. */
+.scroll-fade-both {
+  mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
 }

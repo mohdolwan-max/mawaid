@@ -5,6 +5,14 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ensureCustomerProfile } from "@/lib/customer";
 
+// Where a customer lands after login/signup when nothing specific was
+// requested. The home page, NOT /my: `next` is only populated when the
+// user was bounced here from somewhere particular (proxy.ts sends a
+// signed-out visitor from /my to /account?next=/my, and that is carried
+// through), so falling back to "my bookings" opened a brand-new account
+// on a guaranteed-empty list instead of the marketplace.
+const DEFAULT_AFTER_AUTH = "/";
+
 function safeNext(raw: string | null | undefined, fallback: string): string {
   return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : fallback;
 }
@@ -15,7 +23,7 @@ export async function customerLogin(
 ) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = safeNext(String(formData.get("next") ?? ""), "/my");
+  const next = safeNext(String(formData.get("next") ?? ""), DEFAULT_AFTER_AUTH);
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -35,7 +43,7 @@ export async function customerSignup(
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = safeNext(String(formData.get("next") ?? ""), "/my");
+  const next = safeNext(String(formData.get("next") ?? ""), DEFAULT_AFTER_AUTH);
 
   if (!name || !phone) return { error: "required_field" as const };
   if (password.length < 8) return { error: "password_too_short" as const };
