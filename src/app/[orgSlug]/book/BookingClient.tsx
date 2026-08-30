@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { PublicService, PublicStaff } from "@/lib/publicOrg";
+import { staffPublicLabel } from "@/lib/staffLabel";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { fetchStaffAction, fetchSlotsAction, submitBookingAction } from "./actions";
 
@@ -197,7 +198,7 @@ export function BookingClient({
               className={`service-row ${staffId === st.membership_id ? "selected" : ""}`}
               onClick={() => setStaffId(st.membership_id)}
             >
-              {st.email}
+              {staffPublicLabel(st.name, lang)}
             </div>
           ))}
           {error && <p className="error-text">{t(lang, error)}</p>}

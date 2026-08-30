@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { t, type Lang } from "@/lib/i18n";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { BusinessHours, Service, StaffMember, StaffTimeOff } from "@/lib/types";
-import { inviteStaff, toggleStaffService } from "./actions";
+import { staffOwnerLabel } from "@/lib/staffLabel";
+import { addStaffMember, removeStaffMember, inviteStaff, toggleStaffService } from "./actions";
 import { StaffScheduleEditor } from "./StaffScheduleEditor";
 
 export function StaffClient({
@@ -23,8 +25,12 @@ export function StaffClient({
   orgHours: BusinessHours;
   canManage: boolean;
 }) {
-  const formRef = useRef<HTMLFormElement>(null);
+  const addRef = useRef<HTMLFormElement>(null);
+  const inviteRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [error, setError] = useState<TKey | null>(null);
 
   const isAssigned = (membershipId: string, serviceId: string) =>
     assignments.some((a) => a.staff_membership_id === membershipId && a.service_id === serviceId);
@@ -33,11 +39,45 @@ export function StaffClient({
     <div>
       {canManage && (
         <div className="card">
+          <p style={{ fontWeight: 700, marginBottom: 4 }}>{t(lang, "staff_add_by_name")}</p>
+          <p className="hint" style={{ marginBottom: 12 }}>{t(lang, "staff_add_hint")}</p>
           <form
-            ref={formRef}
+            ref={addRef}
+            action={async (formData) => {
+              setError(null);
+              const res = await addStaffMember(formData);
+              if (res?.error) {
+                setError(res.error);
+                return;
+              }
+              addRef.current?.reset();
+            }}
+          >
+            <div className="grid2">
+              <div className="field">
+                <label htmlFor="staff_name">{t(lang, "staff_name_label")}</label>
+                <input id="staff_name" name="name" required />
+              </div>
+              <div className="field">
+                <label htmlFor="staff_phone">{t(lang, "staff_phone_label")}</label>
+                <input id="staff_phone" name="phone" dir="ltr" inputMode="tel" />
+              </div>
+            </div>
+            <button type="submit" className="btn">
+              {t(lang, "staff_add_cta")}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {canManage && (
+        <div className="card">
+          <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "staff_invite_title")}</p>
+          <form
+            ref={inviteRef}
             action={async (formData) => {
               await inviteStaff(formData);
-              formRef.current?.reset();
+              inviteRef.current?.reset();
             }}
           >
             <div className="toolbar">
@@ -45,7 +85,7 @@ export function StaffClient({
                 <label htmlFor="email">{t(lang, "staff_invite_email")}</label>
                 <input id="email" name="email" type="email" required />
               </div>
-              <button type="submit" className="btn" style={{ marginTop: 18 }}>
+              <button type="submit" className="btn ghost" style={{ marginTop: 18 }}>
                 {t(lang, "staff_invite")}
               </button>
             </div>
@@ -53,11 +93,14 @@ export function StaffClient({
         </div>
       )}
 
+      {error && <p className="error-text">{t(lang, error)}</p>}
+
       <div className="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>{t(lang, "email")}</th>
+              <th>{t(lang, "staff_name_label")}</th>
+              <th>{t(lang, "customer_phone")}</th>
               <th>{t(lang, "staff_role_staff")}</th>
               <th></th>
               {canManage && <th>{t(lang, "staff_services_label")}</th>}
@@ -67,7 +110,8 @@ export function StaffClient({
           <tbody>
             {staff.map((member) => (
               <tr key={member.membership_id ?? member.email}>
-                <td>{member.email}</td>
+                <td>{staffOwnerLabel(member, lang)}</td>
+                <td dir="ltr">{member.phone ?? "—"}</td>
                 <td>{t(lang, member.role === "owner" ? "staff_role_owner" : "staff_role_staff")}</td>
                 <td>
                   {member.pending && <span className="chip warn">{t(lang, "staff_pending")}</span>}
@@ -103,15 +147,34 @@ export function StaffClient({
                 {canManage && (
                   <td>
                     {!member.pending && (
-                      <button
-                        type="button"
-                        className="btn ghost sm"
-                        onClick={() =>
-                          setExpanded(expanded === member.membership_id ? null : member.membership_id)
-                        }
-                      >
-                        {t(lang, "staff_schedule_btn")}
-                      </button>
+                      <div className="toolbar">
+                        <button
+                          type="button"
+                          className="btn ghost sm"
+                          onClick={() =>
+                            setExpanded(expanded === member.membership_id ? null : member.membership_id)
+                          }
+                        >
+                          {t(lang, "staff_schedule_btn")}
+                        </button>
+                        {member.role === "staff" && (
+                          <button
+                            type="button"
+                            className="btn danger sm"
+                            onClick={() => {
+                              if (!confirm(t(lang, "staff_remove_confirm"))) return;
+                              setError(null);
+                              startTransition(async () => {
+                                const res = await removeStaffMember(member.membership_id);
+                                if (res?.error) setError(res.error);
+                                else router.refresh();
+                              });
+                            }}
+                          >
+                            {t(lang, "staff_remove")}
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                 )}

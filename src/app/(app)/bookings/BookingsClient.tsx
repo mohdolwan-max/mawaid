@@ -4,6 +4,7 @@ import { useState } from "react";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import { todayYMD } from "@/lib/date";
 import type { Appointment, Service, StaffMember } from "@/lib/types";
+import { staffOwnerLabel } from "@/lib/staffLabel";
 import { setBookingStatus, addManualBooking } from "./actions";
 
 export function BookingsClient({
@@ -164,7 +165,7 @@ function ManualBookingForm({
               .filter((m) => m.role === "staff")
               .map((m) => (
                 <option key={m.membership_id} value={m.membership_id}>
-                  {m.email}
+                  {staffOwnerLabel(m, lang)}
                 </option>
               ))}
           </select>

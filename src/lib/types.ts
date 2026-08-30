@@ -36,7 +36,11 @@ export type Service = {
 export type StaffMember = {
   membership_id: string;
   user_id: string | null;
-  email: string;
+  // Both null for a staff member added by name with no login at all —
+  // the common case in Jordan, where most clinic/salon staff have no
+  // work email. See 0022_staff_without_email.sql.
+  email: string | null;
+  phone: string | null;
   role: Role;
   pending: boolean;
   display_name: string | null;
@@ -70,7 +74,7 @@ export type Appointment = {
   service_id: string;
   service_name: string;
   staff_id: string | null;
-  staff_email: string | null;
+  staff_name: string | null;
   customer_name: string;
   customer_phone: string;
   customer_email: string | null;

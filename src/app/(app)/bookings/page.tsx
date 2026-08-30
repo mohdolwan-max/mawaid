@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { t } from "@/lib/i18n";
 import { hoursAgoIso } from "@/lib/date";
 import type { Appointment, Service, StaffMember } from "@/lib/types";
+import { staffOwnerLabel } from "@/lib/staffLabel";
 import { BookingsClient } from "./BookingsClient";
 
 export default async function BookingsPage() {
@@ -20,9 +21,11 @@ export default async function BookingsPage() {
     supabase.rpc("list_org_staff", { p_org_id: ctx.orgId }),
   ]);
 
-  const staffEmailByMembership = new Map<string, string>();
+  // Label by name, not email: a staff member added by name has no email
+  // at all now (0022_staff_without_email.sql).
+  const staffLabelByMembership = new Map<string, string>();
   ((staff as StaffMember[]) ?? []).forEach((m) => {
-    if (m.membership_id) staffEmailByMembership.set(m.membership_id, m.email);
+    if (m.membership_id) staffLabelByMembership.set(m.membership_id, staffOwnerLabel(m, ctx.lang));
   });
 
   type Row = {
@@ -46,7 +49,7 @@ export default async function BookingsPage() {
     service_id: r.service_id,
     service_name: Array.isArray(r.services) ? (r.services[0]?.name ?? "") : (r.services?.name ?? ""),
     staff_id: r.staff_id,
-    staff_email: r.staff_id ? (staffEmailByMembership.get(r.staff_id) ?? null) : null,
+    staff_name: r.staff_id ? (staffLabelByMembership.get(r.staff_id) ?? null) : null,
     customer_name: r.customer_name,
     customer_phone: r.customer_phone,
     customer_email: r.customer_email,

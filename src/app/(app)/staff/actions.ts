@@ -16,6 +16,39 @@ export async function inviteStaff(formData: FormData) {
   revalidatePath("/staff");
 }
 
+// The primary way to add someone: a name (and optionally a phone for
+// the owner own reference). No email, no account, no waiting for them
+// to sign up — see 0022_staff_without_email.sql.
+export async function addStaffMember(formData: FormData) {
+  await requireOrgContext();
+  const supabase = await createClient();
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: "required_field" as const };
+  const phone = String(formData.get("phone") ?? "").trim();
+
+  const { error } = await supabase.rpc("add_staff_member", {
+    p_name: name,
+    p_phone: phone || null,
+  });
+  if (error) return { error: "error_generic" as const };
+
+  revalidatePath("/staff");
+  return {};
+}
+
+export async function removeStaffMember(membershipId: string) {
+  await requireOrgContext();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("remove_staff_member", { p_membership_id: membershipId });
+  if (error) {
+    // The RPC refuses rather than cascading away real bookings.
+    return { error: error.message.includes("staff_has_bookings") ? ("staff_has_bookings" as const) : ("error_generic" as const) };
+  }
+  revalidatePath("/staff");
+  return {};
+}
+
 export async function toggleStaffService(staffMembershipId: string, serviceId: string, assigned: boolean) {
   const ctx = await requireOrgContext();
   const supabase = await createClient();

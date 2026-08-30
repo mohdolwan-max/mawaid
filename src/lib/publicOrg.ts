@@ -27,7 +27,11 @@ export type PublicService = {
   photo_url: string | null;
 };
 
-export type PublicStaff = { membership_id: string; email: string };
+// Customers pick a specialist by NAME. This used to carry the staff
+// member email, which the booking page rendered straight at the
+// customer — see 0022_staff_without_email.sql. Null when the owner has
+// not named them yet; the UI falls back to a generic label.
+export type PublicStaff = { membership_id: string; name: string | null };
 
 // Wrapped in React's cache() so generateMetadata() and the page
 // component (both call this for the same slug in the same request)
