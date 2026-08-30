@@ -71,18 +71,40 @@ export function BookingClient({
     setService(s);
     setStaffId(null);
     setError(null);
-    fetchStaffAction(orgSlug, s.id).then(setStaffOptions);
+    // A rejected promise here previously had no .catch() — a transient
+    // network blip left staffOptions stuck at [] silently (degraded but
+    // visible: just "any available staff"). Surfacing the error is
+    // better than pretending the org genuinely has no staff to pick.
+    fetchStaffAction(orgSlug, s.id)
+      .then(setStaffOptions)
+      .catch(() => setError("error_generic"));
     setStep("staff");
   }
 
   useEffect(() => {
     if (step !== "slot" || !service) return;
+    let cancelled = false;
     setSlotsLoading(true);
     setSelectedSlot(null);
-    fetchSlotsAction(orgSlug, service.id, date, staffId).then((s) => {
-      setSlots(s);
-      setSlotsLoading(false);
-    });
+    setError(null);
+    fetchSlotsAction(orgSlug, service.id, date, staffId)
+      .then((s) => {
+        if (cancelled) return;
+        setSlots(s);
+        setSlotsLoading(false);
+      })
+      .catch(() => {
+        // Previously unhandled: a rejected fetch here left slotsLoading
+        // stuck true forever — the date picker stayed, but the slot
+        // grid never resolved either way, reading as a dead/blank step.
+        if (cancelled) return;
+        setSlots([]);
+        setSlotsLoading(false);
+        setError("error_generic");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [step, service, date, staffId, orgSlug]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -166,6 +188,7 @@ export function BookingClient({
               {st.email}
             </div>
           ))}
+          {error && <p className="error-text">{t(lang, error)}</p>}
           <div className="toolbar" style={{ marginTop: 10 }}>
             <button className="btn ghost" onClick={() => setStep("service")}>
               {t(lang, "back")}
@@ -204,6 +227,7 @@ export function BookingClient({
               ))}
             </div>
           )}
+          {error && <p className="error-text">{t(lang, error)}</p>}
           <div className="toolbar" style={{ marginTop: 10 }}>
             <button className="btn ghost" onClick={() => setStep("staff")}>
               {t(lang, "back")}
@@ -277,6 +301,18 @@ export function BookingClient({
             )}
           </div>
           <ReminderOptIn lang={lang} cancelToken={cancelToken} />
+        </div>
+      )}
+
+      {/* Defensive fallback: step "done" with no cancelToken previously
+          rendered nothing at all (every other step's condition also
+          false) — a genuinely blank page rather than an error message. */}
+      {step === "done" && !cancelToken && (
+        <div className="card wizard-step" style={{ textAlign: "center" }}>
+          <p className="error-text">{t(lang, "error_generic")}</p>
+          <Link href={`/${orgSlug}`} className="btn ghost" style={{ marginTop: 10 }}>
+            {t(lang, "back")}
+          </Link>
         </div>
       )}
     </div>
