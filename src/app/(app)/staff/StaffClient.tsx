@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { Fragment, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { BusinessHours, Service, StaffMember, StaffTimeOff } from "@/lib/types";
@@ -185,7 +185,8 @@ export function StaffClient({
           </thead>
           <tbody>
             {staff.map((member) => (
-              <tr key={member.membership_id ?? member.email}>
+              <Fragment key={member.membership_id ?? member.email}>
+                <tr>
                 <td>
                   {member.pending || !canManage ? (
                     staffOwnerLabel(member, lang)
@@ -260,7 +261,27 @@ export function StaffClient({
                     )}
                   </td>
                 )}
-              </tr>
+                </tr>
+                {/* Directly beneath the row it belongs to. It used to be
+                    rendered in a block after the whole table (and after
+                    the hint text below it), which put it ~376px under the
+                    button that opens it — off-screen on a laptop, with no
+                    scroll, so clicking "Schedule" looked like it did
+                    nothing at all. */}
+                {canManage && expanded === member.membership_id && (
+                  <tr>
+                    <td colSpan={canManage ? 6 : 4} style={{ padding: 0 }}>
+                      <StaffScheduleEditor
+                        lang={lang}
+                        membershipId={member.membership_id}
+                        orgHours={orgHours}
+                        staffHours={member.business_hours}
+                        timeOff={timeOff.filter((o) => o.staff_membership_id === member.membership_id)}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -270,20 +291,6 @@ export function StaffClient({
       {canManage && staff.some((m) => !m.pending && !m.display_name) && (
         <p className="hint">{t(lang, "staff_needs_name_hint")}</p>
       )}
-
-      {canManage &&
-        staff
-          .filter((m) => m.membership_id === expanded)
-          .map((m) => (
-            <StaffScheduleEditor
-              key={m.membership_id}
-              lang={lang}
-              membershipId={m.membership_id}
-              orgHours={orgHours}
-              staffHours={m.business_hours}
-              timeOff={timeOff.filter((o) => o.staff_membership_id === m.membership_id)}
-            />
-          ))}
     </div>
   );
 }

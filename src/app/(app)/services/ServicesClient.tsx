@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { t, type Lang } from "@/lib/i18n";
 import type { Service } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
-import { validateImageFile } from "@/lib/imageUpload";
+import { validateImageFile, downscaleImage, MAX_DIM } from "@/lib/imageUpload";
 import { addService, toggleServiceActive, deleteService, saveServicePhoto } from "./actions";
 
 export function ServicesClient({
@@ -91,10 +91,11 @@ function ServiceCard({
     }
     setUploading(true);
     try {
+      const upload = await downscaleImage(file, MAX_DIM.service);
       const supabase = createClient();
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const ext = (upload.name.split(".").pop() || "jpg").toLowerCase();
       const path = `${orgId}/service-${service.id}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("org-media").upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from("org-media").upload(path, upload, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("org-media").getPublicUrl(path);
       await saveServicePhoto(service.id, data.publicUrl);

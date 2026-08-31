@@ -5,7 +5,7 @@ import { t, type Lang } from "@/lib/i18n";
 import type { OrgContext, BusinessHours } from "@/lib/types";
 import { CATEGORIES, CITIES } from "@/lib/directory";
 import { createClient } from "@/lib/supabase/client";
-import { validateImageFile } from "@/lib/imageUpload";
+import { validateImageFile, downscaleImage, MAX_DIM } from "@/lib/imageUpload";
 import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
 import { saveOrgProfile, saveBookingRules, saveDirectoryProfile, saveMediaUrl, closeOrganization } from "./actions";
 
@@ -69,10 +69,13 @@ export function SettingsClient({
     }
     setUploadingKind(kind);
     try {
+      // Shrink before upload: a cover renders ~170px tall and a logo
+      // 56px, so a full-size phone photo is bytes nobody ever sees.
+      const upload = await downscaleImage(file, kind === "cover" ? MAX_DIM.cover : MAX_DIM.logo);
       const supabase = createClient();
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const ext = (upload.name.split(".").pop() || "jpg").toLowerCase();
       const path = `${ctx.orgId}/${kind}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("org-media").upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from("org-media").upload(path, upload, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("org-media").getPublicUrl(path);
       await saveMediaUrl(kind, data.publicUrl);
