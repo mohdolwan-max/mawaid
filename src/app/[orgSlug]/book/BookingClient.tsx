@@ -5,6 +5,7 @@ import Link from "next/link";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { PublicService, PublicStaff } from "@/lib/publicOrg";
 import { staffPublicLabel } from "@/lib/staffLabel";
+import { DateField } from "@/components/DateTimeField";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { fetchStaffAction, fetchSlotsAction, submitBookingAction } from "./actions";
 
@@ -217,7 +218,7 @@ export function BookingClient({
         <div className="card wizard-step">
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_date_step")}</p>
           <div className="field">
-            <input type="date" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} />
+            <DateField lang={lang} value={date} onChange={setDate} min={todayISO()} />
           </div>
           {slotsLoading ? (
             <p className="hint">{t(lang, "loading")}</p>

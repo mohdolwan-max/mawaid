@@ -4,6 +4,7 @@ import { useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import type { BusinessHours, StaffTimeOff } from "@/lib/types";
 import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
+import { DateField, TimeField } from "@/components/DateTimeField";
 import { saveStaffSchedule, addTimeOff, removeTimeOff } from "./actions";
 
 // Inline expandable panel (no modal, matching this app's existing
@@ -26,8 +27,16 @@ export function StaffScheduleEditor({
   const [hours, setHours] = useState<BusinessHours>(staffHours ?? orgHours);
   const [saving, setSaving] = useState(false);
 
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
+  // Split from a single datetime-local into date + time halves: the
+  // native picker draws its own square-cornered calendar that CSS cannot
+  // reach. Recombined as "YYYY-MM-DDTHH:mm" below, exactly the format the
+  // input used to produce, so nothing downstream changes.
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const start = startDate && startTime ? `${startDate}T${startTime}` : "";
+  const end = endDate && endTime ? `${endDate}T${endTime}` : "";
   const [reason, setReason] = useState("");
   const [addingOff, setAddingOff] = useState(false);
 
@@ -121,19 +130,27 @@ export function StaffScheduleEditor({
             endsAt: new Date(end).toISOString(),
             reason,
           });
-          setStart("");
-          setEnd("");
+          setStartDate("");
+          setStartTime("");
+          setEndDate("");
+          setEndTime("");
           setReason("");
           setAddingOff(false);
         }}
       >
         <div className="field" style={{ marginBottom: 0 }}>
           <label>{t(lang, "time_off_from")}</label>
-          <input type="datetime-local" dir="ltr" value={start} onChange={(e) => setStart(e.target.value)} required />
+          <div className="toolbar" style={{ gap: 4 }}>
+            <DateField lang={lang} value={startDate} onChange={setStartDate} placeholder={t(lang, "time_off_from")} />
+            <TimeField lang={lang} value={startTime} onChange={setStartTime} stepMinutes={30} />
+          </div>
         </div>
         <div className="field" style={{ marginBottom: 0 }}>
           <label>{t(lang, "time_off_to")}</label>
-          <input type="datetime-local" dir="ltr" value={end} onChange={(e) => setEnd(e.target.value)} required />
+          <div className="toolbar" style={{ gap: 4 }}>
+            <DateField lang={lang} value={endDate} onChange={setEndDate} min={startDate || undefined} placeholder={t(lang, "time_off_to")} />
+            <TimeField lang={lang} value={endTime} onChange={setEndTime} stepMinutes={30} />
+          </div>
         </div>
         <div className="field" style={{ marginBottom: 0, flex: 1 }}>
           <label>{t(lang, "time_off_reason")}</label>

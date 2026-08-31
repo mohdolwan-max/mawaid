@@ -52,7 +52,23 @@ export const requireOrgContext = cache(async (): Promise<OrgContext> => {
   const row = data as MyContextRow;
 
   if (row.deleted_at) {
-    redirect("/auth/signout");
+    // Two different things set deleted_at, and they must not be treated
+    // the same. close_organization() (0020) is a deliberate one-way
+    // close, so signing out is right. But request_account_deletion()
+    // (0024) also sets it while the 15-day undo is still open — and
+    // signing the owner out there made the undo unreachable: every
+    // re-login looped straight back through here to /auth/signout, while
+    // the UI and the privacy policy both promised they could sign back
+    // in and cancel. The undo card lives on /settings, inside this very
+    // shell, so a pending deletion has to be let through.
+    const { data: pending } = await supabase
+      .from("account_deletions")
+      .select("purge_after")
+      .maybeSingle();
+
+    if (!pending) {
+      redirect("/auth/signout");
+    }
   }
 
   // org_settings.lang is the org's saved default (used e.g. for outbound

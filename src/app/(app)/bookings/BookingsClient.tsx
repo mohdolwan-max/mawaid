@@ -6,6 +6,7 @@ import { t, type Lang, type TKey } from "@/lib/i18n";
 import { todayYMD } from "@/lib/date";
 import type { Appointment, Service, StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
+import { DateField } from "@/components/DateTimeField";
 import { setBookingStatus, addManualBooking, fetchOwnerSlotsAction } from "./actions";
 
 export function BookingsClient({
@@ -214,13 +215,7 @@ function ManualBookingForm({
       </div>
       <div className="field">
         <label htmlFor="m_date">{t(lang, "book_date_step")}</label>
-        <input
-          id="m_date"
-          type="date"
-          dir="ltr"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <DateField lang={lang} value={date} onChange={setDate} />
       </div>
       {/* The same availability grid the customer sees, rather than a free
           datetime field: book_appointment rejects out-of-hours and taken
