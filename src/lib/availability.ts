@@ -37,6 +37,10 @@ export async function bookAppointment(input: {
   staffId: string | null;
   customerEmail: string | null;
   notes: string | null;
+  /** Set only after the customer confirms they really do want two
+   *  overlapping appointments — one phone legitimately books for a whole
+   *  family. See 0026. */
+  allowOverlap?: boolean;
 }): Promise<BookResult> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -49,8 +53,32 @@ export async function bookAppointment(input: {
       p_staff_id: input.staffId,
       p_customer_email: input.customerEmail,
       p_notes: input.notes,
+      p_allow_overlap: input.allowOverlap ?? false,
     })
     .maybeSingle();
+
+  // PGRST202 = no function with these parameters. Happens only in the
+  // window between this code deploying and 0026 being applied; retry on
+  // the pre-0026 signature so booking never breaks on migration order.
+  if (error?.code === "PGRST202") {
+    const legacy = await supabase
+      .rpc("book_appointment", {
+        p_org_slug: input.orgSlug,
+        p_service_id: input.serviceId,
+        p_start_at: input.startAt,
+        p_customer_name: input.customerName,
+        p_customer_phone: input.customerPhone,
+        p_staff_id: input.staffId,
+        p_customer_email: input.customerEmail,
+        p_notes: input.notes,
+      })
+      .maybeSingle();
+    if (legacy.error || !legacy.data) {
+      return { ok: false, error: parseRpcError(legacy.error?.message) };
+    }
+    const legacyRow = legacy.data as { id: string; cancel_token: string };
+    return { ok: true, id: legacyRow.id, cancelToken: legacyRow.cancel_token };
+  }
 
   if (error || !data) {
     return { ok: false, error: parseRpcError(error?.message) };
@@ -63,6 +91,7 @@ function parseRpcError(message?: string): string {
   if (!message) return "error_generic";
   if (message.includes("slot_taken")) return "book_slot_taken";
   if (message.includes("rate_limited")) return "book_rate_limited";
+  if (message.includes("customer_time_conflict")) return "book_customer_conflict";
   return "error_generic";
 }
 
@@ -86,4 +115,78 @@ export async function cancelBookingByToken(token: string): Promise<boolean> {
   const supabase = await createClient();
   const { data } = await supabase.rpc("cancel_booking_by_token", { p_cancel_token: token });
   return Boolean(data);
+}
+
+// Slot starts where an entire run of services fits back to back. Falls
+// back to the single-service list for one service so the common path
+// keeps the cheaper query.
+export async function getAvailableSlotsChain(
+  orgSlug: string,
+  serviceIds: string[],
+  date: string,
+  staffId: string | null
+): Promise<string[]> {
+  if (serviceIds.length <= 1) {
+    return getAvailableSlots(orgSlug, serviceIds[0], date, staffId);
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_available_slots_chain", {
+    p_org_slug: orgSlug,
+    p_service_ids: serviceIds,
+    p_date: date,
+    p_staff_id: staffId,
+  });
+  if (error || !data) return [];
+  return (data as { start_at: string }[]).map((r) => r.start_at);
+}
+
+// Books every service in one transaction: either the whole visit lands
+// or none of it does, so a customer is never left with half a visit.
+// A single-service visit goes through the plain booking function, which
+// keeps the common path on the older, simpler RPC and means the chain
+// function is only ever reached when it is genuinely needed.
+export async function bookAppointmentChain(input: {
+  orgSlug: string;
+  serviceIds: string[];
+  startAt: string;
+  customerName: string;
+  customerPhone: string;
+  staffId: string | null;
+  customerEmail: string | null;
+  notes: string | null;
+  allowOverlap?: boolean;
+}): Promise<BookResult> {
+  if (input.serviceIds.length === 1) {
+    return bookAppointment({
+      orgSlug: input.orgSlug,
+      serviceId: input.serviceIds[0],
+      startAt: input.startAt,
+      staffId: input.staffId,
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      customerEmail: input.customerEmail,
+      notes: input.notes,
+      allowOverlap: input.allowOverlap,
+    });
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("book_appointment_chain", {
+    p_org_slug: input.orgSlug,
+    p_service_ids: input.serviceIds,
+    p_start_at: input.startAt,
+    p_customer_name: input.customerName,
+    p_customer_phone: input.customerPhone,
+    p_staff_id: input.staffId,
+    p_customer_email: input.customerEmail,
+    p_notes: input.notes,
+    p_allow_overlap: input.allowOverlap ?? false,
+  });
+
+  const rows = (data ?? []) as { id: string; cancel_token: string }[];
+  if (error || rows.length === 0) {
+    return { ok: false, error: parseRpcError(error?.message) };
+  }
+  // The first segment carries the token the customer manages the visit
+  // by; the rest are reachable from their bookings list.
+  return { ok: true, id: rows[0].id, cancelToken: rows[0].cancel_token };
 }

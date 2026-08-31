@@ -52,7 +52,11 @@ export function BookingClient({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<TKey | null>(null);
 
-  const [service, setService] = useState<PublicService | null>(null);
+  // A visit can be several services back to back (dental then
+  // dermatology at a medical centre). Order matters — they are booked in
+  // the order chosen, each starting when the previous one ends.
+  const [chosen, setChosen] = useState<PublicService[]>([]);
+  const service = chosen[0] ?? null;
   const [staffOptions, setStaffOptions] = useState<PublicStaff[]>([]);
   const [staffId, setStaffId] = useState<string | null>(null);
 
@@ -68,16 +72,29 @@ export function BookingClient({
   const [honeypot, setHoneypot] = useState("");
 
   const [cancelToken, setCancelToken] = useState<string | null>(null);
+  // Set when the server reports the customer already holds an
+  // overlapping appointment. Not a hard block: one phone legitimately
+  // books for a whole family, so they get to confirm and continue.
+  const [conflictPending, setConflictPending] = useState(false);
 
-  function chooseService(s: PublicService) {
-    setService(s);
+  function toggleService(s: PublicService) {
+    setError(null);
+    setChosen((prev) =>
+      prev.some((c) => c.id === s.id) ? prev.filter((c) => c.id !== s.id) : [...prev, s]
+    );
+  }
+
+  function goToStaff() {
+    if (chosen.length === 0) return;
     setStaffId(null);
     setError(null);
     // A rejected promise here previously had no .catch() — a transient
     // network blip left staffOptions stuck at [] silently (degraded but
     // visible: just "any available staff"). Surfacing the error is
     // better than pretending the org genuinely has no staff to pick.
-    fetchStaffAction(orgSlug, s.id)
+    // Staff choice applies to the whole visit, so only offer people who
+    // can perform the FIRST service; anyone else could not start it.
+    fetchStaffAction(orgSlug, chosen[0].id)
       .then(setStaffOptions)
       .catch(() => setError("error_generic"));
     setStep("staff");
@@ -89,7 +106,7 @@ export function BookingClient({
     setSlotsLoading(true);
     setSelectedSlot(null);
     setError(null);
-    fetchSlotsAction(orgSlug, service.id, date, staffId)
+    fetchSlotsAction(orgSlug, chosen.map((c) => c.id), date, staffId)
       .then((s) => {
         if (cancelled) return;
         setSlots(s);
@@ -107,11 +124,10 @@ export function BookingClient({
     return () => {
       cancelled = true;
     };
-  }, [step, service, date, staffId, orgSlug]);
+  }, [step, service, date, staffId, orgSlug, chosen]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!service || !selectedSlot) return;
+  async function submitBooking(allowOverlap: boolean) {
+    if (chosen.length === 0 || !selectedSlot) return;
     if (honeypot.trim() !== "") {
       // Silently pretend it worked — don't tip off the bot.
       setCancelToken("00000000-0000-0000-0000-000000000000");
@@ -120,17 +136,19 @@ export function BookingClient({
     }
     setPending(true);
     setError(null);
+    setConflictPending(false);
     let result;
     try {
       result = await submitBookingAction({
         orgSlug,
-        serviceId: service.id,
+        serviceIds: chosen.map((c) => c.id),
         startAt: selectedSlot,
         staffId,
         customerName: name,
         customerPhone: phone,
         customerEmail: email,
         notes,
+        allowOverlap,
       });
     } catch {
       // Without this the button spun forever on any rejection (dropped
@@ -148,10 +166,18 @@ export function BookingClient({
       if (result.error === "book_slot_taken") {
         setStep("slot");
       }
+      if (result.error === "book_customer_conflict") {
+        setConflictPending(true);
+      }
       return;
     }
     setCancelToken(result.cancelToken);
     setStep("done");
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    void submitBooking(false);
   }
 
   return (
@@ -160,26 +186,48 @@ export function BookingClient({
 
       {step === "service" && (
         <div className="card wizard-step">
-          <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_service_step")}</p>
-          {services.map((s) => (
-            <div key={s.id} className="service-row" onClick={() => chooseService(s)}>
-              <div>
-                <strong>{s.name}</strong>
-                <p className="hint">
-                  {s.duration_minutes} {t(lang, "minutes")}
-                </p>
+          <p style={{ fontWeight: 700, marginBottom: 4 }}>{t(lang, "book_service_step")}</p>
+          <p className="hint" style={{ marginBottom: 10 }}>{t(lang, "book_multi_hint")}</p>
+          {services.map((s) => {
+            const picked = chosen.findIndex((c) => c.id === s.id);
+            return (
+              <div
+                key={s.id}
+                className={`service-row ${picked >= 0 ? "selected" : ""}`}
+                onClick={() => toggleService(s)}
+              >
+                <div>
+                  <strong>
+                    {picked >= 0 && <span className="pick-order">{picked + 1}</span>}
+                    {s.name}
+                  </strong>
+                  <p className="hint">
+                    {s.duration_minutes} {t(lang, "minutes")}
+                  </p>
+                </div>
+                {s.price != null && (
+                  <span className="num">
+                    {s.price} {t(lang, "currency")}
+                  </span>
+                )}
               </div>
-              {s.price != null && (
-                <span className="num">
-                  {s.price} {t(lang, "currency")}
-                </span>
-              )}
-            </div>
-          ))}
+            );
+          })}
+          {chosen.length > 1 && (
+            <p className="hint" style={{ marginTop: 8 }}>
+              {t(lang, "book_visit_total", {
+                n: chosen.length,
+                minutes: chosen.reduce((sum, c) => sum + c.duration_minutes, 0),
+              })}
+            </p>
+          )}
           <div className="toolbar" style={{ marginTop: 10 }}>
             <Link href={`/${orgSlug}`} className="btn ghost">
               {t(lang, "back")}
             </Link>
+            <button className="btn" disabled={chosen.length === 0} onClick={goToStaff}>
+              {t(lang, "next")}
+            </button>
           </div>
         </div>
       )}
@@ -296,6 +344,17 @@ export function BookingClient({
             <textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
           {error && <p className="error-text">{t(lang, error)}</p>}
+          {conflictPending && (
+            <button
+              type="button"
+              className="btn ghost"
+              style={{ marginBottom: 10 }}
+              disabled={pending}
+              onClick={() => void submitBooking(true)}
+            >
+              {t(lang, "book_anyway")}
+            </button>
+          )}
           <div className="toolbar">
             <button type="button" className="btn ghost" onClick={() => setStep("slot")}>
               {t(lang, "back")}

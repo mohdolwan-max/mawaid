@@ -1,6 +1,12 @@
 "use server";
 
-import { getAvailableSlots, bookAppointment, type BookResult } from "@/lib/availability";
+import {
+  getAvailableSlots,
+  getAvailableSlotsChain,
+  bookAppointment,
+  bookAppointmentChain,
+  type BookResult,
+} from "@/lib/availability";
 import { listPublicStaffForService, listPublicServices, getPublicOrg, type PublicStaff } from "@/lib/publicOrg";
 import { sendBookingConfirmation } from "@/lib/email";
 import { getLang } from "@/lib/lang";
@@ -11,32 +17,34 @@ export async function fetchStaffAction(orgSlug: string, serviceId: string): Prom
 
 export async function fetchSlotsAction(
   orgSlug: string,
-  serviceId: string,
+  serviceIds: string[],
   date: string,
   staffId: string | null
 ): Promise<string[]> {
-  return getAvailableSlots(orgSlug, serviceId, date, staffId);
+  return getAvailableSlotsChain(orgSlug, serviceIds, date, staffId);
 }
 
 export async function submitBookingAction(input: {
   orgSlug: string;
-  serviceId: string;
+  serviceIds: string[];
   startAt: string;
   staffId: string | null;
   customerName: string;
   customerPhone: string;
   customerEmail: string;
   notes: string;
+  allowOverlap?: boolean;
 }): Promise<BookResult> {
-  const result = await bookAppointment({
+  const result = await bookAppointmentChain({
     orgSlug: input.orgSlug,
-    serviceId: input.serviceId,
+    serviceIds: input.serviceIds,
     startAt: input.startAt,
     staffId: input.staffId,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
     customerEmail: input.customerEmail || null,
     notes: input.notes || null,
+    allowOverlap: input.allowOverlap,
   });
 
   if (result.ok && input.customerEmail) {
@@ -54,7 +62,7 @@ export async function submitBookingAction(input: {
         listPublicServices(input.orgSlug),
         getLang(),
       ]);
-      const service = services.find((s) => s.id === input.serviceId);
+      const service = services.find((s) => s.id === input.serviceIds[0]);
       if (org && service) {
         await sendBookingConfirmation({
           toEmail: input.customerEmail,

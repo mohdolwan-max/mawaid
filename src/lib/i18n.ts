@@ -118,6 +118,10 @@ export const T = {
     // ---------- public booking ----------
     book_now: "احجز الآن",
     book_service_step: "اختر الخدمة",
+    book_multi_hint: "تقدر تختار أكثر من خدمة، وبنحجزلك إياهم ورا بعض بنفس الزيارة.",
+    book_visit_total: "{n} خدمات · حوالي {minutes} دقيقة بالزيارة",
+    book_customer_conflict: "عندك موعد ثاني بنفس الوقت. اختر وقت غير، أو أكّد إذا الحجز لشخص ثاني (زي ولدك).",
+    book_anyway: "أكمل الحجز على أي حال",
     book_staff_step: "اختر الموظف (اختياري)",
     book_any_staff: "أي موظف متاح",
     book_date_step: "اختر اليوم والوقت",
@@ -409,6 +413,10 @@ export const T = {
 
     book_now: "Book now",
     book_service_step: "Choose a service",
+    book_multi_hint: "You can pick more than one — we book them back to back in the same visit.",
+    book_visit_total: "{n} services · about {minutes} minutes in total",
+    book_customer_conflict: "You already have a booking at this time. Pick another time, or confirm if this one is for someone else (a child, for example).",
+    book_anyway: "Book it anyway",
     book_staff_step: "Choose staff (optional)",
     book_any_staff: "Any available staff",
     book_date_step: "Choose date & time",
