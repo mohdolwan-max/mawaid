@@ -119,7 +119,13 @@ function parseRpcError(message?: string): string {
 export type BookingRow = {
   id: string;
   org_name: string;
+  // org_slug / service_id / staff_id were added in 0030 so the manage
+  // page can offer a slot picker without a second lookup — it calls the
+  // same get_available_slots the customer used when booking.
+  org_slug: string;
   service_name: string;
+  service_id: string;
+  staff_id: string | null;
   start_at: string;
   end_at: string;
   status: string;
@@ -271,4 +277,55 @@ export async function bookAppointmentChain(input: {
       startAt: r.start_at,
     })),
   };
+}
+
+export type RescheduleResult =
+  | { ok: true; startAt: string; endAt: string }
+  | { ok: false; error: string };
+
+function parseRescheduleError(message?: string): string {
+  if (!message) return "error_generic";
+  if (message.includes("slot_taken")) return "book_slot_taken";
+  if (message.includes("outside_business_hours")) return "resched_outside_hours";
+  if (message.includes("too_soon")) return "resched_too_soon";
+  if (message.includes("too_far_ahead")) return "resched_too_far";
+  if (message.includes("booking_not_active")) return "resched_not_active";
+  if (message.includes("booking_not_found")) return "booking_not_found";
+  if (message.includes("not_authorized")) return "error_generic";
+  return "error_generic";
+}
+
+// Moves an existing appointment. The row is updated in place (0030), so
+// the customer's cancel token — and the link in their confirmation email
+// — keeps working afterwards.
+export async function rescheduleByToken(token: string, startAt: string): Promise<RescheduleResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reschedule_booking_by_token", {
+    p_cancel_token: token,
+    p_start_at: startAt,
+  });
+  if (error) {
+    console.error("reschedule_booking_by_token failed", error);
+    return { ok: false, error: parseRescheduleError(error.message) };
+  }
+  const row = (Array.isArray(data) ? data[0] : data) as { start_at: string; end_at: string } | null;
+  if (!row) return { ok: false, error: "error_generic" };
+  return { ok: true, startAt: row.start_at, endAt: row.end_at };
+}
+
+// The clinic's path. Reception takes the "can I move it?" call far more
+// often than a customer opens their own link.
+export async function rescheduleById(appointmentId: string, startAt: string): Promise<RescheduleResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reschedule_booking", {
+    p_appointment_id: appointmentId,
+    p_start_at: startAt,
+  });
+  if (error) {
+    console.error("reschedule_booking failed", error);
+    return { ok: false, error: parseRescheduleError(error.message) };
+  }
+  const row = (Array.isArray(data) ? data[0] : data) as { start_at: string; end_at: string } | null;
+  if (!row) return { ok: false, error: "error_generic" };
+  return { ok: true, startAt: row.start_at, endAt: row.end_at };
 }

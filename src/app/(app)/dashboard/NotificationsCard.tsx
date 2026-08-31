@@ -18,7 +18,9 @@ export type OrgNotification = {
 // kind comes from the database CHECK (0029), but an unknown value must
 // not render a raw key at a clinic owner — fall back to the neutral one.
 function labelFor(kind: string): TKey {
-  return kind === "booking_created" ? "notif_booking_created" : "notif_booking_cancelled";
+  if (kind === "booking_created") return "notif_booking_created";
+  if (kind === "booking_rescheduled") return "notif_booking_rescheduled";
+  return "notif_booking_cancelled";
 }
 
 export function NotificationsCard({

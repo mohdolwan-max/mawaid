@@ -13,10 +13,13 @@ import {
   weekYMDs,
 } from "@/lib/date";
 import type { BookingStatus, BusinessHours } from "@/lib/types";
-import { setBookingStatus } from "../bookings/actions";
+import { setBookingStatus, fetchOwnerSlotsAction, rescheduleBookingAction } from "../bookings/actions";
+import { DateField } from "@/components/DateTimeField";
+import { todayYMD } from "@/lib/date";
 
 export type CalendarBooking = {
   id: string;
+  serviceId: string;
   serviceName: string;
   price: number | null;
   staffId: string | null;
@@ -393,7 +396,27 @@ function BookingSheet({
   onChanged: () => void;
 }) {
   const [pending, setPending] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [date, setDate] = useState(() => localYMD(booking.startAt, timezone));
+  const [slots, setSlots] = useState<string[] | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [error, setError] = useState<TKey | null>(null);
   const locale = intlLocale(lang);
+
+  async function loadSlots(d: string) {
+    setPending(true);
+    setError(null);
+    setPicked(null);
+    try {
+      setSlots(await fetchOwnerSlotsAction(booking.serviceId, d, booking.staffId));
+    } catch {
+      // "no times" and "the lookup failed" must not look the same.
+      setSlots(null);
+      setError("error_generic");
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function mark(status: BookingStatus) {
     setPending(true);
@@ -437,8 +460,18 @@ function BookingSheet({
             {t(lang, `booking_status_${booking.status}` as TKey)}
           </span>
         </p>
-        {booking.status === "booked" && (
+        {booking.status === "booked" && !moving && (
           <div className="toolbar">
+            <button
+              className="btn ghost sm"
+              disabled={pending}
+              onClick={() => {
+                setMoving(true);
+                void loadSlots(date);
+              }}
+            >
+              {t(lang, "resched_cta")}
+            </button>
             <button className="btn ghost sm" disabled={pending} onClick={() => mark("completed")}>
               {t(lang, "booking_status_completed")}
             </button>
@@ -448,6 +481,64 @@ function BookingSheet({
             <button className="btn danger sm" disabled={pending} onClick={() => mark("cancelled")}>
               {t(lang, "cancel")}
             </button>
+          </div>
+        )}
+
+        {booking.status === "booked" && moving && (
+          <div className="resched">
+            <p style={{ fontWeight: 700, marginBottom: 8 }}>{t(lang, "resched_title")}</p>
+            <DateField
+              lang={lang}
+              value={date}
+              min={todayYMD(timezone)}
+              onChange={(d) => {
+                setDate(d);
+                void loadSlots(d);
+              }}
+            />
+            {pending && <p className="hint">{t(lang, "loading")}</p>}
+            {!pending && slots !== null && slots.length === 0 && (
+              <p className="hint">{t(lang, "book_no_slots")}</p>
+            )}
+            {!pending && slots !== null && slots.length > 0 && (
+              <div className="slot-grid" style={{ marginTop: 10 }}>
+                {slots.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`slot-btn ${picked === s ? "selected" : ""}`}
+                    onClick={() => setPicked(s)}
+                  >
+                    {clock(s, timezone, locale)}
+                  </button>
+                ))}
+              </div>
+            )}
+            {error && <p className="error-text">{t(lang, error)}</p>}
+            <div className="toolbar" style={{ marginTop: 12 }}>
+              <button
+                className="btn sm"
+                disabled={!picked || pending}
+                onClick={async () => {
+                  if (!picked) return;
+                  setPending(true);
+                  setError(null);
+                  const r = await rescheduleBookingAction(booking.id, picked);
+                  setPending(false);
+                  if (!r.ok) {
+                    setError(r.error as TKey);
+                    if (r.error === "book_slot_taken") void loadSlots(date);
+                    return;
+                  }
+                  onChanged();
+                }}
+              >
+                {t(lang, "resched_confirm")}
+              </button>
+              <button className="btn ghost sm" disabled={pending} onClick={() => setMoving(false)}>
+                {t(lang, "resched_keep")}
+              </button>
+            </div>
           </div>
         )}
       </div>

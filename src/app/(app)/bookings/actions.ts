@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
-import { bookAppointment, getAvailableSlots, type BookResult } from "@/lib/availability";
+import {
+  bookAppointment,
+  getAvailableSlots,
+  rescheduleById,
+  type BookResult,
+  type RescheduleResult,
+} from "@/lib/availability";
 import type { BookingStatus } from "@/lib/types";
 
 export async function setBookingStatus(id: string, status: BookingStatus) {
@@ -56,5 +62,22 @@ export async function addManualBooking(input: {
 
   revalidatePath("/bookings");
   revalidatePath("/dashboard");
+  return result;
+}
+
+// Reception moving an appointment. Goes through the same validation the
+// customer's own reschedule uses (0030 _reschedule), so a clinic cannot
+// accidentally park a booking outside its own opening hours.
+export async function rescheduleBookingAction(
+  appointmentId: string,
+  startAt: string
+): Promise<RescheduleResult> {
+  await requireOrgContext();
+  const result = await rescheduleById(appointmentId, startAt);
+  if (result.ok) {
+    revalidatePath("/calendar");
+    revalidatePath("/bookings");
+    revalidatePath("/dashboard");
+  }
   return result;
 }

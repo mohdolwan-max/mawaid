@@ -81,6 +81,7 @@ export default async function CalendarPage({
     const svc = Array.isArray(r.services) ? r.services[0] : r.services;
     return {
       id: r.id,
+      serviceId: r.service_id,
       serviceName: svc?.name ?? "",
       // Stays null when the service has no price. Not 0 — "not priced"
       // and "free" are different facts, and the day's total must not

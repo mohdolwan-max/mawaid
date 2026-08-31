@@ -5,7 +5,7 @@ import { categoryLabel, cityLabel, priceTierLabel, type DirectoryOrg } from "@/l
 export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
   const meta = [org.district, cityLabel(org.city, lang)].filter(Boolean).join(" · ");
   const category = categoryLabel(org.category, lang);
-  const tier = priceTierLabel(org.price_tier);
+  const tier = priceTierLabel(org.price_tier, lang);
 
   return (
     <Link href={`/${org.slug}`} className="org-card">

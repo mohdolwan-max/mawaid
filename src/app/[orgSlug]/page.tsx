@@ -62,7 +62,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
   ]);
   const category = categoryLabel(org.category, lang);
   const location = [org.district, cityLabel(org.city, lang)].filter(Boolean).join(" · ");
-  const tier = priceTierLabel(org.price_tier);
+  const tier = priceTierLabel(org.price_tier, lang);
   // Defense in depth: saveOrgProfile already rejects non-http(s) schemes
   // before this ever reaches the database, but this is rendered as a
   // real <a href> for anonymous visitors, so re-check here too.

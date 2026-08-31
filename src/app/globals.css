@@ -1275,9 +1275,9 @@ label {
 }
 .price-tier {
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink2);
-  direction: ltr;
+  white-space: nowrap;
 }
 
 .search-grid {
@@ -2142,4 +2142,17 @@ label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Reschedule panel on the public "manage booking" page. */
+.resched {
+  border: 1px solid #eeeff2;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: var(--cream, #faf9f6);
+}
+.resched .slot-grid {
+  max-height: 220px;
+  overflow-y: auto;
 }

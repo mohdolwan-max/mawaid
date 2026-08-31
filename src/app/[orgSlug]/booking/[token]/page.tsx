@@ -3,8 +3,10 @@ import { getLang } from "@/lib/lang";
 import { t, type TKey } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
 import { getBookingVisitByToken } from "@/lib/availability";
+import { getPublicOrg } from "@/lib/publicOrg";
 import { canReview } from "@/lib/reviews";
 import { CancelButton } from "./CancelButton";
+import { RescheduleCard } from "./RescheduleCard";
 import { ReviewForm } from "./ReviewForm";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { BackBar } from "@/components/marketplace/BackBar";
@@ -24,6 +26,10 @@ export default async function BookingStatusPage({
   if (segments.length === 0) notFound();
 
   const first = segments[0];
+  // Times must be shown in the CLINIC's timezone, not the visitor's —
+  // a customer abroad picking "5pm" must get the clinic's 5pm.
+  const org = await getPublicOrg(first.org_slug);
+  const timezone = org?.timezone ?? "Asia/Amman";
   const last = segments[segments.length - 1];
   const status = first.status;
   const reviewable = status === "completed" ? await canReview(token) : false;
@@ -31,7 +37,11 @@ export default async function BookingStatusPage({
   const start = new Date(first.start_at);
   const locale = intlLocale(lang);
   const time = (iso: string) =>
-    new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
+    new Date(iso).toLocaleTimeString(locale, {
+      timeZone: timezone,
+      hour: "numeric",
+      minute: "2-digit",
+    });
 
   return (
     <div className="public-shell">
@@ -40,7 +50,7 @@ export default async function BookingStatusPage({
         <h1 style={{ color: "var(--brand)", marginBottom: 6 }}>{first.org_name}</h1>
 
         <p className="hint" style={{ marginBottom: 10 }}>
-          {start.toLocaleDateString(locale, { dateStyle: "full" })}
+          {start.toLocaleDateString(locale, { timeZone: timezone, dateStyle: "full" })}
           {" — "}
           {time(first.start_at)}
           {segments.length > 1 && ` ${t(lang, "booking_until")} ${time(last.end_at)}`}
@@ -78,10 +88,20 @@ export default async function BookingStatusPage({
           <>
             {segments.length > 1 && (
               <p className="hint" style={{ marginBottom: 8 }}>
-                {t(lang, "booking_cancel_whole_visit", { n: String(segments.length) })}
+                {t(lang, "booking_cancel_whole_visit", { n: segments.length.toLocaleString(locale) })}
+                {" "}
+                {t(lang, "resched_visit_note")}
               </p>
             )}
-            <div className="toolbar">
+            <RescheduleCard
+              lang={lang}
+              token={token}
+              orgSlug={first.org_slug}
+              serviceId={first.service_id}
+              staffId={first.staff_id}
+              timezone={timezone}
+            />
+            <div className="toolbar" style={{ marginTop: 10 }}>
               <CancelButton lang={lang} token={token} />
               <ReminderOptIn lang={lang} cancelToken={token} />
             </div>

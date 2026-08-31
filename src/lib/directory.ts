@@ -86,9 +86,19 @@ export function cityLabel(key: string | null, lang: Lang): string {
   return city ? city[lang] : "";
 }
 
-export function priceTierLabel(tier: number | null): string {
-  if (!tier || tier < 1) return "";
-  return "$".repeat(Math.min(tier, 3));
+// Was "$".repeat(tier), which printed dollar signs at a Jordanian
+// audience paying in dinars — and reads as a currency claim rather than
+// a price band. Words say the same thing without naming a currency at
+// all, so this stays correct when the app reaches Egypt.
+const PRICE_TIERS: Record<number, { ar: string; en: string }> = {
+  1: { ar: "اقتصادي", en: "Budget" },
+  2: { ar: "متوسط", en: "Mid-range" },
+  3: { ar: "مرتفع", en: "Premium" },
+};
+
+export function priceTierLabel(tier: number | null, lang: Lang): string {
+  if (!tier) return "";
+  return PRICE_TIERS[Math.min(Math.max(tier, 1), 3)]?.[lang] ?? "";
 }
 
 export type DirectoryOrg = {
