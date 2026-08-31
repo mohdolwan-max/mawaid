@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import type { OrgReview } from "@/lib/types";
 import { hideReview, unhideReview } from "./actions";
+import { intlLocale } from "@/lib/date";
 
 export function ReviewsClient({
   lang,
@@ -50,7 +51,7 @@ export function ReviewsClient({
           {r.comment && <p>{r.comment}</p>}
           <div className="toolbar" style={{ justifyContent: "space-between", marginTop: 6 }}>
             <span className="rv-date">
-              {new Date(r.created_at).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+              {new Date(r.created_at).toLocaleDateString(intlLocale(lang), {
                 dateStyle: "medium",
               })}
               {r.hidden_at && <span className="chip warn" style={{ marginInlineStart: 8 }}>{t(lang, "review_hidden_badge")}</span>}

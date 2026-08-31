@@ -140,6 +140,8 @@ export const T = {
     booking_cancel_cta: "إلغاء الحجز",
     booking_cancelled: "تم إلغاء الحجز",
     booking_cancel_confirm: "هل تريد إلغاء هذا الحجز؟",
+    booking_until: "حتى",
+    booking_cancel_whole_visit: "الإلغاء بيشمل كل خدمات الزيارة ({n}).",
     booking_not_found: "لم يتم العثور على الحجز",
 
     // ---------- owner bookings dashboard ----------
@@ -435,6 +437,8 @@ export const T = {
     booking_cancel_cta: "Cancel booking",
     booking_cancelled: "Booking cancelled",
     booking_cancel_confirm: "Cancel this booking?",
+    booking_until: "until",
+    booking_cancel_whole_visit: "Cancelling removes all {n} services in this visit.",
     booking_not_found: "Booking not found",
 
     dash_overview_sub: "A quick look at your clinic's bookings",

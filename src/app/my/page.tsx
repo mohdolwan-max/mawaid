@@ -8,6 +8,7 @@ import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { CancelMyBooking } from "./CancelMyBooking";
+import { intlLocale } from "@/lib/date";
 
 export default async function MyBookingsPage() {
   const [lang, city] = await Promise.all([getLang(), getCity()]);
@@ -80,7 +81,7 @@ function BookingGroup({
             <strong>{b.org_name}</strong>
             <p className="hint">{b.service_name}</p>
             <p className="hint" dir="ltr">
-              {new Date(b.start_at).toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
+              {new Date(b.start_at).toLocaleString(intlLocale(lang), {
                 dateStyle: "medium",
                 timeStyle: "short",
               })}

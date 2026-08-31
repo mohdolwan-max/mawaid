@@ -8,6 +8,7 @@ import { staffPublicLabel } from "@/lib/staffLabel";
 import { DateField } from "@/components/DateTimeField";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { fetchStaffAction, fetchSlotsAction, submitBookingAction } from "./actions";
+import { intlLocale } from "@/lib/date";
 
 type Step = "service" | "staff" | "slot" | "contact" | "done";
 
@@ -281,7 +282,7 @@ export function BookingClient({
                   className={`slot-btn ${selectedSlot === slotIso ? "selected" : ""}`}
                   onClick={() => setSelectedSlot(slotIso)}
                 >
-                  {new Date(slotIso).toLocaleTimeString(lang === "ar" ? "ar-SA" : "en-US", {
+                  {new Date(slotIso).toLocaleTimeString(intlLocale(lang), {
                     hour: "numeric",
                     minute: "2-digit",
                   })}

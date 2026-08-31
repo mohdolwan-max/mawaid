@@ -24,8 +24,19 @@ export async function getAvailableSlots(
   return (data as { start_at: string }[]).map((r) => r.start_at);
 }
 
+export type BookSegment = {
+  id: string;
+  cancelToken: string;
+  serviceId: string;
+  startAt: string;
+};
+
 export type BookResult =
-  | { ok: true; id: string; cancelToken: string }
+  // `segments` carries every appointment the visit created, first one
+  // first. A single-service booking has exactly one. It used to be
+  // dropped on the floor, which left a guest holding one manage link for
+  // a three-service visit — see 0027 section 4.
+  | { ok: true; id: string; cancelToken: string; segments: BookSegment[] }
   | { ok: false; error: string };
 
 export async function bookAppointment(input: {
@@ -77,14 +88,24 @@ export async function bookAppointment(input: {
       return { ok: false, error: parseRpcError(legacy.error?.message) };
     }
     const legacyRow = legacy.data as { id: string; cancel_token: string };
-    return { ok: true, id: legacyRow.id, cancelToken: legacyRow.cancel_token };
+    return {
+      ok: true,
+      id: legacyRow.id,
+      cancelToken: legacyRow.cancel_token,
+      segments: [{ id: legacyRow.id, cancelToken: legacyRow.cancel_token, serviceId: input.serviceId, startAt: input.startAt }],
+    };
   }
 
   if (error || !data) {
     return { ok: false, error: parseRpcError(error?.message) };
   }
   const row = data as { id: string; cancel_token: string };
-  return { ok: true, id: row.id, cancelToken: row.cancel_token };
+  return {
+    ok: true,
+    id: row.id,
+    cancelToken: row.cancel_token,
+    segments: [{ id: row.id, cancelToken: row.cancel_token, serviceId: input.serviceId, startAt: input.startAt }],
+  };
 }
 
 function parseRpcError(message?: string): string {
@@ -95,20 +116,49 @@ function parseRpcError(message?: string): string {
   return "error_generic";
 }
 
-export async function getBookingByToken(token: string) {
+export type BookingRow = {
+  id: string;
+  org_name: string;
+  service_name: string;
+  start_at: string;
+  end_at: string;
+  status: string;
+  customer_name: string;
+};
+
+// Returns every appointment in the visit, earliest first — one row for an
+// ordinary booking, N for a multi-service one. Deliberately NOT
+// .maybeSingle(): since 0027 the RPC returns the whole visit, and
+// maybeSingle() throws on more than one row.
+export async function getBookingVisitByToken(token: string): Promise<BookingRow[]> {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("get_booking_by_token", { p_cancel_token: token }).maybeSingle();
-  return data as
-    | {
-        id: string;
-        org_name: string;
-        service_name: string;
-        start_at: string;
-        end_at: string;
-        status: string;
-        customer_name: string;
-      }
-    | null;
+  const { data, error } = await supabase.rpc("get_booking_by_token", { p_cancel_token: token });
+  if (error) {
+    // Never fold this into "no such booking": the page would 404 and the
+    // customer would assume their appointment does not exist.
+    console.error("get_booking_by_token failed", error);
+    throw error;
+  }
+  return (data ?? []) as BookingRow[];
+}
+
+// Cancels the WHOLE visit, not just the segment the link points at.
+// A guest has no bookings list to reach the other segments from, so
+// cancelling one of three used to leave two staff holding time for
+// someone who believed they had cancelled.
+export async function cancelVisitByToken(token: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("cancel_visit_by_token", { p_cancel_token: token });
+  if (error?.code === "PGRST202") {
+    // 0027 not applied yet — fall back to cancelling the single row so
+    // the button still does something rather than failing silently.
+    return cancelBookingByToken(token);
+  }
+  if (error) {
+    console.error("cancel_visit_by_token failed", error);
+    return false;
+  }
+  return Number(data ?? 0) > 0;
 }
 
 export async function cancelBookingByToken(token: string): Promise<boolean> {
@@ -136,8 +186,23 @@ export async function getAvailableSlotsChain(
     p_date: date,
     p_staff_id: staffId,
   });
-  if (error || !data) return [];
-  return (data as { start_at: string }[]).map((r) => r.start_at);
+
+  // 0026 not applied yet: fall back to the first service's real times
+  // rather than showing a clinic that looks fully booked on every date.
+  if (error?.code === "PGRST202") {
+    console.error("get_available_slots_chain missing (0026 unapplied)", error);
+    return getAvailableSlots(orgSlug, serviceIds[0], date, staffId);
+  }
+  // Anything else is a real failure and must not be reported as "no
+  // times today" — that is indistinguishable from a fully booked clinic
+  // and hides the break completely (ENGINEERING-STANDARDS §1: never
+  // swallow an error into empty data). BookingClient's .catch() turns
+  // this into a visible error instead.
+  if (error) {
+    console.error("get_available_slots_chain failed", error);
+    throw error;
+  }
+  return ((data ?? []) as { start_at: string }[]).map((r) => r.start_at);
 }
 
 // Books every service in one transaction: either the whole visit lands
@@ -182,11 +247,28 @@ export async function bookAppointmentChain(input: {
     p_allow_overlap: input.allowOverlap ?? false,
   });
 
-  const rows = (data ?? []) as { id: string; cancel_token: string }[];
+  const rows = (data ?? []) as {
+    id: string;
+    cancel_token: string;
+    service_id: string;
+    start_at: string;
+  }[];
   if (error || rows.length === 0) {
     return { ok: false, error: parseRpcError(error?.message) };
   }
-  // The first segment carries the token the customer manages the visit
-  // by; the rest are reachable from their bookings list.
-  return { ok: true, id: rows[0].id, cancelToken: rows[0].cancel_token };
+  // Every segment is kept. The first one's token addresses the whole
+  // visit (get_booking_by_token and cancel_visit_by_token both resolve
+  // it through visit_id since 0027), but the caller still needs the rest
+  // to list what was actually booked in the confirmation and the email.
+  return {
+    ok: true,
+    id: rows[0].id,
+    cancelToken: rows[0].cancel_token,
+    segments: rows.map((r) => ({
+      id: r.id,
+      cancelToken: r.cancel_token,
+      serviceId: r.service_id,
+      startAt: r.start_at,
+    })),
+  };
 }

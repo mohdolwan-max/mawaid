@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Lang } from "@/lib/i18n";
 import { markNotificationsRead } from "./actions";
+import { intlLocale } from "@/lib/date";
 
 export type OrgNotification = {
   id: string;
@@ -60,7 +61,7 @@ export function NotificationsCard({
           </div>
           {n.body && <p dir="ltr">{n.body}</p>}
           <span className="rv-date">
-            {new Date(n.created_at).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+            {new Date(n.created_at).toLocaleDateString(intlLocale(lang), {
               dateStyle: "medium",
             })}
           </span>

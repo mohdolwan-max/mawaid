@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
-import { todayYMD } from "@/lib/date";
+import { todayYMD, intlLocale } from "@/lib/date";
 import type { Appointment, Service, StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
 import { DateField } from "@/components/DateTimeField";
@@ -86,7 +86,7 @@ function BookingSection({ title, lang, rows }: { title: string; lang: Lang; rows
                   <td>{a.service_name}</td>
                   <td dir="ltr">{a.customer_phone}</td>
                   <td dir="ltr">
-                    {new Date(a.start_at).toLocaleString(lang === "ar" ? "ar-SA" : "en-US", {
+                    {new Date(a.start_at).toLocaleString(intlLocale(lang), {
                       dateStyle: "short",
                       timeStyle: "short",
                     })}
@@ -248,7 +248,7 @@ function ManualBookingForm({
               className={`slot-btn ${startAt === slotIso ? "selected" : ""}`}
               onClick={() => setStartAt(slotIso)}
             >
-              {new Date(slotIso).toLocaleTimeString(lang === "ar" ? "ar-SA" : "en-US", {
+              {new Date(slotIso).toLocaleTimeString(intlLocale(lang), {
                 hour: "numeric",
                 minute: "2-digit",
                 timeZone: timezone,

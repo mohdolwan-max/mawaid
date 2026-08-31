@@ -10,6 +10,7 @@ import { isSafeHttpUrl } from "@/lib/url";
 import { PinIcon } from "@/components/icons";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
+import { intlLocale } from "@/lib/date";
 
 // Every page previously shared the root layout's static title/description,
 // so sharing a clinic's link on WhatsApp (a primary growth channel for
@@ -165,7 +166,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
               </div>
               {r.comment && <p>{r.comment}</p>}
               <span className="rv-date">
-                {new Date(r.created_at).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", {
+                {new Date(r.created_at).toLocaleDateString(intlLocale(lang), {
                   dateStyle: "medium",
                 })}
               </span>

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 import { T } from "@/lib/i18n";
+import { AR_LOCALE } from "@/lib/date";
 
 // Sends "your appointment is in ~30 minutes" Web Push notifications.
 // Invoked every 5 minutes by a Supabase pg_cron job (Vercel Hobby crons
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
   for (const row of rows) {
     if (!row.endpoint || !row.p256dh || !row.auth) continue;
 
-    const time = new Date(row.start_at).toLocaleTimeString("ar-SA", {
+    const time = new Date(row.start_at).toLocaleTimeString(AR_LOCALE, {
       timeZone: row.timezone,
       hour: "numeric",
       minute: "2-digit",

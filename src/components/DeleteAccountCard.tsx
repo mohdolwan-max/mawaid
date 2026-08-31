@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Lang } from "@/lib/i18n";
 import { requestAccountDeletion, cancelAccountDeletion } from "@/app/account/deleteActions";
+import { intlLocale } from "@/lib/date";
 
 // Used by both the customer account page and the clinic owner settings
 // page — the underlying RPC decides which kind of deletion it is.
@@ -19,7 +20,7 @@ export function DeleteAccountCard({
   const router = useRouter();
 
   const dateFmt = (iso: string) =>
-    new Date(iso).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US", { dateStyle: "medium" });
+    new Date(iso).toLocaleDateString(intlLocale(lang), { dateStyle: "medium" });
 
   if (pendingUntil) {
     return (

@@ -55,9 +55,26 @@ export function formatTime(ymd: string, hhmm: string, tz: string, lang: "ar" | "
   const [h, m] = hhmm.split(":").map(Number);
   const d = dateFromYMD(ymd);
   d.setUTCHours(h, m, 0, 0);
-  return new Intl.DateTimeFormat(lang === "ar" ? "ar-SA" : "en-US", {
+  return new Intl.DateTimeFormat(intlLocale(lang), {
     timeZone: tz,
     hour: "numeric",
     minute: "2-digit",
   }).format(d);
+}
+
+// Arabic month names are not universal. Jordan and the rest of the Levant
+// say أيلول where Saudi Arabia and Egypt say سبتمبر — and every call site
+// here asked for "ar-SA", i.e. Saudi forms inside a product that targets
+// Jordan. Verified in a real browser that all three of ar-SA/ar-JO/ar-EG
+// resolve to the gregorian calendar, so this changes the spelling of the
+// month and nothing about the numbers.
+//
+// Kept as a single constant because the market is expanding: Egypt is
+// "ar-EG", which makes that a one-line change here instead of thirteen
+// edits scattered across the app. When a second country actually ships,
+// this becomes a lookup on the org's country rather than a constant.
+export const AR_LOCALE = "ar-JO";
+
+export function intlLocale(lang: "ar" | "en"): string {
+  return lang === "ar" ? AR_LOCALE : "en-US";
 }

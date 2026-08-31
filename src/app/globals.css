@@ -1582,3 +1582,28 @@ label {
   font-size: 10.5px;
   font-weight: 800;
 }
+
+/* Multi-service visit on the public "manage booking" page. One link now
+   addresses the whole visit (0027), so every service is listed with its
+   own time rather than only the segment the token points at. */
+.visit-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+}
+.visit-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line, #eeeff2);
+}
+.visit-list li:last-child {
+  border-bottom: 0;
+}
+.visit-list li span {
+  color: var(--ink2);
+  font-size: 13px;
+  white-space: nowrap;
+}

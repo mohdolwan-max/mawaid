@@ -60,14 +60,23 @@ export async function submitBookingAction(input: {
         listPublicServices(input.orgSlug),
         getLang(),
       ]);
-      const service = services.find((s) => s.id === input.serviceIds[0]);
-      if (org && service) {
+      // Name every service the visit actually booked, at its own time.
+      // result.segments comes back from book_appointment_chain, which is
+      // the only place that knows each segment's real start — durations
+      // cannot be re-summed here because PublicService carries no buffer.
+      const booked = result.segments
+        .map((seg) => {
+          const service = services.find((s) => s.id === seg.serviceId);
+          return service ? { name: service.name, startAt: seg.startAt } : null;
+        })
+        .filter((s): s is { name: string; startAt: string } => s !== null);
+
+      if (org && booked.length > 0) {
         await sendBookingConfirmation({
           toEmail: input.customerEmail,
           toName: input.customerName,
           orgName: org.name,
-          serviceName: service.name,
-          startAt: input.startAt,
+          services: booked,
           timezone: org.timezone,
           lang,
           manageUrl: `https://${process.env.NEXT_PUBLIC_SITE_HOST ?? "mawaidy.vercel.app"}/${input.orgSlug}/booking/${result.cancelToken}`,
