@@ -41,6 +41,7 @@ export type StaffMember = {
   // work email. See 0022_staff_without_email.sql.
   email: string | null;
   phone: string | null;
+  title: string | null;
   role: Role;
   pending: boolean;
   display_name: string | null;

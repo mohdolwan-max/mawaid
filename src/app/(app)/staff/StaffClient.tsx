@@ -14,6 +14,7 @@ import { StaffScheduleEditor } from "./StaffScheduleEditor";
 function NameCell({ lang, member }: { lang: Lang; member: StaffMember }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(member.display_name ?? "");
+  const [title, setTitle] = useState(member.title ?? "");
   const [phone, setPhone] = useState(member.phone ?? "");
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -33,6 +34,12 @@ function NameCell({ lang, member }: { lang: Lang; member: StaffMember }) {
 
   return (
     <div className="toolbar" style={{ gap: 4 }}>
+      <input
+        value={title}
+        placeholder={t(lang, "staff_title_placeholder")}
+        onChange={(e) => setTitle(e.target.value)}
+        style={{ minWidth: 90 }}
+      />
       <input
         value={name}
         autoFocus
@@ -54,7 +61,7 @@ function NameCell({ lang, member }: { lang: Lang; member: StaffMember }) {
         disabled={saving || !name.trim()}
         onClick={async () => {
           setSaving(true);
-          await renameStaffMember(member.membership_id, name, phone);
+          await renameStaffMember(member.membership_id, name, title, phone);
           setSaving(false);
           setEditing(false);
           router.refresh();
@@ -114,7 +121,15 @@ export function StaffClient({
               addRef.current?.reset();
             }}
           >
-            <div className="grid2">
+            <div className="grid3">
+              <div className="field">
+                <label htmlFor="staff_title">{t(lang, "staff_title_label")}</label>
+                <input
+                  id="staff_title"
+                  name="title"
+                  placeholder={t(lang, "staff_title_placeholder")}
+                />
+              </div>
               <div className="field">
                 <label htmlFor="staff_name">{t(lang, "staff_name_label")}</label>
                 <input id="staff_name" name="name" required />

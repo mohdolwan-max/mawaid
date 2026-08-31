@@ -198,7 +198,7 @@ export function BookingClient({
               className={`service-row ${staffId === st.membership_id ? "selected" : ""}`}
               onClick={() => setStaffId(st.membership_id)}
             >
-              {staffPublicLabel(st.name, lang)}
+              {staffPublicLabel(st, lang)}
             </div>
           ))}
           {error && <p className="error-text">{t(lang, error)}</p>}

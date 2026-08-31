@@ -36,8 +36,11 @@ export async function addStaffMember(formData: FormData) {
   if (!name) return { error: "required_field" as const };
   const phone = String(formData.get("phone") ?? "").trim();
 
+  const title = String(formData.get("title") ?? "").trim();
+
   const { error } = await supabase.rpc("add_staff_member", {
     p_name: name,
+    p_title: title || null,
     p_phone: phone || null,
   });
   if (error) return { error: "error_generic" as const };
@@ -61,12 +64,13 @@ export async function removeStaffMember(membershipId: string) {
 // update_staff_profile has existed since 0013 but was never called from
 // anywhere, which is why every membership still has display_name NULL and
 // the public staff picker had nothing to show but the email address.
-export async function renameStaffMember(membershipId: string, name: string, phone: string) {
+export async function renameStaffMember(membershipId: string, name: string, title: string, phone: string) {
   await requireOrgContext();
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_staff_profile", {
     p_membership_id: membershipId,
     p_display_name: name.trim() || null,
+    p_title: title.trim() || null,
     p_phone: phone.trim() || null,
   });
   if (error) return { error: "error_generic" as const };
