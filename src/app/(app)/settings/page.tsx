@@ -2,6 +2,8 @@ import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { t } from "@/lib/i18n";
 import { SettingsClient, type DirectoryProfile } from "./SettingsClient";
+import { DeleteAccountCard } from "@/components/DeleteAccountCard";
+import { getPendingDeletion } from "@/app/account/deleteActions";
 
 export default async function SettingsPage() {
   const ctx = await requireOrgContext();
@@ -40,6 +42,9 @@ export default async function SettingsPage() {
         directory={directory}
         mapsUrl={dir?.maps_url ?? ""}
       />
+      {ctx.role === "owner" && (
+        <DeleteAccountCard lang={ctx.lang} pendingUntil={await getPendingDeletion()} />
+      )}
     </div>
   );
 }

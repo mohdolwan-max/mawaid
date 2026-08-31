@@ -61,10 +61,20 @@ function PrivacyAr() {
         بيانات كل منشأة معزولة تقنياً عن بيانات المنشآت الأخرى، بحيث لا يمكن لأي منشأة الوصول إلى حجوزات أو عملاء منشأة غيرها.
       </p>
 
-      <h2 style={sectionStyle}>حقوقك</h2>
+      <h2 style={sectionStyle}>حقوقك وحذف الحساب</h2>
       <p style={{ marginBottom: 14 }}>
-        يحق لك الاطلاع على بياناتك أو تعديلها أو طلب حذف حسابك وبياناتك المرتبطة به بالتواصل معنا.
+        يحق لك الاطلاع على بياناتك أو تعديلها، وتستطيع حذف حسابك نهائياً بنفسك من صفحة حسابك.
       </p>
+      <ul style={listStyle}>
+        <li>عند طلب الحذف تُلغى حجوزاتك القادمة فوراً ويصل إشعار بذلك للعيادات المعنية.</li>
+        <li>يبقى الحساب قابلاً للاسترجاع لمدة 15 يوماً، تستطيع خلالها التراجع بتسجيل الدخول مرة أخرى.</li>
+        <li>بعد انتهاء هذه المدة يُحذف حسابك وبياناتك الشخصية لدينا حذفاً نهائياً.</li>
+        <li>
+          استثناء مهم: تحتفظ كل عيادة حجزت لديها بسجلّها الخاص عن زياراتك السابقة (الاسم ورقم
+          الجوال وتفاصيل الموعد)، باعتباره سجلاً تشغيلياً يخصّها. حذف حسابك لدينا لا يمحو سجلات
+          العيادات، وللتواصل بشأنها يُرجى مراجعة العيادة مباشرة.
+        </li>
+      </ul>
 
       <h2 style={sectionStyle}>التواصل</h2>
       <p style={{ marginBottom: 6 }}>
@@ -119,10 +129,20 @@ function PrivacyEn() {
         Each business&apos;s data is technically isolated from every other business — no business can access another&apos;s bookings or customers.
       </p>
 
-      <h2 style={sectionStyle}>Your rights</h2>
+      <h2 style={sectionStyle}>Your rights and account deletion</h2>
       <p style={{ marginBottom: 14 }}>
-        You may request access to, correction of, or deletion of your account and associated data by contacting us.
+        You may access or correct your data, and you can permanently delete your account yourself from your account page.
       </p>
+      <ul style={listStyle}>
+        <li>On request, your upcoming bookings are cancelled immediately and the affected clinics are notified.</li>
+        <li>The account stays recoverable for 15 days — sign back in during that window to undo.</li>
+        <li>After that period your account and the personal data we hold are permanently deleted.</li>
+        <li>
+          One important exception: each clinic you booked with keeps its own record of your past
+          visits (name, phone and appointment details) as its own business record. Deleting your
+          account with us does not erase clinic records — contact the clinic directly about those.
+        </li>
+      </ul>
 
       <h2 style={sectionStyle}>Contact</h2>
       <p style={{ marginBottom: 6 }}>

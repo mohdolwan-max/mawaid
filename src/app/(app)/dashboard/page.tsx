@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { todayYMD, nowIso } from "@/lib/date";
 import { CalendarIcon, ClockIcon } from "@/components/icons";
 import { PublicLinkCard } from "./PublicLinkCard";
+import { NotificationsCard, type OrgNotification } from "./NotificationsCard";
 
 export default async function DashboardPage() {
   const ctx = await requireOrgContext();
@@ -20,6 +21,14 @@ export default async function DashboardPage() {
     .eq("status", "booked")
     .gte("start_at", startOfDay)
     .lte("start_at", endOfDay);
+
+  // Newest first, capped — the dashboard is a summary, not an archive.
+  const { data: notifications } = await supabase
+    .from("notifications")
+    .select("id, kind, title, body, read_at, created_at")
+    .eq("org_id", ctx.orgId)
+    .order("created_at", { ascending: false })
+    .limit(20);
 
   const { count: upcomingCount } = await supabase
     .from("appointments")
@@ -53,6 +62,8 @@ export default async function DashboardPage() {
           <div className="t-value">{upcomingCount ?? 0}</div>
         </div>
       </div>
+
+      <NotificationsCard lang={ctx.lang} notifications={(notifications as OrgNotification[]) ?? []} />
 
       <PublicLinkCard lang={ctx.lang} slug={ctx.slug} />
     </div>

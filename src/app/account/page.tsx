@@ -7,6 +7,8 @@ import { ensureCustomerProfile } from "@/lib/customer";
 import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { AccountClient } from "./AccountClient";
+import { DeleteAccountCard } from "@/components/DeleteAccountCard";
+import { getPendingDeletion } from "./deleteActions";
 
 export default async function AccountPage({
   searchParams,
@@ -24,6 +26,7 @@ export default async function AccountPage({
   // materializes the customers row from signup metadata.
   const profile = user ? await ensureCustomerProfile() : null;
   const isOrgUser = Boolean(user) && !profile;
+  const pendingDeletion = user ? await getPendingDeletion() : null;
 
   return (
     <div className="market-shell">
@@ -42,6 +45,13 @@ export default async function AccountPage({
           )}
         </div>
       </div>
+      {/* Signed-in customers only: an org user manages deletion from
+          /settings instead, and a signed-out visitor has nothing to delete. */}
+      {profile && (
+        <div style={{ maxWidth: 420, margin: "0 auto" }}>
+          <DeleteAccountCard lang={lang} pendingUntil={pendingDeletion} />
+        </div>
+      )}
       <BottomNav lang={lang} />
     </div>
   );
