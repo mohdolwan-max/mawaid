@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { t, type Lang } from "@/lib/i18n";
+import { t, type Lang, type TKey } from "@/lib/i18n";
 import { markNotificationsRead } from "./actions";
 import { intlLocale } from "@/lib/date";
 
@@ -14,6 +14,12 @@ export type OrgNotification = {
   read_at: string | null;
   created_at: string;
 };
+
+// kind comes from the database CHECK (0029), but an unknown value must
+// not render a raw key at a clinic owner — fall back to the neutral one.
+function labelFor(kind: string): TKey {
+  return kind === "booking_created" ? "notif_booking_created" : "notif_booking_cancelled";
+}
 
 export function NotificationsCard({
   lang,
@@ -55,11 +61,18 @@ export function NotificationsCard({
         <div key={n.id} className="review-row">
           <div className="rv-head">
             <span className="rv-name">
-              {!n.read_at && <span className="chip warn" style={{ marginInlineEnd: 6 }}>•</span>}
-              {t(lang, "notif_booking_cancelled")} — {n.title}
+              {!n.read_at && (
+              <span
+                className={`chip ${n.kind === "booking_cancelled" ? "bad" : "good"}`}
+                style={{ marginInlineEnd: 6 }}
+              >
+                •
+              </span>
+            )}
+              {t(lang, labelFor(n.kind))} — {n.title}
             </span>
           </div>
-          {n.body && <p dir="ltr">{n.body}</p>}
+          {n.body && <p dir="auto">{n.body}</p>}
           <span className="rv-date">
             {new Date(n.created_at).toLocaleDateString(intlLocale(lang), {
               dateStyle: "medium",

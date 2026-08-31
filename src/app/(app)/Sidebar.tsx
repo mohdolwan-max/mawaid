@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { t, type Lang } from "@/lib/i18n";
+import { intlLocale } from "@/lib/date";
 import { toggleLang } from "./actions";
 
 const LINKS = [
@@ -16,7 +17,17 @@ const LINKS = [
   { href: "/settings", key: "nav_settings" as const },
 ];
 
-export function Sidebar({ lang, orgName }: { lang: Lang; orgName: string }) {
+export function Sidebar({
+  lang,
+  orgName,
+  unread,
+}: {
+  lang: Lang;
+  orgName: string;
+  /** null = the count could not be read. Deliberately not 0: an owner
+   *  must never be shown "nothing new" because a query failed. */
+  unread: number | null;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -35,6 +46,9 @@ export function Sidebar({ lang, orgName }: { lang: Lang; orgName: string }) {
             className={pathname.startsWith(link.href) ? "active" : ""}
           >
             {t(lang, link.key)}
+            {link.href === "/dashboard" && unread !== null && unread > 0 && (
+              <span className="nav-badge">{unread.toLocaleString(intlLocale(lang))}</span>
+            )}
           </Link>
         ))}
       </nav>

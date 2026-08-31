@@ -2120,3 +2120,26 @@ label {
   color: var(--ink2);
   text-decoration: none;
 }
+
+/* Unread notification count beside the dashboard link. Sits in the nav
+   rather than only on the dashboard so a new booking is visible from
+   wherever the owner happens to be. */
+.sidebar .nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.nav-badge {
+  min-width: 20px;
+  padding: 0 6px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
