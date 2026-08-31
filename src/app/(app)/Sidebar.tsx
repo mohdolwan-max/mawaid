@@ -8,6 +8,7 @@ import { toggleLang } from "./actions";
 
 const LINKS = [
   { href: "/dashboard", key: "nav_dashboard" as const },
+  { href: "/calendar", key: "nav_calendar" as const },
   { href: "/services", key: "nav_services" as const },
   { href: "/staff", key: "nav_staff" as const },
   { href: "/bookings", key: "nav_bookings" as const },

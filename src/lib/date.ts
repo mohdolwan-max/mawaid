@@ -78,3 +78,41 @@ export const AR_LOCALE = "ar-JO";
 export function intlLocale(lang: "ar" | "en"): string {
   return lang === "ar" ? AR_LOCALE : "en-US";
 }
+
+// Where an instant falls in the CLINIC's day, as minutes past its local
+// midnight. The calendar positions every booking with this: a clinic in
+// Amman viewed from a phone still set to another timezone must show its
+// 3pm appointment at 3pm, not shifted. Intl is the only way to do this
+// without pulling in a timezone library — hour12:false so 12am reads as
+// 00 rather than 12.
+export function localMinutes(iso: string, tz: string): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(iso));
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  // "24" appears for midnight in some ICU versions; fold it back to 0.
+  return (get("hour") % 24) * 60 + get("minute");
+}
+
+// The clinic's local calendar date for an instant. Used to bucket
+// bookings into days — start_at.slice(0, 10) would bucket by UTC and put
+// a 2am Amman appointment on the previous day.
+export function localYMD(iso: string, tz: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+}
+
+// Sunday-first week containing `ymd`, as seven YMD strings. The business
+// week here starts Sunday because business_hours is keyed 0=Sunday and
+// Friday is the day clinics close.
+export function weekYMDs(ymd: string, tz: string): string[] {
+  const start = addDaysYMD(ymd, -weekdayIndex(ymd, tz));
+  return Array.from({ length: 7 }, (_, i) => addDaysYMD(start, i));
+}
