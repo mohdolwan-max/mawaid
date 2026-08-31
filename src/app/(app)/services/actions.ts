@@ -1,6 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { ORG_TAG } from "@/lib/publicOrg";
+import { DIRECTORY_TAG } from "@/lib/directoryServer";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 
@@ -46,4 +48,6 @@ export async function saveServicePhoto(serviceId: string, url: string) {
   if (error) throw error;
   revalidatePath("/services");
   revalidatePath(`/${ctx.slug}`);
+  revalidateTag(ORG_TAG);
+  revalidateTag(DIRECTORY_TAG);
 }

@@ -15,12 +15,21 @@ export default async function MarketplaceHome() {
 
   // Every row on this page is scoped to the selected city — the whole
   // point of the city selector is that changing it changes what you see.
-  const [topRated, newest] = await Promise.all([
-    listDirectoryOrgs({ city, limit: 12, featuredCategories: FEATURED_CATEGORIES, featuredOnly: true }),
-    listDirectoryOrgs({ city, limit: 12, offset: 0, featuredCategories: FEATURED_CATEGORIES, featuredOnly: true }),
-  ]);
+  //
+  // ONE query, not two. These were two calls with identical arguments
+  // (offset: 0 is the default), so the page paid for the same round trip
+  // twice and then rendered the same clinics in both rows — the RPC has
+  // a single ordering and no way to ask for "newest". Until it can, the
+  // second row cannot be honest, so it is not rendered at all rather
+  // than repeating the first under a heading that claims otherwise.
+  const topRated = await listDirectoryOrgs({
+    city,
+    limit: 12,
+    featuredCategories: FEATURED_CATEGORIES,
+    featuredOnly: true,
+  });
 
-  const nothingListed = topRated.length === 0 && newest.length === 0;
+  const nothingListed = topRated.length === 0;
   const cityName = cityLabel(city, lang);
 
   return (
@@ -45,12 +54,6 @@ export default async function MarketplaceHome() {
             title={t(lang, "sec_featured", { city: cityName })}
             seeAllHref={`/search?city=${city}`}
             orgs={topRated}
-            lang={lang}
-          />
-          <CardRow
-            title={t(lang, "sec_new", { city: cityName })}
-            seeAllHref={`/search?city=${city}`}
-            orgs={newest}
             lang={lang}
           />
         </>

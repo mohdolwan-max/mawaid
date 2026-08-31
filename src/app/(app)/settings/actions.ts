@@ -1,6 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { ORG_TAG } from "@/lib/publicOrg";
+import { DIRECTORY_TAG } from "@/lib/directoryServer";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { isSafeHttpUrl } from "@/lib/url";
@@ -29,6 +31,8 @@ export async function saveOrgProfile(input: {
     .eq("id", ctx.orgId);
   revalidatePath("/settings");
   revalidatePath(`/${ctx.slug}`);
+  revalidateTag(ORG_TAG);
+  revalidateTag(DIRECTORY_TAG);
 }
 
 export async function saveDirectoryProfile(input: {
@@ -54,7 +58,10 @@ export async function saveDirectoryProfile(input: {
     .eq("id", ctx.orgId);
   revalidatePath("/settings");
   revalidatePath("/");
+  revalidateTag(DIRECTORY_TAG);
   revalidatePath(`/${ctx.slug}`);
+  revalidateTag(ORG_TAG);
+  revalidateTag(DIRECTORY_TAG);
 }
 
 // Called after the browser uploads to the org-media bucket; persists the
@@ -68,6 +75,8 @@ export async function saveMediaUrl(kind: "cover" | "logo", url: string) {
     .eq("id", ctx.orgId);
   revalidatePath("/settings");
   revalidatePath(`/${ctx.slug}`);
+  revalidateTag(ORG_TAG);
+  revalidateTag(DIRECTORY_TAG);
 }
 
 export async function saveBookingRules(input: {
