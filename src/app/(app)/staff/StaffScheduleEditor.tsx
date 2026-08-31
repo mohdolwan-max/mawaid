@@ -90,7 +90,8 @@ export function StaffScheduleEditor({
         </>
       )}
 
-      <p style={{ fontWeight: 700, margin: "16px 0 10px" }}>{t(lang, "staff_time_off_title")}</p>
+      <p style={{ fontWeight: 700, margin: "16px 0 4px" }}>{t(lang, "staff_time_off_title")}</p>
+      <p className="hint" style={{ marginBottom: 10 }}>{t(lang, "time_off_hint")}</p>
       {timeOff.length === 0 ? (
         <p className="hint">{t(lang, "time_off_empty")}</p>
       ) : (
