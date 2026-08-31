@@ -33,6 +33,12 @@ export async function addManualBooking(input: {
   customerPhone: string;
   customerEmail: string;
   notes: string;
+  // book_appointment() (0026) refuses a second booking overlapping one the
+  // same phone already holds. Reception hits that legitimately — one number
+  // books the whole family, so a mother putting two children with two
+  // doctors at 3pm is a real request, not a mistake. Without a way through,
+  // the only person who can serve that call is stuck.
+  allowOverlap?: boolean;
 }): Promise<BookResult> {
   const ctx = await requireOrgContext();
 
@@ -45,6 +51,7 @@ export async function addManualBooking(input: {
     customerPhone: input.customerPhone,
     customerEmail: input.customerEmail || null,
     notes: input.notes || null,
+    allowOverlap: input.allowOverlap,
   });
 
   revalidatePath("/bookings");

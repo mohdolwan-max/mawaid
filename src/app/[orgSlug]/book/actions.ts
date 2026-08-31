@@ -1,9 +1,7 @@
 "use server";
 
 import {
-  getAvailableSlots,
   getAvailableSlotsChain,
-  bookAppointment,
   bookAppointmentChain,
   type BookResult,
 } from "@/lib/availability";

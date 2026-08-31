@@ -139,6 +139,7 @@ function ManualBookingForm({
   const [notes, setNotes] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<TKey | null>(null);
+  const [conflictPending, setConflictPending] = useState(false);
 
   // Reload availability whenever the service, staff or day changes —
   // each of those changes which slots are actually bookable.
@@ -164,11 +165,11 @@ function ManualBookingForm({
     };
   }, [serviceId, staffId, date]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(allowOverlap: boolean) {
     if (!startAt) return;
     setPending(true);
     setError(null);
+    setConflictPending(false);
     const result = await addManualBooking({
       serviceId,
       staffId: staffId || null,
@@ -177,13 +178,25 @@ function ManualBookingForm({
       customerPhone: phone,
       customerEmail: email,
       notes,
+      allowOverlap,
     });
     setPending(false);
     if (!result.ok) {
       setError(result.error as TKey);
+      // Reception is booking on the customer's behalf and can simply ask
+      // "is this for someone else?" — so the override is offered here for
+      // the same reason it is offered to the customer.
+      if (result.error === "book_customer_conflict") {
+        setConflictPending(true);
+      }
       return;
     }
     onDone();
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    void submit(false);
   }
 
   return (
@@ -263,6 +276,17 @@ function ManualBookingForm({
         <textarea id="m_notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
       {error && <p className="error-text">{t(lang, error)}</p>}
+      {conflictPending && (
+        <button
+          type="button"
+          className="btn ghost"
+          style={{ marginBottom: 10 }}
+          disabled={pending}
+          onClick={() => void submit(true)}
+        >
+          {t(lang, "book_anyway")}
+        </button>
+      )}
       <button type="submit" className="btn" disabled={pending || !startAt}>
         {pending ? t(lang, "loading") : t(lang, "save")}
       </button>
