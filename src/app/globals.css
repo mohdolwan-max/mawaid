@@ -19,6 +19,10 @@
   --ink2: #6b7280;
   --line: #e4e6eb;
   --bg: #f7f6f2;
+  /* one step off --bg: enough to separate a row from the page,
+     not enough to read as a coloured box */
+  --band: #eef3f1;
+  --band-line: #e3ebe8;
   --white: #fff;
   --sidebg: #f5f5f7;
   --side-ink: #454b57;
@@ -2156,3 +2160,48 @@ label {
   max-height: 220px;
   overflow-y: auto;
 }
+
+/* =====================================================================
+   Marketplace background — depth at the top, a ground under each row.
+   Chosen from four options by looking at them side by side; a photo and
+   an animated background were both rejected: the clinic cards already
+   carry the imagery, a photo behind them costs mobile data on a Jordanian
+   phone, and motion pulls at someone whose whole intent is to book and
+   leave. Both of these are pure CSS and load nothing.
+   ===================================================================== */
+
+/* The wash the hero sits inside, so it stops looking pasted onto white.
+   Fixed and full-bleed because .market-shell is capped at 960px and a
+   gradient painted on it would stop dead at that edge. Negative z-index
+   keeps it behind all content while still covering the body colour. */
+.market-shell::before {
+  content: "";
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 460px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 60% at 78% -10%, #dcede9 0%, rgba(220, 237, 233, 0) 62%),
+    linear-gradient(#f2f6f4 0%, rgba(247, 246, 242, 0) 100%);
+}
+
+/* Each row of clinics gets its own ground. With a single row this reads
+   as a deliberate panel; add a second row and the gap between them does
+   the alternating on its own, with no nth-child rule to get wrong.
+   Inset rather than full-bleed on purpose — the 50vw break-out trick
+   counts the scrollbar and reintroduces the horizontal overflow this
+   file already fought once. */
+.card-band {
+  background: var(--band);
+  border: 1px solid var(--band-line);
+  border-radius: 16px;
+  padding: 14px 14px 0;
+  margin-bottom: 18px;
+}
+.card-band .hrow-head { margin-top: 0; }
+/* The row edge fade is a mask-image, not a painted gradient, so it makes
+   the scroller transparent at both ends and the band shows through by
+   itself — no seam, and nothing here has to match --bg. */
+.card-band .hrow { padding-bottom: 14px; }

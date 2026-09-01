@@ -18,7 +18,7 @@ export function CardRow({
   if (orgs.length === 0) return null;
 
   return (
-    <section>
+    <section className="card-band">
       <div className="hrow-head">
         <h2>{title}</h2>
         <Link href={seeAllHref}>{t(lang, "see_all")}</Link>
