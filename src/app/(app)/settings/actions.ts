@@ -8,16 +8,23 @@ import { requireOrgContext } from "@/lib/org";
 import { isSafeHttpUrl } from "@/lib/url";
 import type { BusinessHours } from "@/lib/types";
 
+// Every save reports back. The old shape — fire the update, ignore the
+// error, revalidate anyway — meant a failed write looked EXACTLY like a
+// successful one: the page revalidated to the old values and the owner's
+// edit just quietly reverted. A result object, not a throw: production
+// Next.js masks thrown server-action errors behind a digest.
+export type SaveResult = { ok: true } | { ok: false; message: string };
+
 export async function saveOrgProfile(input: {
   name: string;
   address: string;
   phone: string;
   mapsUrl: string;
-}) {
+}): Promise<SaveResult> {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
   const mapsUrl = input.mapsUrl.trim();
-  await supabase
+  const { error } = await supabase
     .from("organizations")
     .update({
       name: input.name.trim(),
@@ -29,10 +36,15 @@ export async function saveOrgProfile(input: {
       maps_url: mapsUrl && isSafeHttpUrl(mapsUrl) ? mapsUrl : null,
     })
     .eq("id", ctx.orgId);
+  if (error) {
+    console.error("saveOrgProfile failed", error);
+    return { ok: false, message: error.message };
+  }
   revalidatePath("/settings");
   revalidatePath(`/${ctx.slug}`);
   revalidateTag(ORG_TAG);
   revalidateTag(DIRECTORY_TAG);
+  return { ok: true };
 }
 
 export async function saveDirectoryProfile(input: {
@@ -44,7 +56,7 @@ export async function saveDirectoryProfile(input: {
   priceTier: number | null;
   lat: number | null;
   lng: number | null;
-}) {
+}): Promise<SaveResult> {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
 
@@ -61,39 +73,60 @@ export async function saveDirectoryProfile(input: {
     Math.abs(input.lat) <= 90 && Math.abs(input.lng) <= 180;
   const clearedPair = input.lat === null && input.lng === null;
 
-  await supabase
+  const payload = {
+    is_listed: input.isListed,
+    category: input.category || null,
+    city: input.city || null,
+    district: input.district.trim() || null,
+    description: input.description.trim() || null,
+    price_tier: input.priceTier,
+  };
+  const locPayload = validPair || clearedPair ? { lat: input.lat, lng: input.lng } : {};
+
+  let { error } = await supabase
     .from("organizations")
-    .update({
-      is_listed: input.isListed,
-      category: input.category || null,
-      city: input.city || null,
-      district: input.district.trim() || null,
-      description: input.description.trim() || null,
-      price_tier: input.priceTier,
-      ...(validPair || clearedPair ? { lat: input.lat, lng: input.lng } : {}),
-    })
+    .update({ ...payload, ...locPayload })
     .eq("id", ctx.orgId);
+
+  // Deploy window: this code live before 0031 — PostgREST rejects the
+  // unknown lat/lng columns and would take the WHOLE form down with
+  // them (the 0024-era lesson: one unknown column stopped a settings
+  // form saving entirely). Retry without the location so everything
+  // that existed before this feature still saves.
+  if (error && Object.keys(locPayload).length > 0) {
+    const retry = await supabase.from("organizations").update(payload).eq("id", ctx.orgId);
+    error = retry.error;
+  }
+  if (error) {
+    console.error("saveDirectoryProfile failed", error);
+    return { ok: false, message: error.message };
+  }
   revalidatePath("/settings");
   revalidatePath("/");
-  revalidateTag(DIRECTORY_TAG);
   revalidatePath(`/${ctx.slug}`);
   revalidateTag(ORG_TAG);
   revalidateTag(DIRECTORY_TAG);
+  return { ok: true };
 }
 
 // Called after the browser uploads to the org-media bucket; persists the
 // resulting public URL on the org row.
-export async function saveMediaUrl(kind: "cover" | "logo", url: string) {
+export async function saveMediaUrl(kind: "cover" | "logo", url: string): Promise<SaveResult> {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("organizations")
     .update(kind === "cover" ? { cover_image_url: url } : { logo_url: url })
     .eq("id", ctx.orgId);
+  if (error) {
+    console.error("saveMediaUrl failed", error);
+    return { ok: false, message: error.message };
+  }
   revalidatePath("/settings");
   revalidatePath(`/${ctx.slug}`);
   revalidateTag(ORG_TAG);
   revalidateTag(DIRECTORY_TAG);
+  return { ok: true };
 }
 
 export async function saveBookingRules(input: {
@@ -101,10 +134,10 @@ export async function saveBookingRules(input: {
   slotIntervalMinutes: number;
   minNoticeMinutes: number;
   maxAdvanceDays: number;
-}) {
+}): Promise<SaveResult> {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("org_settings")
     .update({
       business_hours: input.businessHours,
@@ -113,7 +146,12 @@ export async function saveBookingRules(input: {
       max_advance_days: input.maxAdvanceDays,
     })
     .eq("org_id", ctx.orgId);
+  if (error) {
+    console.error("saveBookingRules failed", error);
+    return { ok: false, message: error.message };
+  }
   revalidatePath("/settings");
+  return { ok: true };
 }
 
 // Soft-delete only (see 0020_close_organization.sql) — the RPC itself

@@ -15,8 +15,9 @@ import { PublicFooter } from "@/components/marketplace/PublicFooter";
 export default async function MarketplaceHome() {
   const [lang, city, geo] = await Promise.all([getLang(), getCity(), getGeo()]);
 
-  // Every row on this page is scoped to the selected city — the whole
-  // point of the city selector is that changing it changes what you see.
+  // Every row EXCEPT the nearest one is scoped to the selected city —
+  // nearest is deliberately unscoped, because physical distance does not
+  // care about a browse filter.
   //
   // ONE query, not two. These were two calls with identical arguments
   // (offset: 0 is the default), so the page paid for the same round trip
@@ -55,15 +56,10 @@ export default async function MarketplaceHome() {
 
       <CategoryChips lang={lang} />
 
-      <NearMeBar lang={lang} hasGeo={geo !== null} />
+      <NearMeBar lang={lang} hasGeo={geo !== null} hasResults={nearby.length > 0} />
 
       {nearby.length > 0 && (
-        <CardRow
-          title={t(lang, "near_title")}
-          seeAllHref={`/search`}
-          orgs={nearby}
-          lang={lang}
-        />
+        <CardRow title={t(lang, "near_title")} orgs={nearby} lang={lang} />
       )}
 
       {nothingListed ? (

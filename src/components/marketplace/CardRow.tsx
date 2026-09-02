@@ -11,7 +11,10 @@ export function CardRow({
   lang,
 }: {
   title: string;
-  seeAllHref: string;
+  /** Omitted for rows whose ordering no destination page can reproduce —
+   *  a "see all" that lands on a differently-sorted list silently changes
+   *  the question it answers. */
+  seeAllHref?: string;
   orgs: DirectoryOrg[];
   lang: Lang;
 }) {
@@ -21,7 +24,7 @@ export function CardRow({
     <section className="card-band">
       <div className="hrow-head">
         <h2>{title}</h2>
-        <Link href={seeAllHref}>{t(lang, "see_all")}</Link>
+        {seeAllHref && <Link href={seeAllHref}>{t(lang, "see_all")}</Link>}
       </div>
       <ScrollRow className="hrow">
         {orgs.map((org) => (

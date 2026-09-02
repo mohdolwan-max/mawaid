@@ -9,6 +9,20 @@ import { validateImageFile, downscaleImage, MAX_DIM } from "@/lib/imageUpload";
 import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
 import { saveOrgProfile, saveBookingRules, saveDirectoryProfile, saveMediaUrl, closeOrganization } from "./actions";
 
+// An Arabic-locale mobile keyboard on inputMode="decimal" produces
+// Arabic-Indic digits (٣١٫٩) — and Number("٣١٫٩") is NaN, which used to
+// surface as a WRONG-CAUSE error about pairing while the owner stared at
+// two perfectly filled fields. Normalised at submit time, not on every
+// keystroke, so the owner sees what they typed.
+function normalizeDecimal(raw: string): string {
+  return raw
+    .trim()
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/[٫,]/g, ".")
+    .replace(/٬/g, "");
+}
+
 export type DirectoryProfile = {
   isListed: boolean;
   category: string;
@@ -39,12 +53,14 @@ export function SettingsClient({
   const [phone, setPhone] = useState(ctx.phone ?? "");
   const [mapsUrl, setMapsUrl] = useState(initialMapsUrl);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaved, setProfileSaved] = useState<"" | "ok" | "failed">("");
 
   const [hours, setHours] = useState<BusinessHours>(ctx.businessHours);
   const [slotInterval, setSlotInterval] = useState(ctx.slotIntervalMinutes);
   const [minNotice, setMinNotice] = useState(ctx.minNoticeMinutes);
   const [maxAdvance, setMaxAdvance] = useState(ctx.maxAdvanceDays);
   const [savingRules, setSavingRules] = useState(false);
+  const [rulesSaved, setRulesSaved] = useState<"" | "ok" | "failed">("");
 
   const [copied, setCopied] = useState(false);
   const publicUrl = typeof window !== "undefined" ? `${window.location.origin}/${ctx.slug}` : `/${ctx.slug}`;
@@ -60,11 +76,12 @@ export function SettingsClient({
   // time it round-trips, and 0,0 is a real place in the Atlantic.
   const [latStr, setLatStr] = useState(directory.lat === null ? "" : String(directory.lat));
   const [lngStr, setLngStr] = useState(directory.lng === null ? "" : String(directory.lng));
-  const [locMsg, setLocMsg] = useState<"" | "loc_parsed" | "loc_parse_failed" | "loc_pair_error" | "loc_geo_failed">("");
+  const [locMsg, setLocMsg] = useState<"" | "loc_parsed" | "loc_parse_failed" | "loc_pair_error" | "loc_format_error" | "loc_geo_failed">("");
   const [locating, setLocating] = useState(false);
   const [coverUrl, setCoverUrl] = useState(directory.coverImageUrl);
   const [logoUrl, setLogoUrl] = useState(directory.logoUrl);
   const [savingDir, setSavingDir] = useState(false);
+  const [dirSaved, setDirSaved] = useState<"" | "ok" | "failed">("");
   const [uploadingKind, setUploadingKind] = useState<"cover" | "logo" | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -119,7 +136,8 @@ export function SettingsClient({
         onSubmit={async (e) => {
           e.preventDefault();
           setSavingProfile(true);
-          await saveOrgProfile({ name, address, phone, mapsUrl });
+          const r = await saveOrgProfile({ name, address, phone, mapsUrl });
+          setProfileSaved(r.ok ? "ok" : "failed");
           setSavingProfile(false);
         }}
       >
@@ -156,6 +174,8 @@ export function SettingsClient({
             {savingProfile ? t(lang, "loading") : t(lang, "save")}
           </button>
         )}
+        {profileSaved === "ok" && <p className="hint" style={{ color: "var(--good-ink)", marginTop: 6 }}>{t(lang, "save_ok")}</p>}
+        {profileSaved === "failed" && <p className="error-text" style={{ marginTop: 6 }}>{t(lang, "save_failed")}</p>}
       </form>
 
       <form
@@ -163,24 +183,29 @@ export function SettingsClient({
         onSubmit={async (e) => {
           e.preventDefault();
           setSavingDir(true);
-          const latTrim = latStr.trim();
-          const lngTrim = lngStr.trim();
+          const latTrim = normalizeDecimal(latStr);
+          const lngTrim = normalizeDecimal(lngStr);
           const lat = latTrim === "" ? null : Number(latTrim);
           const lng = lngTrim === "" ? null : Number(lngTrim);
+          const bothFilled = lat !== null && lng !== null;
           const validPair =
-            lat !== null && lng !== null &&
+            bothFilled &&
             Number.isFinite(lat) && Number.isFinite(lng) &&
-            Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+            Math.abs(lat!) <= 90 && Math.abs(lng!) <= 180;
           const clearedPair = lat === null && lng === null;
           if (!validPair && !clearedPair) {
-            // Half a coordinate is not a location; saying so beats
-            // silently dropping what the owner typed.
-            setLocMsg("loc_pair_error");
+            // Two different failures get two different messages: half a
+            // pair is a pairing problem; two filled fields that do not
+            // parse (or sit out of range) are a format problem, and
+            // telling the owner "pair them" while both are filled sends
+            // them hunting the wrong bug.
+            setLocMsg(bothFilled ? "loc_format_error" : "loc_pair_error");
             setSavingDir(false);
             return;
           }
           setLocMsg("");
-          await saveDirectoryProfile({ isListed, category, city, district, description, priceTier, lat, lng });
+          const dirResult = await saveDirectoryProfile({ isListed, category, city, district, description, priceTier, lat, lng });
+          setDirSaved(dirResult.ok ? "ok" : "failed");
           setSavingDir(false);
         }}
       >
@@ -335,6 +360,7 @@ export function SettingsClient({
           {locMsg === "loc_parse_failed" && <p className="error-text">{t(lang, "loc_parse_failed")}</p>}
           {locMsg === "loc_geo_failed" && <p className="error-text">{t(lang, "loc_geo_failed")}</p>}
           {locMsg === "loc_pair_error" && <p className="error-text">{t(lang, "loc_pair_error")}</p>}
+          {locMsg === "loc_format_error" && <p className="error-text">{t(lang, "loc_format_error")}</p>}
           {locMsg === "" && latStr.trim() === "" && lngStr.trim() === "" && (
             <p className="hint" style={{ color: "var(--gold-ink)" }}>{t(lang, "loc_not_set")}</p>
           )}
@@ -385,6 +411,8 @@ export function SettingsClient({
             {savingDir ? t(lang, "loading") : t(lang, "save")}
           </button>
         )}
+        {dirSaved === "ok" && <p className="hint" style={{ color: "var(--good-ink)", marginTop: 6 }}>{t(lang, "save_ok")}</p>}
+        {dirSaved === "failed" && <p className="error-text" style={{ marginTop: 6 }}>{t(lang, "save_failed")}</p>}
       </form>
 
       <form
@@ -392,12 +420,13 @@ export function SettingsClient({
         onSubmit={async (e) => {
           e.preventDefault();
           setSavingRules(true);
-          await saveBookingRules({
+          const r = await saveBookingRules({
             businessHours: hours,
             slotIntervalMinutes: slotInterval,
             minNoticeMinutes: minNotice,
             maxAdvanceDays: maxAdvance,
           });
+          setRulesSaved(r.ok ? "ok" : "failed");
           setSavingRules(false);
         }}
       >
@@ -448,6 +477,8 @@ export function SettingsClient({
             {savingRules ? t(lang, "loading") : t(lang, "save")}
           </button>
         )}
+        {rulesSaved === "ok" && <p className="hint" style={{ color: "var(--good-ink)", marginTop: 6 }}>{t(lang, "save_ok")}</p>}
+        {rulesSaved === "failed" && <p className="error-text" style={{ marginTop: 6 }}>{t(lang, "save_failed")}</p>}
       </form>
 
       {canManage && <DangerZone lang={lang} />}

@@ -26,19 +26,28 @@ alter table public.organizations
   add column if not exists lat double precision,
   add column if not exists lng double precision;
 
-do $do$
-begin
-  if not exists (
-    select 1 from pg_constraint where conname = 'org_location_valid'
-  ) then
-    alter table public.organizations add constraint org_location_valid check (
-      ((lat is null) = (lng is null))
-      and (lat is null or (lat between -90 and 90))
-      and (lng is null or (lng between -180 and 180))
-    );
-  end if;
-end
-$do$;
+-- drop-then-add rather than a pg_constraint name lookup: the lookup
+-- matched by NAME ALONE, so a same-named constraint on any table in any
+-- schema would have skipped the ADD silently — and a pre-existing
+-- different definition on organizations itself would have been kept
+-- while the app code trusts exactly this one as its backstop.
+-- `drop constraint if exists` is inherently table-scoped.
+alter table public.organizations
+  drop constraint if exists org_location_valid;
+
+-- Heal any drifted half-coordinates before the ADD, so it cannot fail
+-- on existing rows. Half a coordinate was never a location.
+update public.organizations
+  set lat = null, lng = null
+  where (lat is null) <> (lng is null)
+     or lat not between -90 and 90
+     or lng not between -180 and 180;
+
+alter table public.organizations add constraint org_location_valid check (
+  ((lat is null) = (lng is null))
+  and (lat is null or (lat between -90 and 90))
+  and (lng is null or (lng between -180 and 180))
+);
 
 
 -- ---------------------------------------------------------------------
