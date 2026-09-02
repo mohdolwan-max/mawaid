@@ -2205,3 +2205,18 @@ label {
    the scroller transparent at both ends and the band shows through by
    itself — no seam, and nothing here has to match --bg. */
 .card-band .hrow { padding-bottom: 14px; }
+
+/* "Nearest to you" opt-in bar on the marketplace home. Sits between the
+   category chips and the rows; deliberately quiet — the permission ask
+   must feel like an offer, not a demand. */
+.near-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 16px;
+}
+.near-bar .error-text {
+  width: 100%;
+  margin: 0;
+}

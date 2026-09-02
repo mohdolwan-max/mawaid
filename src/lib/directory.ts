@@ -90,7 +90,7 @@ export function cityLabel(key: string | null, lang: Lang): string {
 // audience paying in dinars — and reads as a currency claim rather than
 // a price band. Words say the same thing without naming a currency at
 // all, so this stays correct when the app reaches Egypt.
-const PRICE_TIERS: Record<number, { ar: string; en: string }> = {
+export const PRICE_TIERS: Record<number, { ar: string; en: string }> = {
   1: { ar: "اقتصادي", en: "Budget" },
   2: { ar: "متوسط", en: "Mid-range" },
   3: { ar: "مرتفع", en: "Premium" },
@@ -113,4 +113,46 @@ export type DirectoryOrg = {
   price_tier: number | null;
   avg_rating: number | null;
   review_count: number;
+  /** Present only on rows from list_nearby_orgs. Never defaulted to 0 —
+   *  a card without a known distance shows nothing, not "0 كم". */
+  distance_km?: number | null;
 };
+
+// Client-writable cookie carrying the customer's ROUNDED position
+// ("31.944,35.882"). Named here rather than in lib/location.ts because
+// that file is server-only and the client component that writes the
+// cookie needs the same constant.
+export const GEO_COOKIE = "mawaid_geo";
+
+// "850 م" under a kilometre, "1.2 كم" above it. Metres are rounded to
+// 50 because the customer's own position is rounded to ~110m before it
+// ever leaves their device — showing 837م would claim a precision the
+// input does not have.
+export function distanceLabel(km: number | null | undefined, lang: Lang): string {
+  if (km == null || !Number.isFinite(km) || km < 0) return "";
+  const locale = lang === "ar" ? "ar-JO" : "en-US";
+  if (km < 1) {
+    const m = Math.max(50, Math.round((km * 1000) / 50) * 50);
+    return `${m.toLocaleString(locale)} ${lang === "ar" ? "م" : "m"}`;
+  }
+  const n = km.toLocaleString(locale, { maximumFractionDigits: 1 });
+  return `${n} ${lang === "ar" ? "كم" : "km"}`;
+}
+
+// Pulls coordinates out of a full Google Maps link. The pin marker
+// (!3d…!4d…) is preferred over the @…, viewport centre — the viewport is
+// wherever the map happened to be panned, the pin is the place itself.
+// Short links (maps.app.goo.gl) carry no coordinates and return null;
+// the settings UI says so instead of failing silently.
+export function parseMapsLink(url: string): { lat: number; lng: number } | null {
+  const pin = url.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+  const viewport = url.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  const query = url.match(/[?&](?:q|query|ll|destination)=(-?\d{1,3}\.\d+)(?:%2C|,)(-?\d{1,3}\.\d+)/i);
+  const m = pin ?? viewport ?? query;
+  if (!m) return null;
+  const lat = Number(m[1]);
+  const lng = Number(m[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}

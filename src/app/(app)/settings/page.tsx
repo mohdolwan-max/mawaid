@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   // members-select RLS policy.
   const { data: dir } = await supabase
     .from("organizations")
-    .select("is_listed, category, city, district, description, price_tier, cover_image_url, logo_url, maps_url")
+    .select("is_listed, category, city, district, description, price_tier, cover_image_url, logo_url, maps_url, lat, lng")
     .eq("id", ctx.orgId)
     .single();
 
@@ -27,6 +27,10 @@ export default async function SettingsPage() {
     priceTier: dir?.price_tier ?? null,
     coverImageUrl: dir?.cover_image_url ?? null,
     logoUrl: dir?.logo_url ?? null,
+    // null stays null: an unset location must reach the form as empty
+    // fields, never as 0/0 — which is a real place in the Atlantic.
+    lat: dir?.lat ?? null,
+    lng: dir?.lng ?? null,
   };
 
   return (

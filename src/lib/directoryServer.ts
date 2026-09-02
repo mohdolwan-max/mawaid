@@ -3,6 +3,8 @@ import { unstable_cache } from "next/cache";
 import { publicSupabase } from "@/lib/supabase/public";
 import type { DirectoryOrg } from "@/lib/directory";
 
+export type NearbyOrg = DirectoryOrg & { distance_km: number };
+
 export const DIRECTORY_TAG = "directory";
 
 // The marketplace listing is the same for everybody and changes when a
@@ -66,4 +68,30 @@ export async function listDirectoryOrgs(filters: {
     // is already logged above.
     return [];
   }
+}
+
+// Deliberately NOT wrapped in unstable_cache: the arguments are one
+// customer's position, so a cache entry would be private to a ~110m grid
+// square and hit almost never, while the query itself measured ~9ms and
+// the database now sits in the same city as the functions. Caching here
+// would spend memory to save nothing.
+export async function listNearbyOrgs(lat: number, lng: number, limit = 12): Promise<NearbyOrg[]> {
+  const { data, error } = await publicSupabase.rpc("list_nearby_orgs", {
+    p_lat: lat,
+    p_lng: lng,
+    p_limit: limit,
+  });
+  if (error) {
+    // 0031 not applied yet: the nearest row simply does not render,
+    // which degrades exactly like the feature not existing. Anything
+    // else is a real failure — logged loudly, and the row is dropped
+    // rather than taking the whole home page down with it.
+    if (error.code === "PGRST202") {
+      console.error("list_nearby_orgs missing (0031 unapplied)");
+    } else {
+      console.error("list_nearby_orgs failed", error);
+    }
+    return [];
+  }
+  return (data as NearbyOrg[]) ?? [];
 }

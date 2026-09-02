@@ -2,7 +2,9 @@ import { getLang } from "@/lib/lang";
 import { getCity } from "@/lib/city";
 import { t } from "@/lib/i18n";
 import { cityLabel, FEATURED_CATEGORIES } from "@/lib/directory";
-import { listDirectoryOrgs } from "@/lib/directoryServer";
+import { listDirectoryOrgs, listNearbyOrgs } from "@/lib/directoryServer";
+import { getGeo } from "@/lib/location";
+import { NearMeBar } from "@/components/marketplace/NearMeBar";
 import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { SearchBar } from "@/components/marketplace/SearchBar";
@@ -11,7 +13,7 @@ import { CardRow } from "@/components/marketplace/CardRow";
 import { PublicFooter } from "@/components/marketplace/PublicFooter";
 
 export default async function MarketplaceHome() {
-  const [lang, city] = await Promise.all([getLang(), getCity()]);
+  const [lang, city, geo] = await Promise.all([getLang(), getCity(), getGeo()]);
 
   // Every row on this page is scoped to the selected city — the whole
   // point of the city selector is that changing it changes what you see.
@@ -22,12 +24,19 @@ export default async function MarketplaceHome() {
   // a single ordering and no way to ask for "newest". Until it can, the
   // second row cannot be honest, so it is not rendered at all rather
   // than repeating the first under a heading that claims otherwise.
-  const topRated = await listDirectoryOrgs({
-    city,
-    limit: 12,
-    featuredCategories: FEATURED_CATEGORIES,
-    featuredOnly: true,
-  });
+  // Two rows, two honest orderings: nearest is pure distance (only when
+  // the customer chose to share a position), featured is the existing
+  // rating order. No blended score — a ranking nobody can explain reads
+  // as a ranking that is rigged.
+  const [topRated, nearby] = await Promise.all([
+    listDirectoryOrgs({
+      city,
+      limit: 12,
+      featuredCategories: FEATURED_CATEGORIES,
+      featuredOnly: true,
+    }),
+    geo ? listNearbyOrgs(geo.lat, geo.lng, 12) : Promise.resolve([]),
+  ]);
 
   const nothingListed = topRated.length === 0;
   const cityName = cityLabel(city, lang);
@@ -45,6 +54,17 @@ export default async function MarketplaceHome() {
       </div>
 
       <CategoryChips lang={lang} />
+
+      <NearMeBar lang={lang} hasGeo={geo !== null} />
+
+      {nearby.length > 0 && (
+        <CardRow
+          title={t(lang, "near_title")}
+          seeAllHref={`/search`}
+          orgs={nearby}
+          lang={lang}
+        />
+      )}
 
       {nothingListed ? (
         <div className="empty">{t(lang, "market_empty")}</div>

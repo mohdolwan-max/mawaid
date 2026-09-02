@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import type { OrgContext, BusinessHours } from "@/lib/types";
-import { CATEGORIES, CITIES } from "@/lib/directory";
+import { CATEGORIES, CITIES, PRICE_TIERS, parseMapsLink } from "@/lib/directory";
 import { createClient } from "@/lib/supabase/client";
 import { validateImageFile, downscaleImage, MAX_DIM } from "@/lib/imageUpload";
 import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
@@ -18,6 +18,8 @@ export type DirectoryProfile = {
   priceTier: number | null;
   coverImageUrl: string | null;
   logoUrl: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 export function SettingsClient({
@@ -54,6 +56,12 @@ export function SettingsClient({
   const [district, setDistrict] = useState(directory.district);
   const [description, setDescription] = useState(directory.description);
   const [priceTier, setPriceTier] = useState<number | null>(directory.priceTier);
+  // Kept as strings: a number input state would turn "" into 0 the first
+  // time it round-trips, and 0,0 is a real place in the Atlantic.
+  const [latStr, setLatStr] = useState(directory.lat === null ? "" : String(directory.lat));
+  const [lngStr, setLngStr] = useState(directory.lng === null ? "" : String(directory.lng));
+  const [locMsg, setLocMsg] = useState<"" | "loc_parsed" | "loc_parse_failed" | "loc_pair_error" | "loc_geo_failed">("");
+  const [locating, setLocating] = useState(false);
   const [coverUrl, setCoverUrl] = useState(directory.coverImageUrl);
   const [logoUrl, setLogoUrl] = useState(directory.logoUrl);
   const [savingDir, setSavingDir] = useState(false);
@@ -155,7 +163,24 @@ export function SettingsClient({
         onSubmit={async (e) => {
           e.preventDefault();
           setSavingDir(true);
-          await saveDirectoryProfile({ isListed, category, city, district, description, priceTier });
+          const latTrim = latStr.trim();
+          const lngTrim = lngStr.trim();
+          const lat = latTrim === "" ? null : Number(latTrim);
+          const lng = lngTrim === "" ? null : Number(lngTrim);
+          const validPair =
+            lat !== null && lng !== null &&
+            Number.isFinite(lat) && Number.isFinite(lng) &&
+            Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+          const clearedPair = lat === null && lng === null;
+          if (!validPair && !clearedPair) {
+            // Half a coordinate is not a location; saying so beats
+            // silently dropping what the owner typed.
+            setLocMsg("loc_pair_error");
+            setSavingDir(false);
+            return;
+          }
+          setLocMsg("");
+          await saveDirectoryProfile({ isListed, category, city, district, description, priceTier, lat, lng });
           setSavingDir(false);
         }}
       >
@@ -219,10 +244,100 @@ export function SettingsClient({
             style={{ maxWidth: 200 }}
           >
             <option value="">{t(lang, "dir_price_none")}</option>
-            <option value="1">$</option>
-            <option value="2">$$</option>
-            <option value="3">$$$</option>
+            {/* The same words the public cards show — the owner picks what
+                the customer will actually read, not a currency glyph. */}
+            <option value="1">{PRICE_TIERS[1][lang]}</option>
+            <option value="2">{PRICE_TIERS[2][lang]}</option>
+            <option value="3">{PRICE_TIERS[3][lang]}</option>
           </select>
+        </div>
+
+        <div className="field" style={{ marginTop: 4 }}>
+          <label>{t(lang, "loc_title")}</label>
+          <p className="hint" style={{ marginBottom: 8 }}>{t(lang, "loc_sub")}</p>
+          <div className="toolbar" style={{ marginBottom: 8 }}>
+            <button
+              type="button"
+              className="btn ghost sm"
+              disabled={!canManage || locating}
+              onClick={() => {
+                // The owner is usually standing IN the clinic, which makes
+                // this the most accurate way to set the pin. Fills the
+                // fields only — nothing is saved until the save button,
+                // so a bad fix can simply be edited or cleared.
+                if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+                  setLocMsg("loc_geo_failed");
+                  return;
+                }
+                setLocating(true);
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    setLatStr(pos.coords.latitude.toFixed(5));
+                    setLngStr(pos.coords.longitude.toFixed(5));
+                    setLocMsg("");
+                    setLocating(false);
+                  },
+                  () => {
+                    setLocMsg("loc_geo_failed");
+                    setLocating(false);
+                  },
+                  { enableHighAccuracy: true, timeout: 10000 }
+                );
+              }}
+            >
+              {locating ? t(lang, "loading") : t(lang, "loc_use_current")}
+            </button>
+            <button
+              type="button"
+              className="btn ghost sm"
+              disabled={!canManage || !mapsUrl.trim()}
+              onClick={() => {
+                const parsed = parseMapsLink(mapsUrl);
+                if (!parsed) {
+                  setLocMsg("loc_parse_failed");
+                  return;
+                }
+                setLatStr(parsed.lat.toFixed(5));
+                setLngStr(parsed.lng.toFixed(5));
+                setLocMsg("loc_parsed");
+              }}
+            >
+              {t(lang, "loc_from_link")}
+            </button>
+          </div>
+          <div className="grid2">
+            <div className="field">
+              <label htmlFor="d_lat">{t(lang, "loc_lat")}</label>
+              <input
+                id="d_lat"
+                dir="ltr"
+                inputMode="decimal"
+                disabled={!canManage}
+                value={latStr}
+                onChange={(e) => setLatStr(e.target.value)}
+                placeholder="31.94350"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="d_lng">{t(lang, "loc_lng")}</label>
+              <input
+                id="d_lng"
+                dir="ltr"
+                inputMode="decimal"
+                disabled={!canManage}
+                value={lngStr}
+                onChange={(e) => setLngStr(e.target.value)}
+                placeholder="35.88150"
+              />
+            </div>
+          </div>
+          {locMsg === "loc_parsed" && <p className="hint" style={{ color: "var(--good-ink)" }}>{t(lang, "loc_parsed")}</p>}
+          {locMsg === "loc_parse_failed" && <p className="error-text">{t(lang, "loc_parse_failed")}</p>}
+          {locMsg === "loc_geo_failed" && <p className="error-text">{t(lang, "loc_geo_failed")}</p>}
+          {locMsg === "loc_pair_error" && <p className="error-text">{t(lang, "loc_pair_error")}</p>}
+          {locMsg === "" && latStr.trim() === "" && lngStr.trim() === "" && (
+            <p className="hint" style={{ color: "var(--gold-ink)" }}>{t(lang, "loc_not_set")}</p>
+          )}
         </div>
 
         {canManage && uploadError && <p className="error-text">{uploadError}</p>}

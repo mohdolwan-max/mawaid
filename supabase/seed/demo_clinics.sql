@@ -115,42 +115,42 @@ where slug = 'test-clinic-smoketest';
 -- ---------------------------------------------------------------------
 insert into public.organizations
   (id, name, slug, address, phone, category, city, district, description,
-   price_tier, is_listed, logo_url, cover_image_url, created_at)
+   price_tier, is_listed, logo_url, cover_image_url, lat, lng, created_at)
 values
   ('a0000001-0000-4000-8000-000000000001',
    'عيادة نبض الجلدية (عرض توضيحي)', 'demo-nabd-derma',
    'شارع عبدالله غوشة، عبدون، عمّان', '0790000001',
    'derma', 'amman', 'عبدون',
    'عيادة جلدية متخصصة في علاج البشرة والشعر والتجميل غير الجراحي، بإشراف استشاريين معتمدين. تشمل الخدمات الاستشارات التشخيصية وجلسات العناية بالبشرة والحقن التجميلي.',
-   3, true, '/icons/derma.webp', '/demo/derma.svg', now() - interval '55 days'),
+   3, true, '/icons/derma.webp', '/demo/derma.svg', 31.9435, 35.8815, now() - interval '55 days'),
 
   ('a0000002-0000-4000-8000-000000000002',
    'صالون لمسة أنيقة (عرض توضيحي)', 'demo-lamsa-salon',
    'شارع المدينة المنورة، خلدا، عمّان', '0790000002',
    'salon_women', 'amman', 'خلدا',
    'صالون نسائي متكامل يقدّم قص وتصفيف الشعر والصبغات ومكياج المناسبات والعناية بالأظافر، في أجواء هادئة ومخصّصة للسيدات فقط.',
-   2, true, '/icons/beauty.webp', '/demo/salon_women.svg', now() - interval '48 days'),
+   2, true, '/icons/beauty.webp', '/demo/salon_women.svg', 31.9986, 35.8481, now() - interval '48 days'),
 
   ('a0000003-0000-4000-8000-000000000003',
    'حلاقة الفرسان (عرض توضيحي)', 'demo-forsan-barber',
    'شارع خالد بن الوليد، جبل الحسين، عمّان', '0790000003',
    'barber', 'amman', 'جبل الحسين',
    'صالون حلاقة رجالي بخدمة سريعة وأسعار مناسبة، يشمل قص الشعر وتهذيب الذقن والحمام المغربي للرجال.',
-   1, true, '/icons/barber.webp', '/demo/barber.svg', now() - interval '40 days'),
+   1, true, '/icons/barber.webp', '/demo/barber.svg', 31.9645, 35.9166, now() - interval '40 days'),
 
   ('a0000004-0000-4000-8000-000000000004',
    'واحة الاسترخاء سبا (عرض توضيحي)', 'demo-waha-spa',
    'شارع الشريف عبدالحميد شرف، الشميساني، عمّان', '0790000004',
    'spa', 'amman', 'الشميساني',
    'مركز سبا يقدّم جلسات المساج العلاجي والاسترخائي والحمام المغربي والساونا، بأيدي أخصائيات مدرّبات وفي أجواء هادئة.',
-   3, true, '/icons/spa.webp', '/demo/spa.svg', now() - interval '32 days'),
+   3, true, '/icons/spa.webp', '/demo/spa.svg', 31.9663, 35.8987, now() - interval '32 days'),
 
   ('a0000005-0000-4000-8000-000000000005',
    'مركز العافية للعلاج الطبيعي (عرض توضيحي)', 'demo-afia-physio',
    'شارع الجامعة، إربد', '0790000005',
    'physio', 'irbid', 'شارع الجامعة',
    'مركز علاج طبيعي وإعادة تأهيل يعالج آلام الظهر والرقبة وإصابات الملاعب وما بعد العمليات، ببرامج فردية يشرف عليها أخصائيون.',
-   2, true, '/icons/physio.webp', '/demo/physio.svg', now() - interval '25 days'),
+   2, true, '/icons/physio.webp', '/demo/physio.svg', 32.5391, 35.8593, now() - interval '25 days'),
 
   -- Laser is one of the strongest categories in this market, and
   -- hiding the old smoke-test org left its chip empty, so it gets a
@@ -160,7 +160,7 @@ values
    'شارع مكة، الصويفية، عمّان', '0790000006',
    'laser', 'amman', 'الصويفية',
    'مركز متخصص في إزالة الشعر بالليزر وتقنيات نضارة البشرة، بأجهزة حديثة وكوادر مدرّبة. جلسات مخصصة حسب نوع البشرة مع استشارة مجانية قبل البدء.',
-   3, true, '/icons/laser.webp', '/demo/laser.svg', now() - interval '18 days');
+   3, true, '/icons/laser.webp', '/demo/laser.svg', 31.9346, 35.8628, now() - interval '18 days');
 
 
 -- ---------------------------------------------------------------------

@@ -42,9 +42,25 @@ export async function saveDirectoryProfile(input: {
   district: string;
   description: string;
   priceTier: number | null;
+  lat: number | null;
+  lng: number | null;
 }) {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
+
+  // A location is written only as a valid PAIR, or cleared as a pair.
+  // Anything else — one coordinate typed, garbage, out of range — leaves
+  // the stored location untouched rather than corrupting it. The UI
+  // blocks those cases with a visible error before ever calling this;
+  // the server refuses them independently because the DB constraint
+  // (org_location_valid) would otherwise fail the WHOLE update and take
+  // the rest of the form's fields down with it.
+  const validPair =
+    input.lat !== null && input.lng !== null &&
+    Number.isFinite(input.lat) && Number.isFinite(input.lng) &&
+    Math.abs(input.lat) <= 90 && Math.abs(input.lng) <= 180;
+  const clearedPair = input.lat === null && input.lng === null;
+
   await supabase
     .from("organizations")
     .update({
@@ -54,6 +70,7 @@ export async function saveDirectoryProfile(input: {
       district: input.district.trim() || null,
       description: input.description.trim() || null,
       price_tier: input.priceTier,
+      ...(validPair || clearedPair ? { lat: input.lat, lng: input.lng } : {}),
     })
     .eq("id", ctx.orgId);
   revalidatePath("/settings");

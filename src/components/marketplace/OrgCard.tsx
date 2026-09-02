@@ -1,9 +1,13 @@
 import Link from "next/link";
 import type { Lang } from "@/lib/i18n";
-import { categoryLabel, cityLabel, priceTierLabel, type DirectoryOrg } from "@/lib/directory";
+import { categoryLabel, cityLabel, distanceLabel, priceTierLabel, type DirectoryOrg } from "@/lib/directory";
 
 export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
-  const meta = [org.district, cityLabel(org.city, lang)].filter(Boolean).join(" · ");
+  // distanceLabel returns "" when distance_km is absent, so cards from
+  // the ordinary listings render exactly as before — no distance, not 0.
+  const meta = [org.district, cityLabel(org.city, lang), distanceLabel(org.distance_km, lang)]
+    .filter(Boolean)
+    .join(" · ");
   const category = categoryLabel(org.category, lang);
   const tier = priceTierLabel(org.price_tier, lang);
 
