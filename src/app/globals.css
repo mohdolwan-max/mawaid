@@ -2204,21 +2204,28 @@ label {
    leave. Both of these are pure CSS and load nothing.
    ===================================================================== */
 
-/* The wash the hero sits inside, so it stops looking pasted onto white.
-   Fixed and full-bleed because .market-shell is capped at 960px and a
-   gradient painted on it would stop dead at that edge. Negative z-index
-   keeps it behind all content while still covering the body colour. */
+/* The wash the hero sits inside, so it stops looking pasted onto white —
+   and, on a wide screen, what dresses the bare side gutters .market-shell
+   (capped at 960px) leaves empty (owner: "الجوانب بشعين سادة"). Full-
+   viewport and `fixed` rather than tied to page height, so the same
+   couple of soft blobs stay in view in the gutters at every scroll
+   position instead of only behind the hero. Negative z-index keeps it
+   behind all content while still covering the body colour.
+   Tone-on-tone with the existing palette (--tint, --cream) and heavily
+   faded — same reasoning as the hero wash: a photo costs mobile data a
+   clinic card already carries, and motion pulls at someone whose whole
+   intent is to book and leave. Pure CSS, nothing loaded, nothing moving. */
 .market-shell::before {
   content: "";
   position: fixed;
-  inset-block-start: 0;
-  inset-inline: 0;
-  height: 460px;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
     radial-gradient(120% 60% at 78% -10%, #dcede9 0%, rgba(220, 237, 233, 0) 62%),
-    linear-gradient(#f2f6f4 0%, rgba(247, 246, 242, 0) 100%);
+    radial-gradient(46% 38% at 3% 58%, #f2e9d8 0%, rgba(242, 233, 216, 0) 72%),
+    radial-gradient(42% 34% at 98% 90%, #dcede9 0%, rgba(220, 237, 233, 0) 72%),
+    linear-gradient(#f2f6f4 0%, rgba(247, 246, 242, 0) 32%);
 }
 
 /* Each row of clinics gets its own ground. With a single row this reads
