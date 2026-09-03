@@ -63,6 +63,13 @@ export function BookingClient({
 
   const [date, setDate] = useState(todayISO());
   const [slots, setSlots] = useState<string[]>([]);
+  // "Any staff" + a real roster renders the Wddk-style grouped view:
+  // one block of times PER specialist instead of one anonymous grid.
+  // Picking a time there also picks its specialist (kept separately so
+  // the explicit staff-step choice — staffId — stays untouched and the
+  // fetch effect below doesn't re-fire and wipe the selection).
+  const [staffSlots, setStaffSlots] = useState<{ staff: PublicStaff; slots: string[] }[]>([]);
+  const [pickedStaffForSlot, setPickedStaffForSlot] = useState<string | null>(null);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
@@ -106,26 +113,45 @@ export function BookingClient({
     let cancelled = false;
     setSlotsLoading(true);
     setSelectedSlot(null);
+    setPickedStaffForSlot(null);
     setError(null);
-    fetchSlotsAction(orgSlug, chosen.map((c) => c.id), date, staffId)
-      .then((s) => {
-        if (cancelled) return;
-        setSlots(s);
-        setSlotsLoading(false);
-      })
-      .catch(() => {
-        // Previously unhandled: a rejected fetch here left slotsLoading
-        // stuck true forever — the date picker stayed, but the slot
-        // grid never resolved either way, reading as a dead/blank step.
-        if (cancelled) return;
-        setSlots([]);
-        setSlotsLoading(false);
-        setError("error_generic");
-      });
+    const grouped = staffId === null && staffOptions.length > 0;
+    const load = grouped
+      ? // One request per specialist, in parallel. Rosters are small
+        // (2–10 people) and each answer is that person's real diary —
+        // there is no single query that could answer this more honestly.
+        Promise.all(
+          staffOptions.map((st) =>
+            fetchSlotsAction(orgSlug, chosen.map((c) => c.id), date, st.membership_id).then(
+              (s) => ({ staff: st, slots: s })
+            )
+          )
+        ).then((groups) => {
+          if (cancelled) return;
+          setStaffSlots(groups.filter((g) => g.slots.length > 0));
+          setSlots([]);
+          setSlotsLoading(false);
+        })
+      : fetchSlotsAction(orgSlug, chosen.map((c) => c.id), date, staffId).then((s) => {
+          if (cancelled) return;
+          setSlots(s);
+          setStaffSlots([]);
+          setSlotsLoading(false);
+        });
+    load.catch(() => {
+      // Previously unhandled: a rejected fetch here left slotsLoading
+      // stuck true forever — the date picker stayed, but the slot
+      // grid never resolved either way, reading as a dead/blank step.
+      if (cancelled) return;
+      setSlots([]);
+      setStaffSlots([]);
+      setSlotsLoading(false);
+      setError("error_generic");
+    });
     return () => {
       cancelled = true;
     };
-  }, [step, service, date, staffId, orgSlug, chosen]);
+  }, [step, service, date, staffId, staffOptions, orgSlug, chosen]);
 
   async function submitBooking(allowOverlap: boolean) {
     if (chosen.length === 0 || !selectedSlot) return;
@@ -144,7 +170,10 @@ export function BookingClient({
         orgSlug,
         serviceIds: chosen.map((c) => c.id),
         startAt: selectedSlot,
-        staffId,
+        // A time picked inside a specialist's block IS a choice of that
+        // specialist — booking it as "anyone" could land the visit with
+        // somebody else even though their name sat above the button.
+        staffId: staffId ?? pickedStaffForSlot,
         customerName: name,
         customerPhone: phone,
         customerEmail: email,
@@ -271,6 +300,38 @@ export function BookingClient({
           </div>
           {slotsLoading ? (
             <p className="hint">{t(lang, "loading")}</p>
+          ) : staffSlots.length > 0 ? (
+            // "Any staff" with a real roster: times grouped per
+            // specialist (the Wddk venue pattern) — clearer than one
+            // anonymous grid, and the customer sees WHO each time is
+            // with before committing.
+            staffSlots.map((g) => (
+              <div key={g.staff.membership_id} className="staff-slot-group">
+                <p className="ssg-head">{staffPublicLabel(g.staff, lang)}</p>
+                <div className="slot-grid">
+                  {g.slots.map((slotIso) => {
+                    const isPicked =
+                      selectedSlot === slotIso && pickedStaffForSlot === g.staff.membership_id;
+                    return (
+                      <button
+                        key={slotIso}
+                        type="button"
+                        className={`slot-btn ${isPicked ? "selected" : ""}`}
+                        onClick={() => {
+                          setSelectedSlot(slotIso);
+                          setPickedStaffForSlot(g.staff.membership_id);
+                        }}
+                      >
+                        {new Date(slotIso).toLocaleTimeString(intlLocale(lang), {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
           ) : slots.length === 0 ? (
             <p className="hint">{t(lang, "book_no_slots")}</p>
           ) : (
@@ -289,6 +350,16 @@ export function BookingClient({
                 </button>
               ))}
             </div>
+          )}
+          {/* Shown only when EVERY chosen service carries a price — a
+              partial sum would understate what the visit costs. */}
+          {chosen.length > 0 && chosen.every((c) => c.price != null) && (
+            <p className="hint" style={{ marginTop: 10, fontWeight: 700 }}>
+              {t(lang, "book_total_price", {
+                p: chosen.reduce((sum, c) => sum + Number(c.price), 0),
+                currency: t(lang, "currency"),
+              })}
+            </p>
           )}
           {error && <p className="error-text">{t(lang, error)}</p>}
           <div className="toolbar" style={{ marginTop: 10 }}>

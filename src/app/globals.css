@@ -2220,3 +2220,154 @@ label {
   width: 100%;
   margin: 0;
 }
+
+/* ---------- rich card additions (Wddk-inspired playbook) ---------- */
+.org-card .oc-rate {
+  position: absolute;
+  top: 8px;
+  inset-inline-start: 8px;
+  background: rgba(10, 24, 20, 0.6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  direction: ltr;
+  backdrop-filter: blur(4px);
+}
+.org-card .oc-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.org-card .oc-meta svg {
+  flex-shrink: 0;
+  color: var(--brand);
+}
+.org-card .oc-price {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--brand);
+  white-space: nowrap;
+}
+
+/* ---------- browse-by-district tiles ---------- */
+.zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.zone-tile {
+  background: var(--white);
+  border: 1px solid #eeeff2;
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  transition: border-color 0.15s ease, transform 0.18s ease;
+}
+.zone-tile:hover {
+  border-color: var(--brand);
+  transform: translateY(-2px);
+}
+.zone-tile .zt-ic {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--tint);
+  color: var(--brand);
+  display: grid;
+  place-items: center;
+  margin: 0 auto 7px;
+}
+.zone-tile .zt-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+.zone-tile .zt-count {
+  font-size: 11px;
+  color: var(--ink2);
+  margin-top: 2px;
+}
+
+/* ---------- open-now chip beside the greeting ---------- */
+.greeting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.open-now-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--tint);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.open-now-chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+/* ---------- public org page: sticky section tabs ---------- */
+.org-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  padding: 8px 0;
+  margin-bottom: 10px;
+  overflow-x: auto;
+}
+.org-tabs a {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink2);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.org-tabs a:hover {
+  background: var(--tint);
+  color: var(--brand);
+}
+.org-tabs a.primary {
+  background: var(--brand);
+  color: #fff;
+  margin-inline-start: auto;
+}
+
+/* ---------- booking: slots grouped per staff ---------- */
+.staff-slot-group {
+  margin-bottom: 14px;
+}
+.staff-slot-group .ssg-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.staff-slot-group .ssg-head::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+}

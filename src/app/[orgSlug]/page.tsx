@@ -115,13 +115,26 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
         </div>
       </div>
 
+      {/* Wddk venue-page pattern: sticky section tabs so a long page is
+          navigable, with the booking CTA always one tap away. Anchor
+          links, not client tabs — everything stays server-rendered and
+          crawlable, and a tab only exists when its section does. */}
+      <nav className="org-tabs">
+        {org.description && <a href="#overview">{t(lang, "tab_overview")}</a>}
+        <a href="#services">{t(lang, "tab_services")}</a>
+        {reviews.length > 0 && <a href="#reviews">{t(lang, "tab_reviews")}</a>}
+        <Link href={`/${orgSlug}/book`} className="primary">
+          {t(lang, "book_now")}
+        </Link>
+      </nav>
+
       {org.description && (
-        <div className="card">
+        <div className="card" id="overview">
           <p style={{ fontSize: 13, color: "var(--ink2)", whiteSpace: "pre-wrap" }}>{org.description}</p>
         </div>
       )}
 
-      <div className="card">
+      <div className="card" id="services">
         {services.length === 0 ? (
           <div className="empty">{t(lang, "service_empty")}</div>
         ) : (
@@ -150,7 +163,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
       </Link>
 
       {reviews.length > 0 && (
-        <div className="card" style={{ marginTop: 16 }}>
+        <div className="card" id="reviews" style={{ marginTop: 16 }}>
           <p style={{ fontWeight: 700, marginBottom: 6 }}>{t(lang, "reviews_title")}</p>
           {reviews.map((r, i) => (
             <div key={i} className="review-row">

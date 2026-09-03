@@ -27,6 +27,7 @@ const cachedListDirectoryOrgs = unstable_cache(
     featuredCategories?: string[] | null;
     featuredOnly?: boolean;
     order?: "rating" | "newest";
+    district?: string | null;
   }): Promise<DirectoryOrg[]> => {
     const { data, error } = await publicSupabase.rpc("list_directory_orgs", {
       p_city: filters.city ?? null,
@@ -41,6 +42,8 @@ const cachedListDirectoryOrgs = unstable_cache(
       // every rating-ordered row working, and only the newest row
       // degrades to absent (0035 unapplied logs PGRST202 below).
       ...(filters.order === "newest" ? { p_order: "newest" } : {}),
+      // Same deploy-order tolerance for the district filter (0036).
+      ...(filters.district ? { p_district: filters.district } : {}),
     });
 
     // Not `data ?? []`. An empty marketplace and a broken query look
@@ -66,6 +69,7 @@ export async function listDirectoryOrgs(filters: {
   featuredCategories?: string[] | null;
   featuredOnly?: boolean;
   order?: "rating" | "newest";
+  district?: string | null;
 }): Promise<DirectoryOrg[]> {
   try {
     return await cachedListDirectoryOrgs(filters);
@@ -101,4 +105,72 @@ export async function listNearbyOrgs(lat: number, lng: number, limit = 12): Prom
     return [];
   }
   return (data as NearbyOrg[]) ?? [];
+}
+
+// District tiles ("browse by zone") and the open-now counter share the
+// directory's caching story: same audience-wide data, same 60s window,
+// same tag so a profile edit drops them together with the listings.
+// Both degrade to "render nothing" when the RPC is missing (0036 not
+// applied yet) or failing — a missing count must never render as 0.
+const cachedDistrictCounts = unstable_cache(
+  async (city: string | null): Promise<{ district: string; org_count: number }[]> => {
+    const { data, error } = await publicSupabase.rpc("list_district_counts", {
+      p_city: city,
+    });
+    if (error) {
+      console.error(
+        error.code === "PGRST202"
+          ? "list_district_counts missing (0036 unapplied)"
+          : "list_district_counts failed",
+        error.code === "PGRST202" ? "" : error
+      );
+      throw error;
+    }
+    return (data as { district: string; org_count: number }[]) ?? [];
+  },
+  ["list-district-counts"],
+  { revalidate: 60, tags: [DIRECTORY_TAG] }
+);
+
+export async function listDistrictCounts(
+  city: string | null
+): Promise<{ district: string; org_count: number }[]> {
+  try {
+    return await cachedDistrictCounts(city);
+  } catch {
+    return [];
+  }
+}
+
+const cachedOpenNowCount = unstable_cache(
+  async (city: string | null): Promise<number | null> => {
+    const { data, error } = await publicSupabase.rpc("count_open_now", {
+      p_city: city,
+    });
+    if (error) {
+      console.error(
+        error.code === "PGRST202"
+          ? "count_open_now missing (0036 unapplied)"
+          : "count_open_now failed",
+        error.code === "PGRST202" ? "" : error
+      );
+      throw error;
+    }
+    return typeof data === "number" ? data : null;
+  },
+  ["count-open-now"],
+  // 60s is coarse against a clock ("open at 9:00" can read closed until
+  // 9:01) but that is one minute of staleness on a convenience line —
+  // not worth a per-request query.
+  { revalidate: 60, tags: [DIRECTORY_TAG] }
+);
+
+export async function countOpenNow(city: string | null): Promise<number | null> {
+  try {
+    return await cachedOpenNowCount(city);
+  } catch {
+    // null, not 0: the caller hides the line entirely. "0 clinics open"
+    // is a real fact we do show; "the query broke" is not.
+    return null;
+  }
 }

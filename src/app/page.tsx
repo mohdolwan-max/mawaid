@@ -2,7 +2,12 @@ import { getLang } from "@/lib/lang";
 import { getCity } from "@/lib/city";
 import { t } from "@/lib/i18n";
 import { cityLabel, FEATURED_CATEGORIES } from "@/lib/directory";
-import { listDirectoryOrgs, listNearbyOrgs } from "@/lib/directoryServer";
+import {
+  listDirectoryOrgs,
+  listNearbyOrgs,
+  listDistrictCounts,
+  countOpenNow,
+} from "@/lib/directoryServer";
 import { getGeo } from "@/lib/location";
 import { NearMeBar } from "@/components/marketplace/NearMeBar";
 import { PublicNav } from "@/components/marketplace/PublicNav";
@@ -10,27 +15,22 @@ import { BottomNav } from "@/components/marketplace/BottomNav";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { CategoryChips } from "@/components/marketplace/CategoryChips";
 import { CardRow } from "@/components/marketplace/CardRow";
+import { DistrictTiles } from "@/components/marketplace/DistrictTiles";
 import { PublicFooter } from "@/components/marketplace/PublicFooter";
 
 export default async function MarketplaceHome() {
   const [lang, city, geo] = await Promise.all([getLang(), getCity(), getGeo()]);
 
-  // Every row EXCEPT the nearest one is scoped to the selected city —
-  // nearest is deliberately unscoped, because physical distance does not
-  // care about a browse filter.
-  //
-  // Three rows, three honest orderings — no blended score, because a
-  // ranking nobody can explain reads as a ranking that is rigged:
-  //   * nearest  — pure distance, only when the customer shared a position
-  //   * featured — the existing rating order
-  //   * all      — every listed clinic, newest signup first (0035 taught
-  //     the RPC this second ordering). This row exists because a clinic
-  //     with no reviews was invisible outside its category chip and
-  //     search — precisely the clinics that just signed up and need the
-  //     exposure most; the owner found this himself with a fresh account.
-  // An "all" row that repeated the rating order under a different heading
-  // was tried before and removed — the orderings must genuinely differ.
-  const [topRated, allNewest, nearby] = await Promise.all([
+  // Section rhythm follows the Wddk study (owner's playbook): context →
+  // search → browse intents → top-rated → zones → nearest → everything.
+  // Every ordering is honest and every number is computed — no blended
+  // score, because a ranking nobody can explain reads as rigged:
+  //   * top-rated — the existing rating order
+  //   * zones     — real district strings with live counts (0036)
+  //   * nearest   — pure distance, only when the customer shared a position
+  //   * all       — every listed org, newest signup first, so a clinic
+  //     with no reviews yet is visible from day one
+  const [topRated, allNewest, nearby, districts, openNow] = await Promise.all([
     listDirectoryOrgs({
       city,
       limit: 12,
@@ -39,6 +39,8 @@ export default async function MarketplaceHome() {
     }),
     listDirectoryOrgs({ city, limit: 12, order: "newest" }),
     geo ? listNearbyOrgs(geo.lat, geo.lng, 12) : Promise.resolve([]),
+    listDistrictCounts(city),
+    countOpenNow(city),
   ]);
 
   const nothingListed = topRated.length === 0 && allNewest.length === 0;
@@ -48,7 +50,16 @@ export default async function MarketplaceHome() {
     <div className="market-shell">
       <PublicNav lang={lang} city={city} />
 
-      <p className="market-greeting">{t(lang, "market_greeting")}</p>
+      <div className="greeting-row">
+        <p className="market-greeting">{t(lang, "market_greeting")}</p>
+        {/* The playbook's "context header" — its weather idea replaced by
+            something a patient actually uses. Hidden when null (query
+            failed / 0036 unapplied) AND when 0: "open now: 0" at 3am is
+            true but sells nothing — this chip is invitation, not data. */}
+        {openNow != null && openNow > 0 && (
+          <span className="open-now-chip">{t(lang, "open_now_count", { n: openNow })}</span>
+        )}
+      </div>
 
       <div className="hero-banner">
         <h1>{t(lang, "market_hero_title")}</h1>
@@ -57,12 +68,6 @@ export default async function MarketplaceHome() {
       </div>
 
       <CategoryChips lang={lang} />
-
-      <NearMeBar lang={lang} hasGeo={geo !== null} hasResults={nearby.length > 0} />
-
-      {nearby.length > 0 && (
-        <CardRow title={t(lang, "near_title")} orgs={nearby} lang={lang} />
-      )}
 
       {nothingListed ? (
         <div className="empty">{t(lang, "market_empty")}</div>
@@ -74,6 +79,14 @@ export default async function MarketplaceHome() {
             orgs={topRated}
             lang={lang}
           />
+
+          <DistrictTiles lang={lang} city={city} rows={districts} />
+
+          <NearMeBar lang={lang} hasGeo={geo !== null} hasResults={nearby.length > 0} />
+          {nearby.length > 0 && (
+            <CardRow title={t(lang, "near_title")} orgs={nearby} lang={lang} />
+          )}
+
           {/* seeAllHref is honest here even though /search sorts by
               rating: this row's claim is a SET ("all clinics"), not an
               ordering, and the destination shows the same set. */}

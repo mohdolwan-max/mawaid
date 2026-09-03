@@ -1,6 +1,7 @@
 import Link from "next/link";
-import type { Lang } from "@/lib/i18n";
+import { t, type Lang } from "@/lib/i18n";
 import { categoryLabel, cityLabel, distanceLabel, priceTierLabel, type DirectoryOrg } from "@/lib/directory";
+import { PinIcon } from "@/components/icons";
 
 export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
   // distanceLabel returns "" when distance_km is absent, so cards from
@@ -10,6 +11,9 @@ export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
     .join(" · ");
   const category = categoryLabel(org.category, lang);
   const tier = priceTierLabel(org.price_tier, lang);
+  // != null twice over (missing field pre-0036, or no priced service):
+  // either way the card shows NO price line — never "from 0".
+  const fromPrice = org.min_price != null ? Number(org.min_price) : null;
 
   return (
     <Link href={`/${org.slug}`} className="org-card">
@@ -21,17 +25,28 @@ export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img className="logo-fallback" src={org.logo_url} alt={org.name} />
         ) : null}
+        {/* Rating overlays the photo (Wddk-style card density) instead of
+            spending a body row on it. Absent rating = no badge, not 0. */}
+        {org.avg_rating != null && (
+          <span className="oc-rate">★ {Number(org.avg_rating).toFixed(1)}</span>
+        )}
       </div>
       <div className="oc-body">
         <div className="oc-name">{org.name}</div>
-        {meta && <div className="oc-meta">{meta}</div>}
+        {meta && (
+          <div className="oc-meta">
+            <PinIcon size={11} /> {meta}
+          </div>
+        )}
         <div className="oc-foot">
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
             {category && <span className="chip neutral">{category}</span>}
             {tier && <span className="price-tier">{tier}</span>}
           </span>
-          {org.avg_rating != null && (
-            <span className="rating-badge">★ {Number(org.avg_rating).toFixed(1)}</span>
+          {fromPrice != null && (
+            <span className="oc-price">
+              {t(lang, "card_from")} {fromPrice} {t(lang, "currency")}
+            </span>
           )}
         </div>
       </div>

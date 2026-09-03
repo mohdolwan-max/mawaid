@@ -14,7 +14,7 @@ const PAGE_SIZE = 24;
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; city?: string; category?: string; offset?: string }>;
+  searchParams: Promise<{ q?: string; city?: string; category?: string; district?: string; offset?: string }>;
 }) {
   const params = await searchParams;
   const [lang, cookieCity] = await Promise.all([getLang(), getCity()]);
@@ -22,11 +22,17 @@ export default async function SearchPage({
   const q = params.q?.trim() || null;
   const city = CITIES.some((c) => c.key === params.city) ? params.city! : null;
   const category = CATEGORIES.some((c) => c.key === params.category) ? params.category! : null;
+  // District is owner-typed free text (the zone tiles link here with it),
+  // so unlike city/category there is no allowlist to check against — the
+  // RPC matches it by exact equality, and garbage just finds nothing.
+  // Length-capped so a crafted URL can't push kilobytes into the query.
+  const district = params.district?.trim().slice(0, 80) || null;
   const offset = Math.max(0, Number(params.offset) || 0);
 
   const orgs = await listDirectoryOrgs({
     city,
     category,
+    district,
     search: q,
     limit: PAGE_SIZE + 1, // +1 to know whether a next page exists
     offset,
@@ -38,7 +44,7 @@ export default async function SearchPage({
   const visible = hasMore ? orgs.slice(0, PAGE_SIZE) : orgs;
 
   const buildQuery = (over: Record<string, string | null>) => {
-    const merged: Record<string, string | null> = { q, city, category, ...over };
+    const merged: Record<string, string | null> = { q, city, category, district, ...over };
     const usp = new URLSearchParams();
     for (const [k, v] of Object.entries(merged)) {
       if (v) usp.set(k, v);
@@ -78,6 +84,17 @@ export default async function SearchPage({
           {t(lang, "nav_search")}
         </button>
       </form>
+
+      {/* Arriving from a zone tile filters by district invisibly — this
+          chip makes the active filter visible and removable, otherwise
+          the page reads as "search is broken, half the clinics vanished". */}
+      {district && (
+        <div style={{ marginBottom: 12 }}>
+          <Link href={buildQuery({ district: null })} className="chip neutral">
+            {district} ✕
+          </Link>
+        </div>
+      )}
 
       {visible.length === 0 ? (
         <div className="empty">{t(lang, "search_empty")}</div>

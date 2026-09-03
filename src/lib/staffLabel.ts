@@ -1,11 +1,18 @@
 import { t, type Lang } from "@/lib/i18n";
 
 // Title is a qualifier, name is the identity — kept as separate columns
-// and joined only for display, so "د." + "أحمد" reads as "د. أحمد" while
-// either can be edited without disturbing the other.
+// and joined only for display. Two kinds of title exist in the wild and
+// they join on opposite sides:
+//   * an honorific prefix ("د.", "أ.") — belongs BEFORE the name;
+//   * a job description ("استشارية جلدية") — after the name, dashed,
+//     because "استشارية جلدية د. رنا القيسي" reads backwards, and that
+//     is exactly what the grouped booking view was showing.
+// The trailing dot is the discriminator: Arabic honorifics are written
+// as abbreviations ("د.", "م.", "أ.د.") and job descriptions never are.
 function withTitle(title: string | null | undefined, name: string): string {
   const t2 = title?.trim();
-  return t2 ? `${t2} ${name}` : name;
+  if (!t2) return name;
+  return t2.endsWith(".") ? `${t2} ${name}` : `${name} — ${t2}`;
 }
 
 // How a staff member is shown wherever the OWNER lists one. Name first;
