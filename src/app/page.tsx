@@ -17,6 +17,7 @@ import { CategoryChips } from "@/components/marketplace/CategoryChips";
 import { CardRow } from "@/components/marketplace/CardRow";
 import { DistrictTiles } from "@/components/marketplace/DistrictTiles";
 import { PublicFooter } from "@/components/marketplace/PublicFooter";
+import { InstallPrompt } from "@/components/marketplace/InstallPrompt";
 
 export default async function MarketplaceHome() {
   const [lang, city, geo] = await Promise.all([getLang(), getCity(), getGeo()]);
@@ -102,6 +103,7 @@ export default async function MarketplaceHome() {
       <PublicFooter lang={lang} />
 
       <BottomNav lang={lang} />
+      <InstallPrompt lang={lang} />
     </div>
   );
 }

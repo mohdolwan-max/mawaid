@@ -2495,3 +2495,64 @@ label {
     animation: none;
   }
 }
+
+/* ---------- add-to-home-screen banner (InstallPrompt) ---------- */
+.install-prompt {
+  position: fixed;
+  inset-inline: 12px;
+  bottom: 12px;
+  z-index: 80; /* above content and .bottom-nav (60), below the splash */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--white);
+  border: 1px solid var(--band-line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 28px rgba(16, 24, 40, 0.16);
+  max-width: 480px;
+  margin-inline: auto;
+  animation: ip-rise 0.35s ease both;
+}
+@media (max-width: 700px) {
+  .install-prompt {
+    /* Sit above the fixed bottom tab bar instead of covering it. */
+    bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}
+.install-prompt .ip-mark {
+  flex-shrink: 0;
+}
+.install-prompt .ip-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.install-prompt .ip-text strong {
+  font-size: 13px;
+}
+.install-prompt .ip-text span {
+  font-size: 11.5px;
+  color: var(--ink2);
+  line-height: 1.5;
+}
+.install-prompt .ip-close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: var(--band);
+  color: var(--ink2);
+  font-size: 12px;
+  cursor: pointer;
+}
+@keyframes ip-rise {
+  from { transform: translateY(14px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .install-prompt { animation: none; }
+}
