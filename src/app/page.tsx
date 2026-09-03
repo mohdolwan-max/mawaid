@@ -15,6 +15,7 @@ import { BottomNav } from "@/components/marketplace/BottomNav";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { CategoryChips } from "@/components/marketplace/CategoryChips";
 import { CardRow } from "@/components/marketplace/CardRow";
+import { CardGrid } from "@/components/marketplace/CardGrid";
 import { DistrictTiles } from "@/components/marketplace/DistrictTiles";
 import { PublicFooter } from "@/components/marketplace/PublicFooter";
 import { InstallPrompt } from "@/components/marketplace/InstallPrompt";
@@ -90,8 +91,10 @@ export default async function MarketplaceHome() {
 
           {/* seeAllHref is honest here even though /search sorts by
               rating: this row's claim is a SET ("all clinics"), not an
-              ordering, and the destination shows the same set. */}
-          <CardRow
+              ordering, and the destination shows the same set. A GRID,
+              not a scroll row: the catch-all list reads as a feed that
+              grows downward. */}
+          <CardGrid
             title={t(lang, "sec_all", { city: cityName })}
             seeAllHref={`/search?city=${city}`}
             orgs={allNewest}
