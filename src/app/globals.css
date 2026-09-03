@@ -1196,6 +1196,18 @@ label {
 .hrow > * {
   scroll-snap-align: start;
 }
+/* Owner: the row should hold exactly 4 clinics with equal edges on
+   desktop (no partial 5th card cut off at the fold) — 2 on phones, see
+   the max-width:700px override below. Percentage-based on the row's OWN
+   width (not a fixed px card), so this stays "exactly 4, edge to edge"
+   at any desktop width instead of only at one assumed viewport. A row
+   with MORE than 4 results still scrolls/pages via ScrollRow's arrows
+   (scroll-snap-type on .hrow already snaps a full screenful at a time)
+   — this only changes how many are visible per screenful, not how many
+   are reachable. */
+.hrow .org-card {
+  width: calc((100% - 36px) / 4); /* 100% minus 3 gaps (12px each) over 4 cards */
+}
 
 .org-card {
   /* Desktop keeps a fixed-width card; phones show two side by side
@@ -1439,12 +1451,15 @@ label {
 
 /* ---------- phones: two clinic cards side by side ---------- */
 @media (max-width: 700px) {
-  /* Two cards fill the row with ~22px to spare, so a sliver of the third
-     still shows through the .hrow edge fade and the row keeps reading as
-     scrollable. The 100% resolves against the flex container's visible
+  /* Owner: equal edges, no partial card peeking at the fold — two cards
+     fill the row exactly (100% minus the one 12px gap between them,
+     split evenly), same reasoning as the 4-up desktop rule above. A row
+     with more than 2 results still swipes to the next pair via
+     scroll-snap on .hrow; only the peek affordance this used to lean on
+     is gone. The 100% resolves against the flex container's visible
      content box, not its (much wider) scroll width. */
   .hrow .org-card {
-    width: calc((100% - 34px) / 2);
+    width: calc((100% - 12px) / 2);
   }
   /* Search results reuse the same card in a grid — keep the same two-up
      rhythm there instead of one oversized card per row. */
