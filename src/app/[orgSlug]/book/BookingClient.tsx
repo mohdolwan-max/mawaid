@@ -9,6 +9,7 @@ import { DateField } from "@/components/DateTimeField";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { fetchStaffAction, fetchSlotsAction, submitBookingAction } from "./actions";
 import { intlLocale } from "@/lib/date";
+import { isValidPhone, formatPhoneForDisplay, normalizePhone } from "@/lib/phone";
 
 type Step = "service" | "staff" | "slot" | "contact" | "done";
 
@@ -155,6 +156,12 @@ export function BookingClient({
 
   async function submitBooking(allowOverlap: boolean) {
     if (chosen.length === 0 || !selectedSlot) return;
+    // Backstopped by appointments_phone_shape (0039); this is the copy
+    // that gives the customer a sentence instead of a driver error.
+    if (!isValidPhone(phone)) {
+      setError("phone_invalid");
+      return;
+    }
     if (honeypot.trim() !== "") {
       // Silently pretend it worked — don't tip off the bot.
       setCancelToken("00000000-0000-0000-0000-000000000000");
@@ -202,6 +209,19 @@ export function BookingClient({
       return;
     }
     setCancelToken(result.cancelToken);
+    // A guest who left the email blank saw the manage link once, on
+    // this screen, and closing the tab lost the booking for good — the
+    // clinic could cancel it, they could not. Keep a local pointer so
+    // the same device can find it again (SavedBookings on the home
+    // page). Storage failure must never break a confirmed booking.
+    try {
+      const saved: { token: string }[] = JSON.parse(localStorage.getItem("maw3ed_bookings") ?? "[]");
+      const next = [
+        { token: result.cancelToken, orgSlug, at: selectedSlot, phone: normalizePhone(phone) },
+        ...saved.filter((b) => b && b.token !== result.cancelToken),
+      ].slice(0, 5);
+      localStorage.setItem("maw3ed_bookings", JSON.stringify(next));
+    } catch {}
     setStep("done");
   }
 
@@ -405,7 +425,31 @@ export function BookingClient({
           </div>
           <div className="field">
             <label htmlFor="phone">{t(lang, "customer_phone")}</label>
-            <input id="phone" dir="ltr" required value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <input
+              id="phone"
+              dir="ltr"
+              inputMode="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            {/* Read the number back before they commit. A booking on a
+                mistyped number is a slot the clinic loses and a customer
+                it cannot warn — and the customer cannot undo it either.
+                Only speaks once there is something to judge. */}
+            {phone.trim() !== "" &&
+              (isValidPhone(phone) ? (
+                <p className="hint" style={{ marginTop: 6 }}>
+                  {t(lang, "phone_confirm")}{" "}
+                  <span dir="ltr" style={{ fontWeight: 700, color: "var(--brand)" }}>
+                    {formatPhoneForDisplay(phone)}
+                  </span>
+                </p>
+              ) : (
+                <p className="error-text" style={{ marginTop: 6 }}>
+                  {t(lang, "phone_invalid")}
+                </p>
+              ))}
           </div>
           <div className="field">
             <label htmlFor="email">{t(lang, "customer_email")}</label>
@@ -431,7 +475,7 @@ export function BookingClient({
             <button type="button" className="btn ghost" onClick={() => setStep("slot")}>
               {t(lang, "back")}
             </button>
-            <button type="submit" className="btn" disabled={pending}>
+            <button type="submit" className="btn" disabled={pending || !isValidPhone(phone)}>
               {pending ? t(lang, "loading") : t(lang, "book_submit")}
             </button>
           </div>

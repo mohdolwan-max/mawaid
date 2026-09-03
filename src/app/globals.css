@@ -2556,3 +2556,42 @@ label {
 @media (prefers-reduced-motion: reduce) {
   .install-prompt { animation: none; }
 }
+
+/* ---------- a guest's own booking, remembered on this device ---------- */
+.saved-bookings {
+  margin: 0 0 12px;
+}
+.saved-bookings .sb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--tint);
+  border: 1px solid var(--band-line);
+  border-radius: 12px;
+  padding: 10px 13px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.saved-bookings .sb-row svg {
+  flex-shrink: 0;
+  color: var(--brand);
+}
+.saved-bookings .sb-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 12px;
+}
+.saved-bookings .sb-text strong {
+  font-size: 13px;
+}
+.saved-bookings .sb-cta {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand);
+  white-space: nowrap;
+}

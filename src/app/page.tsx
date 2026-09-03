@@ -19,6 +19,7 @@ import { CardGrid } from "@/components/marketplace/CardGrid";
 import { DistrictTiles } from "@/components/marketplace/DistrictTiles";
 import { PublicFooter } from "@/components/marketplace/PublicFooter";
 import { InstallPrompt } from "@/components/marketplace/InstallPrompt";
+import { SavedBookings } from "@/components/marketplace/SavedBookings";
 
 export default async function MarketplaceHome() {
   const [lang, city, geo] = await Promise.all([getLang(), getCity(), getGeo()]);
@@ -62,6 +63,8 @@ export default async function MarketplaceHome() {
           <span className="open-now-chip">{t(lang, "open_now_count", { n: openNow })}</span>
         )}
       </div>
+
+      <SavedBookings lang={lang} />
 
       <div className="hero-banner">
         <h1>{t(lang, "market_hero_title")}</h1>
