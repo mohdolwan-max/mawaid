@@ -26,6 +26,7 @@ const cachedListDirectoryOrgs = unstable_cache(
     offset?: number;
     featuredCategories?: string[] | null;
     featuredOnly?: boolean;
+    order?: "rating" | "newest";
   }): Promise<DirectoryOrg[]> => {
     const { data, error } = await publicSupabase.rpc("list_directory_orgs", {
       p_city: filters.city ?? null,
@@ -35,6 +36,11 @@ const cachedListDirectoryOrgs = unstable_cache(
       p_offset: filters.offset ?? 0,
       p_featured_categories: filters.featuredCategories ?? null,
       p_featured_only: filters.featuredOnly ?? false,
+      // Sent only when it is not the default: an already-deployed app
+      // talking to a database still on the 7-parameter function keeps
+      // every rating-ordered row working, and only the newest row
+      // degrades to absent (0035 unapplied logs PGRST202 below).
+      ...(filters.order === "newest" ? { p_order: "newest" } : {}),
     });
 
     // Not `data ?? []`. An empty marketplace and a broken query look
@@ -59,6 +65,7 @@ export async function listDirectoryOrgs(filters: {
   offset?: number;
   featuredCategories?: string[] | null;
   featuredOnly?: boolean;
+  order?: "rating" | "newest";
 }): Promise<DirectoryOrg[]> {
   try {
     return await cachedListDirectoryOrgs(filters);

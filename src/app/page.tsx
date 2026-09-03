@@ -19,27 +19,29 @@ export default async function MarketplaceHome() {
   // nearest is deliberately unscoped, because physical distance does not
   // care about a browse filter.
   //
-  // ONE query, not two. These were two calls with identical arguments
-  // (offset: 0 is the default), so the page paid for the same round trip
-  // twice and then rendered the same clinics in both rows — the RPC has
-  // a single ordering and no way to ask for "newest". Until it can, the
-  // second row cannot be honest, so it is not rendered at all rather
-  // than repeating the first under a heading that claims otherwise.
-  // Two rows, two honest orderings: nearest is pure distance (only when
-  // the customer chose to share a position), featured is the existing
-  // rating order. No blended score — a ranking nobody can explain reads
-  // as a ranking that is rigged.
-  const [topRated, nearby] = await Promise.all([
+  // Three rows, three honest orderings — no blended score, because a
+  // ranking nobody can explain reads as a ranking that is rigged:
+  //   * nearest  — pure distance, only when the customer shared a position
+  //   * featured — the existing rating order
+  //   * all      — every listed clinic, newest signup first (0035 taught
+  //     the RPC this second ordering). This row exists because a clinic
+  //     with no reviews was invisible outside its category chip and
+  //     search — precisely the clinics that just signed up and need the
+  //     exposure most; the owner found this himself with a fresh account.
+  // An "all" row that repeated the rating order under a different heading
+  // was tried before and removed — the orderings must genuinely differ.
+  const [topRated, allNewest, nearby] = await Promise.all([
     listDirectoryOrgs({
       city,
       limit: 12,
       featuredCategories: FEATURED_CATEGORIES,
       featuredOnly: true,
     }),
+    listDirectoryOrgs({ city, limit: 12, order: "newest" }),
     geo ? listNearbyOrgs(geo.lat, geo.lng, 12) : Promise.resolve([]),
   ]);
 
-  const nothingListed = topRated.length === 0;
+  const nothingListed = topRated.length === 0 && allNewest.length === 0;
   const cityName = cityLabel(city, lang);
 
   return (
@@ -70,6 +72,15 @@ export default async function MarketplaceHome() {
             title={t(lang, "sec_featured", { city: cityName })}
             seeAllHref={`/search?city=${city}`}
             orgs={topRated}
+            lang={lang}
+          />
+          {/* seeAllHref is honest here even though /search sorts by
+              rating: this row's claim is a SET ("all clinics"), not an
+              ordering, and the destination shows the same set. */}
+          <CardRow
+            title={t(lang, "sec_all", { city: cityName })}
+            seeAllHref={`/search?city=${city}`}
+            orgs={allNewest}
             lang={lang}
           />
         </>
