@@ -25,7 +25,7 @@ export default async function ReviewsPage() {
           <p>{t(ctx.lang, "reviews_sub")}</p>
         </div>
       </div>
-      <ReviewsClient lang={ctx.lang} reviews={(data as OrgReview[]) ?? []} canManage={ctx.role === "owner"} />
+      <ReviewsClient lang={ctx.lang} reviews={(data as OrgReview[]) ?? []} canManage={ctx.role === "owner"} timezone={ctx.timezone} />
     </div>
   );
 }

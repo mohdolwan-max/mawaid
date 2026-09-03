@@ -53,13 +53,26 @@ export function BookingsClient({
         />
       )}
 
-      <BookingSection title={t(lang, "bookings_today")} lang={lang} rows={todays} />
-      <BookingSection title={t(lang, "bookings_upcoming")} lang={lang} rows={upcoming} />
+      <BookingSection title={t(lang, "bookings_today")} lang={lang} rows={todays} timezone={timezone} />
+      <BookingSection title={t(lang, "bookings_upcoming")} lang={lang} rows={upcoming} timezone={timezone} />
     </div>
   );
 }
 
-function BookingSection({ title, lang, rows }: { title: string; lang: Lang; rows: Appointment[] }) {
+function BookingSection({
+  title,
+  lang,
+  rows,
+  timezone,
+}: {
+  title: string;
+  lang: Lang;
+  rows: Appointment[];
+  /** The CLINIC's timezone. Without it this renders UTC on the server and
+   *  local time in the browser — a hydration mismatch that silently kills
+   *  the status buttons in these same rows. */
+  timezone: string;
+}) {
   const router = useRouter();
 
   return (
@@ -87,6 +100,7 @@ function BookingSection({ title, lang, rows }: { title: string; lang: Lang; rows
                   <td dir="ltr">{a.customer_phone}</td>
                   <td dir="ltr">
                     {new Date(a.start_at).toLocaleString(intlLocale(lang), {
+                      timeZone: timezone,
                       dateStyle: "short",
                       timeStyle: "short",
                     })}

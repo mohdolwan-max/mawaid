@@ -63,7 +63,11 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <NotificationsCard lang={ctx.lang} notifications={(notifications as OrgNotification[]) ?? []} />
+      <NotificationsCard
+        lang={ctx.lang}
+        notifications={(notifications as OrgNotification[]) ?? []}
+        timezone={ctx.timezone}
+      />
 
       <PublicLinkCard lang={ctx.lang} slug={ctx.slug} />
     </div>

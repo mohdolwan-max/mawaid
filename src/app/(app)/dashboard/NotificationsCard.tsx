@@ -26,9 +26,14 @@ function labelFor(kind: string): TKey {
 export function NotificationsCard({
   lang,
   notifications,
+  timezone,
 }: {
   lang: Lang;
   notifications: OrgNotification[];
+  /** The clinic's timezone. A date rendered without it is UTC on the
+   *  server and local in the browser — the same hydration mismatch that
+   *  killed the booking status buttons. */
+  timezone: string;
 }) {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -77,6 +82,7 @@ export function NotificationsCard({
           {n.body && <p dir="auto">{n.body}</p>}
           <span className="rv-date">
             {new Date(n.created_at).toLocaleDateString(intlLocale(lang), {
+              timeZone: timezone,
               dateStyle: "medium",
             })}
           </span>

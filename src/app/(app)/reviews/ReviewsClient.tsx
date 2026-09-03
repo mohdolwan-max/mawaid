@@ -10,10 +10,15 @@ export function ReviewsClient({
   lang,
   reviews,
   canManage,
+  timezone,
 }: {
   lang: Lang;
   reviews: OrgReview[];
   canManage: boolean;
+  /** The clinic's timezone. A date rendered without it is UTC on the
+   *  server and local in the browser — the same hydration mismatch that
+   *  killed the booking status buttons. */
+  timezone: string;
 }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -52,6 +57,7 @@ export function ReviewsClient({
           <div className="toolbar" style={{ justifyContent: "space-between", marginTop: 6 }}>
             <span className="rv-date">
               {new Date(r.created_at).toLocaleDateString(intlLocale(lang), {
+                timeZone: timezone,
                 dateStyle: "medium",
               })}
               {r.hidden_at && <span className="chip warn" style={{ marginInlineStart: 8 }}>{t(lang, "review_hidden_badge")}</span>}

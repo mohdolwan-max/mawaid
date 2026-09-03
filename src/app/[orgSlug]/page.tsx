@@ -167,6 +167,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
               {r.comment && <p>{r.comment}</p>}
               <span className="rv-date">
                 {new Date(r.created_at).toLocaleDateString(intlLocale(lang), {
+                  timeZone: org.timezone,
                   dateStyle: "medium",
                 })}
               </span>
