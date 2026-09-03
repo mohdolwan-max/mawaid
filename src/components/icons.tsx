@@ -111,34 +111,48 @@ export function BuildingIcon({ size = 26, className }: IconProps) {
 // monoline set above it carries its own colours: it is the identity, not
 // an interface glyph, and must render identically everywhere.
 export function BrandMark({ size = 26, className }: IconProps) {
+  // Kept in lockstep with src/app/icon.svg ("correct-colors" iteration,
+  // 2026-09-03) — same geometry, richer 3-stop gradients per element.
   return (
     <svg viewBox="0 0 1024 1024" width={size} height={size} className={className} aria-hidden="true">
       <defs>
-        <linearGradient id="bm-l" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#D4F2E8" /><stop offset="1" stopColor="#49B69F" />
+        <linearGradient id="bm-lh" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#D7F2E8" /><stop offset="0.55" stopColor="#9EDBC9" /><stop offset="1" stopColor="#73C5AE" />
         </linearGradient>
-        <linearGradient id="bm-r" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#55C5B2" /><stop offset="1" stopColor="#006356" />
+        <linearGradient id="bm-lb" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#B8E7D8" /><stop offset="0.55" stopColor="#88D2BD" /><stop offset="1" stopColor="#58B79F" />
+        </linearGradient>
+        <linearGradient id="bm-rh" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#48B8A2" /><stop offset="0.5" stopColor="#228F7D" /><stop offset="1" stopColor="#0F6B5E" />
+        </linearGradient>
+        <linearGradient id="bm-rb" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#50BEA8" /><stop offset="0.55" stopColor="#289E8C" /><stop offset="1" stopColor="#0C6D60" />
+        </linearGradient>
+        <linearGradient id="bm-ring" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#A9E0CF" /><stop offset="1" stopColor="#70C6AE" />
+        </linearGradient>
+        <linearGradient id="bm-hand" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#0B6A5D" /><stop offset="1" stopColor="#005548" />
         </linearGradient>
       </defs>
-      <circle cx="255" cy="175" r="66" fill="url(#bm-l)" />
-      <circle cx="769" cy="175" r="66" fill="url(#bm-r)" />
-      <rect x="175" y="310" width="130" height="470" rx="65" fill="url(#bm-l)" />
-      <rect x="719" y="310" width="130" height="470" rx="65" fill="url(#bm-r)" />
-      <path d="M240 330L500 555" fill="none" stroke="url(#bm-l)" strokeWidth="132" strokeLinecap="round" />
-      <path d="M784 330L524 555" fill="none" stroke="url(#bm-r)" strokeWidth="132" strokeLinecap="round" />
-      <circle cx="512" cy="665" r="190" fill="#7FD2BD" />
-      <circle cx="512" cy="665" r="163" fill="#fff" />
-      <g stroke="#006356" strokeWidth="16" strokeLinecap="round">
-        <path d="M512 535v30" /><path d="M512 765v30" />
-        <path d="M382 665h30" /><path d="M612 665h30" />
+      <circle cx="255" cy="175" r="66" fill="url(#bm-lh)" />
+      <circle cx="769" cy="175" r="66" fill="url(#bm-rh)" />
+      <rect x="175" y="310" width="130" height="470" rx="65" fill="url(#bm-lb)" />
+      <rect x="719" y="310" width="130" height="470" rx="65" fill="url(#bm-rb)" />
+      <path d="M240 330 L500 555" fill="none" stroke="url(#bm-lb)" strokeWidth="132" strokeLinecap="round" />
+      <path d="M784 330 L524 555" fill="none" stroke="url(#bm-rb)" strokeWidth="132" strokeLinecap="round" />
+      <circle cx="512" cy="665" r="190" fill="url(#bm-ring)" />
+      <circle cx="512" cy="665" r="163" fill="#FFFFFF" />
+      <g stroke="#0C6D60" strokeWidth="16" strokeLinecap="round">
+        <path d="M512 535 V565" /><path d="M512 765 V795" />
+        <path d="M382 665 H412" /><path d="M612 665 H642" />
       </g>
-      <g stroke="#006356" strokeLinecap="round">
+      <g stroke="url(#bm-hand)" strokeLinecap="round">
         <path d="M512 665 L443 615" strokeWidth="22" />
         <path d="M512 665 L590 620" strokeWidth="18" />
       </g>
-      <circle cx="512" cy="665" r="28" fill="#7FD2BD" />
-      <circle cx="512" cy="665" r="12" fill="#fff" />
+      <circle cx="512" cy="665" r="28" fill="#79CFB8" />
+      <circle cx="512" cy="665" r="12" fill="#FFFFFF" />
     </svg>
   );
 }
