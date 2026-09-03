@@ -20,7 +20,7 @@ export function ForgotPasswordForm({ lang, next }: { lang: Lang; next: string })
       </div>
       {state?.error && <p className="error-text">{t(lang, "auth_error")}</p>}
       <button type="submit" className="btn block" disabled={pending}>
-        {pending ? t(lang, "loading") : t(lang, "send_reset_link")}
+        {pending ? t(lang, "sending_reset_link") : t(lang, "send_reset_link")}
       </button>
     </form>
   );
