@@ -1463,6 +1463,29 @@ label {
     flex-wrap: wrap;
     gap: 4px;
   }
+  /* The desktop tile is 92px wide around a 60px icon (sized so long
+     English labels stay on one line) — on a 375px phone that padding
+     plus the 16px gap put ~48px of air between icons and fit only 3.5
+     categories. Owner's report: "الفراغ بشع". Tighter tiles show ~5,
+     and labels may wrap to a second centered line instead of paying
+     for one-line English in horizontal blank. */
+  .cat-chip-row {
+    gap: 6px;
+    padding-bottom: 12px;
+  }
+  .cat-card {
+    width: 72px;
+    gap: 5px;
+  }
+  .cat-card .cat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+  }
+  .cat-card .cat-label {
+    font-size: 10.5px;
+    white-space: normal;
+  }
 }
 
 /* Edge fade for scrollable rows — applied by ScrollRow ONLY on a side
