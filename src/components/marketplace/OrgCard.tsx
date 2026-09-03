@@ -11,9 +11,11 @@ export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
     .join(" · ");
   const category = categoryLabel(org.category, lang);
   const tier = priceTierLabel(org.price_tier, lang);
-  // != null twice over (missing field pre-0036, or no priced service):
-  // either way the card shows NO price line — never "from 0".
-  const fromPrice = org.min_price != null ? Number(org.min_price) : null;
+  // No line unless there is a real PAID price: missing field (pre-0036),
+  // no priced services, or a database still counting free consultations
+  // into the minimum (pre-0037) all hide it — "from 0 JOD" reads as
+  // broken data, never as a gift.
+  const fromPrice = org.min_price != null && Number(org.min_price) > 0 ? Number(org.min_price) : null;
 
   return (
     <Link href={`/${org.slug}`} className="org-card">
