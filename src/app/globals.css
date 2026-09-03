@@ -1096,6 +1096,21 @@ label {
   .scroll-arrow.end {
     inset-inline-end: -14px;
   }
+  /* Card rows only: -14px was tuned for the old peek design, where the
+     arrow sat on an already-cut-off card. With full cards flush to the
+     row edge it covered real content (owner: "ما بدي السهم ياكل من
+     الكرت"). -30px puts the 32px circle astride the card-band's border
+     instead: 2px over the row, 14px across the band's padding, 16px
+     outside it — which is exactly the market-shell padding, so at the
+     narrowest desktop (701px) it meets the viewport edge with zero
+     horizontal overflow. The chips row keeps -14px; it has no band and
+     only 16px of outside room, where -30px would overflow. */
+  .card-band .scroll-arrow.start {
+    inset-inline-start: -30px;
+  }
+  .card-band .scroll-arrow.end {
+    inset-inline-end: -30px;
+  }
   [dir="rtl"] .scroll-arrow svg {
     transform: scaleX(-1);
   }
