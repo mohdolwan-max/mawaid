@@ -2452,3 +2452,46 @@ label {
   border-radius: 50%;
   background: var(--brand);
 }
+
+/* ---------- installed-app opening splash (SplashIntro) ---------- */
+.splash-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #f6fbf9, #ddf1e9);
+  transition: opacity 0.45s ease;
+}
+.splash-intro.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.splash-intro .si-mark {
+  /* Big, as asked: roughly half the screen on a phone, capped on tablets. */
+  width: min(52vw, 320px);
+  height: auto;
+  animation: si-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+.splash-intro .si-pulse {
+  position: absolute;
+  width: min(78vw, 480px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(73, 182, 159, 0.2), rgba(73, 182, 159, 0) 65%);
+  animation: si-pulse 1.5s ease-out infinite;
+}
+@keyframes si-pop {
+  from { transform: scale(0.78); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes si-pulse {
+  from { transform: scale(0.7); opacity: 0.9; }
+  to { transform: scale(1.28); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-intro .si-mark,
+  .splash-intro .si-pulse {
+    animation: none;
+  }
+}

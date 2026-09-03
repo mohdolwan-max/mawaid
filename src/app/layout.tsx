@@ -1,3 +1,4 @@
+import { SplashIntro } from "@/components/SplashIntro";
 import type { Metadata, Viewport } from "next";
 import { Cairo, Poppins } from "next/font/google";
 import { getLang } from "@/lib/lang";
@@ -52,7 +53,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} className={`${cairo.variable} ${poppins.variable}`}>
-      <body>{children}</body>
+      <body>
+        <SplashIntro />
+        {children}
+      </body>
     </html>
   );
 }
