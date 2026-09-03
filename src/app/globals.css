@@ -1126,13 +1126,16 @@ label {
   width: 92px;
 }
 .cat-card .cat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 18px;
+  /* Owner: icons read small on desktop — sized up while the row's gap
+     (7px) and card width (92px) stay put, so this is bigger icons in
+     the same layout, not a wider/looser row. */
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 30px;
   overflow: hidden;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
