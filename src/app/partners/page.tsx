@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 // instead of hidden behind a "contact us".
 export default async function PartnersPage() {
   const lang = await getLang();
-  const host = process.env.NEXT_PUBLIC_SITE_HOST ?? "mawaidy.vercel.app";
+  const host = process.env.NEXT_PUBLIC_SITE_HOST ?? "maw3ed.me";
 
   const features: [TKey, TKey][] = [
     ["pt_f1_t", "pt_f1_b"],

@@ -79,7 +79,7 @@ export async function submitBookingAction(input: {
           services: booked,
           timezone: org.timezone,
           lang,
-          manageUrl: `https://${process.env.NEXT_PUBLIC_SITE_HOST ?? "mawaidy.vercel.app"}/${input.orgSlug}/booking/${result.cancelToken}`,
+          manageUrl: `https://${process.env.NEXT_PUBLIC_SITE_HOST ?? "maw3ed.me"}/${input.orgSlug}/booking/${result.cancelToken}`,
         });
       }
     } catch (err) {

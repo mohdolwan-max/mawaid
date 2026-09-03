@@ -72,7 +72,7 @@ export async function sendBookingConfirmation(input: {
 
   try {
     await resend.emails.send({
-      from: process.env.BOOKING_EMAIL_FROM ?? "bookings@mawaid.app",
+      from: process.env.BOOKING_EMAIL_FROM ?? "bookings@maw3ed.me",
       to: input.toEmail,
       subject,
       html,

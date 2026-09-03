@@ -56,7 +56,7 @@ export async function customerSignup(
       // Survives until the email-confirmation callback, when
       // ensureCustomerProfile() materializes the customers row from it.
       data: { kind: "customer", name, phone },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_HOST?.startsWith("localhost") ? "http" : "https"}://${process.env.NEXT_PUBLIC_SITE_HOST ?? "mawaidy.vercel.app"}/auth/callback?next=${encodeURIComponent(next)}`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_HOST?.startsWith("localhost") ? "http" : "https"}://${process.env.NEXT_PUBLIC_SITE_HOST ?? "maw3ed.me"}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
 
