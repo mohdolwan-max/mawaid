@@ -5,7 +5,7 @@ import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { getPublicOrg, listPublicServices } from "@/lib/publicOrg";
 import { getOrgReviews, getOrgRatingSummary } from "@/lib/reviews";
-import { categoryLabel, cityLabel, priceTierLabel } from "@/lib/directory";
+import { categoryLabel, cityLabel, priceTierLabel, reviewCountLabel } from "@/lib/directory";
 import { isSafeHttpUrl } from "@/lib/url";
 import { PinIcon } from "@/components/icons";
 import { BottomNav } from "@/components/marketplace/BottomNav";
@@ -105,7 +105,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
             {ratingSummary.avg_rating != null && (
               <span className="rating-badge">
                 ★ {Number(ratingSummary.avg_rating).toFixed(1)} ·{" "}
-                {t(lang, "reviews_count", { n: ratingSummary.review_count })}
+                {reviewCountLabel(ratingSummary.review_count, lang)}
               </span>
             )}
             {category && <span className="chip neutral">{category}</span>}

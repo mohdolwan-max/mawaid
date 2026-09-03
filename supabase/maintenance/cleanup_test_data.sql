@@ -38,7 +38,8 @@ where u.email in (
   'mohdolwan+mawaidtest5@gmail.com',
   'mohdolwan+mawaidtest6@gmail.com',
   'mohdolwan+mawaidtest7@gmail.com',
-  'mohdolwan+mawaidcust1@gmail.com'
+  'mohdolwan+mawaidcust1@gmail.com',
+  'mawaid.qa.customer@gmail.com'
 )
 
 union all
@@ -54,12 +55,27 @@ where o.slug like 'demo-%'
 
 union all
 
--- The auditor's guest booking, wherever it landed.
-select 'QA guest booking', o.slug || ' · ' || a.customer_name, a.status
+-- The auditor's bookings, both rounds: the guest booking and the
+-- second-round review test.
+select 'QA booking', o.slug || ' · ' || a.customer_name, a.status
 from public.appointments a
 join public.organizations o on o.id = a.org_id
-where a.customer_name = 'اختبار QA'
+where a.customer_name in ('اختبار QA', 'نور للتقييم')
+
+union all
+
+-- Second-round finding: the auditor switched this org's directory listing
+-- ON, so a test clinic carrying a fabricated 5-star review sat at the
+-- TOP of the live directory. Unlist immediately (line below Section 1);
+-- the org itself goes with Section 2.
+select 'LISTED PUBLICLY — unlist now', o.slug, o.name
+from public.organizations o
+where o.slug = 'qa-test-clinic' and o.is_listed
 order by 1, 2;
+
+
+-- Reversible, and does not wait for the rest of the cleanup:
+-- update public.organizations set is_listed = false where slug = 'qa-test-clinic';
 
 
 -- =====================================================================
@@ -74,7 +90,8 @@ order by 1, 2;
 --   and o.slug like 'demo-%'
 --   and a.id::text not like 'd0000%';
 --
--- delete from public.appointments where customer_name = 'اختبار QA';
+-- delete from public.appointments
+-- where customer_name in ('اختبار QA', 'نور للتقييم');
 --
 -- -- Orgs: 9 child tables cascade (appointments, services, staff_*,
 -- -- reviews, notifications, org_settings, memberships, invitations).
@@ -93,7 +110,8 @@ order by 1, 2;
 --   'mohdolwan+mawaidtest5@gmail.com',
 --   'mohdolwan+mawaidtest6@gmail.com',
 --   'mohdolwan+mawaidtest7@gmail.com',
---   'mohdolwan+mawaidcust1@gmail.com'
+--   'mohdolwan+mawaidcust1@gmail.com',
+--   'mawaid.qa.customer@gmail.com'
 -- );
 --
 -- commit;

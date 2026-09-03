@@ -101,6 +101,18 @@ export function priceTierLabel(tier: number | null, lang: Lang): string {
   return PRICE_TIERS[Math.min(Math.max(tier, 1), 3)]?.[lang] ?? "";
 }
 
+/** "1 review", not "1 reviews" (re-test report, 2026-09-03) — and the
+ *  Arabic side needs the same care: تقييم / تقييمان / تقييمات / تقييماً
+ *  by the same 1 / 2 / 3-10 / 11+ rule as [[facilityCountLabel]]. A
+ *  plain "{n} reviews" template cannot express either language. */
+export function reviewCountLabel(n: number, lang: "ar" | "en"): string {
+  if (lang === "en") return n === 1 ? "1 review" : `${n} reviews`;
+  if (n === 1) return "تقييم واحد";
+  if (n === 2) return "تقييمان";
+  if (n >= 3 && n <= 10) return `${n} تقييمات`;
+  return `${n} تقييماً`;
+}
+
 /** "3 منشآت" with real Arabic number agreement (1 / 2 / 3-10 / 11+) —
  *  the zone tiles and the open-now line both count mixed businesses
  *  (clinics AND salons), hence منشأة rather than عيادة. */
