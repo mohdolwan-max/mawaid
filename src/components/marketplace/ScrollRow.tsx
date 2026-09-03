@@ -52,7 +52,13 @@ export function ScrollRow({ className, children }: { className: string; children
     const el = ref.current;
     if (!el) return;
     const rtl = getComputedStyle(el).direction === "rtl";
-    el.scrollBy({ left: (rtl ? -1 : 1) * dir * 280, behavior: "smooth" });
+    // A full page (the row's own width), not a fixed px step: card rows
+    // are now sized so exactly N cards fill that width edge to edge, and
+    // a step that didn't match card width landed mid-card — the row
+    // scrolled, but the "equal edges" look broke immediately on the
+    // first click. A page-at-a-time step always lands back on a card
+    // boundary, whatever N happens to be for this row's card width.
+    el.scrollBy({ left: (rtl ? -1 : 1) * dir * el.clientWidth, behavior: "smooth" });
   }
 
   const fade =

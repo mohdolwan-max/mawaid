@@ -2236,10 +2236,15 @@ label {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* Semi-transparent BRAND colours, not near-white pastels: the first
+     pass used #f2e9d8/#dcede9, which sit so close to --bg (#f7f6f2)
+     that the blobs barely registered — owner: "مش واضح". A tint of the
+     actual brand teal and gold reads as a deliberate design element at
+     the same softness. */
   background:
-    radial-gradient(120% 60% at 78% -10%, #dcede9 0%, rgba(220, 237, 233, 0) 62%),
-    radial-gradient(46% 38% at 3% 58%, #f2e9d8 0%, rgba(242, 233, 216, 0) 72%),
-    radial-gradient(42% 34% at 98% 90%, #dcede9 0%, rgba(220, 237, 233, 0) 72%),
+    radial-gradient(120% 60% at 78% -10%, rgba(20, 108, 99, 0.13) 0%, rgba(20, 108, 99, 0) 62%),
+    radial-gradient(50% 42% at 2% 56%, rgba(212, 175, 55, 0.14) 0%, rgba(212, 175, 55, 0) 70%),
+    radial-gradient(48% 40% at 99% 88%, rgba(20, 108, 99, 0.13) 0%, rgba(20, 108, 99, 0) 70%),
     linear-gradient(#f2f6f4 0%, rgba(247, 246, 242, 0) 32%);
 }
 

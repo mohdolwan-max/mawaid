@@ -37,7 +37,14 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+  // geolocation=(self): NearMeBar (0031) asks for the customer's
+  // position to show nearby clinics — a blanket geolocation=() predates
+  // that feature and was silently killing it on every browser, on both
+  // mobile and desktop, with no error a user could act on (the API call
+  // fails at the policy level before it ever reaches a permission
+  // prompt). "self" still blocks any third-party content embedded in
+  // the page from requesting it — nothing here needs that.
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
 ];
 
