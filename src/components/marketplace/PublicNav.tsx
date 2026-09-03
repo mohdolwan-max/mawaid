@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { t, type Lang } from "@/lib/i18n";
-import { SearchIcon, CalendarIcon, UserIcon } from "@/components/icons";
+import { SearchIcon, CalendarIcon, UserIcon, BrandMark } from "@/components/icons";
 import { CitySelector } from "./CitySelector";
 import { LangToggle } from "./LangToggle";
 import { HeaderMenu } from "./HeaderMenu";
@@ -17,7 +17,7 @@ export function PublicNav({ lang, city }: { lang: Lang; city: string }) {
       <div className="mh-start">
         <HeaderMenu lang={lang} />
         <Link href="/" className="mh-brand">
-          {t(lang, "brand")}
+          <BrandMark size={26} /> {t(lang, "brand")}
         </Link>
       </div>
       <nav className="header-nav-links">

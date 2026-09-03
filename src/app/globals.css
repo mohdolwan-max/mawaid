@@ -881,6 +881,11 @@ label {
   font-weight: 800;
   color: var(--brand);
   text-decoration: none;
+  /* Mark + wordmark on one baseline-ish line since the brand mark
+     (owner's vector, 2026-09) now sits beside the name. */
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 .market-header .mh-side {
   display: flex;

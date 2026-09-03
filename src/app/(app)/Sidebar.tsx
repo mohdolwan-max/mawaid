@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { t, type Lang } from "@/lib/i18n";
+import { BrandMark } from "@/components/icons";
 import { intlLocale } from "@/lib/date";
 import { toggleLang } from "./actions";
 
@@ -36,7 +37,9 @@ export function Sidebar({
     <aside className="sidebar">
       <div className="brand">
         <h1>{orgName}</h1>
-        <small>{t(lang, "brand")}</small>
+        <small style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <BrandMark size={13} /> {t(lang, "brand")}
+        </small>
       </div>
       <nav className="nav">
         {LINKS.map((link) => (

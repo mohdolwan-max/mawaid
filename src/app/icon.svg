@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<defs>
+<linearGradient id="l" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#D4F2E8"/><stop offset="1" stop-color="#49B69F"/></linearGradient>
+<linearGradient id="r" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#55C5B2"/><stop offset="1" stop-color="#006356"/></linearGradient>
+</defs>
+<circle cx="255" cy="175" r="66" fill="url(#l)"/><circle cx="769" cy="175" r="66" fill="url(#r)"/>
+<rect x="175" y="310" width="130" height="470" rx="65" fill="url(#l)"/><rect x="719" y="310" width="130" height="470" rx="65" fill="url(#r)"/>
+<path d="M240 330L500 555" fill="none" stroke="url(#l)" stroke-width="132" stroke-linecap="round"/>
+<path d="M784 330L524 555" fill="none" stroke="url(#r)" stroke-width="132" stroke-linecap="round"/>
+<circle cx="512" cy="665" r="190" fill="#7FD2BD"/><circle cx="512" cy="665" r="163" fill="#fff"/>
+<g stroke="#006356" stroke-width="16" stroke-linecap="round"><path d="M512 535v30"/><path d="M512 765v30"/><path d="M382 665h30"/><path d="M612 665h30"/></g>
+<!-- 10:10 hands -->
+<g stroke="#006356" stroke-linecap="round">
+<path d="M512 665 L443 615" stroke-width="22"/>
+<path d="M512 665 L590 620" stroke-width="18"/>
+</g>
+<circle cx="512" cy="665" r="28" fill="#7FD2BD"/><circle cx="512" cy="665" r="12" fill="#fff"/>
+</svg>
