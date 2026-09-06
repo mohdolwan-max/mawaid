@@ -8,6 +8,8 @@ import {
 import { listPublicStaffForService, listPublicServices, getPublicOrg, type PublicStaff } from "@/lib/publicOrg";
 import { sendBookingConfirmation } from "@/lib/email";
 import { getLang } from "@/lib/lang";
+import { currentSourceHash } from "@/lib/sourceLimit";
+import { createClient } from "@/lib/supabase/server";
 
 export async function fetchStaffAction(orgSlug: string, serviceId: string): Promise<PublicStaff[]> {
   return listPublicStaffForService(orgSlug, serviceId);
@@ -33,6 +35,30 @@ export async function submitBookingAction(input: {
   notes: string;
   allowOverlap?: boolean;
 }): Promise<BookResult> {
+  // Bulk-abuse ceiling, before anything is written. Keyed on the request
+  // source rather than on the phone, because the per-phone limit (0027)
+  // resets the moment a digit changes — see 0040. Nothing is asked of
+  // the customer, so the honest path is untouched.
+  //
+  // FAIL OPEN, deliberately: if the guard itself errors — RPC missing
+  // because 0040 is not applied yet, a network blip — the booking still
+  // goes through. A broken doorman must not close the shop.
+  try {
+    const sourceHash = await currentSourceHash();
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("check_booking_source", {
+      p_source_hash: sourceHash,
+    });
+    if (error) {
+      if (error.message?.includes("rate_limited")) {
+        return { ok: false, error: "book_rate_limited" };
+      }
+      console.error("check_booking_source failed", error);
+    }
+  } catch (e) {
+    console.error("check_booking_source threw", e);
+  }
+
   const result = await bookAppointmentChain({
     orgSlug: input.orgSlug,
     serviceIds: input.serviceIds,
