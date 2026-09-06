@@ -877,15 +877,23 @@ label {
   }
 }
 .market-header .mh-brand {
-  font-size: 21px;
-  font-weight: 800;
-  color: var(--brand);
-  text-decoration: none;
-  /* Mark + wordmark on one baseline-ish line since the brand mark
-     (owner's vector, 2026-09) now sits beside the name. */
+  /* The lockup is an image now, so the old font-size/weight/colour did
+     nothing — height is what sizes it. 34px puts the mark comfortably
+     above the 21px the wordmark used to occupy on its own, which is
+     the whole point of the change. */
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  text-decoration: none;
+}
+.market-header .mh-brand img {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+@media (max-width: 700px) {
+  .market-header .mh-brand img {
+    height: 30px;
+  }
 }
 .market-header .mh-side {
   display: flex;
