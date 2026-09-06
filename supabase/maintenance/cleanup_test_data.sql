@@ -117,3 +117,20 @@ order by 1, 2;
 -- commit;
 --
 -- -- Then re-run Section 1: every bucket must come back EMPTY.
+
+-- ---------------------------------------------------------------------
+-- Appended 2026-09-06: bookings left by verifying 0041 on the live
+-- database (staff spreading on Sep 14, the rate-limit loop on Sep 21).
+-- The Section 1 preview above already lists them as "stray demo
+-- booking"; this is the direct removal if you want them gone now.
+-- ---------------------------------------------------------------------
+-- delete from public.appointments a
+-- using public.organizations o
+-- where o.id = a.org_id
+--   and o.slug = 'demo-nabd-derma'
+--   and a.customer_name in ('توزيع 0','توزيع 1','توزيع 2','توزيع 3')
+--   and a.start_at::date = date '2026-09-14';
+--
+-- delete from public.appointments
+--  where public._norm_phone(customer_phone) = '0799887766'
+--    and start_at::date = date '2026-09-21';
