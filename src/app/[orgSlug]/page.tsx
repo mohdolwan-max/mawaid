@@ -71,8 +71,12 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
   return (
     <div className="public-shell">
       <BackBar href="/" title="" />
+      {/* 16:9, the same ratio the cards use. The old fixed 170px made this
+          a 3.55:1 letterbox, so a cover framed for the card was cropped to
+          a strip here — one upload could not satisfy both. The shell caps
+          at 640px, so this tops out around 360px tall. */}
       {org.cover_image_url && (
-        <div style={{ margin: "0 0 14px", borderRadius: 14, overflow: "hidden", height: 170 }}>
+        <div style={{ margin: "0 0 14px", borderRadius: 14, overflow: "hidden", aspectRatio: "16 / 9" }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL */}
           <img
             src={org.cover_image_url}

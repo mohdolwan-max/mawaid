@@ -373,7 +373,7 @@ export function SettingsClient({
               <label>{t(lang, "dir_cover")}</label>
               {coverUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL
-                <img src={coverUrl} alt="" style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 8, marginBottom: 6 }} />
+                <img src={coverUrl} alt="" style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", borderRadius: 8, marginBottom: 6 }} />
               )}
               <input
                 type="file"
@@ -384,6 +384,7 @@ export function SettingsClient({
                   if (file) handleUpload("cover", file);
                 }}
               />
+              <p className="hint" style={{ marginTop: 6 }}>{t(lang, "cover_hint")}</p>
               {uploadingKind === "cover" && <p className="hint">{t(lang, "uploading")}</p>}
             </div>
             <div className="field">
@@ -401,6 +402,7 @@ export function SettingsClient({
                   if (file) handleUpload("logo", file);
                 }}
               />
+              <p className="hint" style={{ marginTop: 6 }}>{t(lang, "logo_hint")}</p>
               {uploadingKind === "logo" && <p className="hint">{t(lang, "uploading")}</p>}
             </div>
           </div>
