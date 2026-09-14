@@ -73,7 +73,8 @@ const ADAPTERS: Record<string, () => PaymentProvider | null> = {
 };
 
 export function getPaymentProvider(): PaymentProvider | null {
-  const id = process.env.PAYMENT_PROVIDER?.trim();
+  // Case-insensitive: "PayTabs" typed into a dashboard is not a different gateway.
+  const id = process.env.PAYMENT_PROVIDER?.trim().toLowerCase();
   if (!id) return null;
   const make = ADAPTERS[id];
   if (!make) {
