@@ -4,6 +4,7 @@ import { getLang } from "@/lib/lang";
 import { t, type TKey } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
 import { listPlans } from "@/lib/planServer";
+import { salesWhatsappDigits } from "@/lib/plan";
 import { PlansGrid } from "@/components/marketplace/PlansGrid";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,7 +25,7 @@ export default async function PartnersPage() {
   // Every price and limit comes from the plans table (0043). null when it
   // cannot load, and then no prices render rather than invented ones.
   const plans = await listPlans();
-  const salesWhatsapp = process.env.NEXT_PUBLIC_SALES_WHATSAPP?.replace(/[^0-9]/g, "") || null;
+  const salesWhatsapp = salesWhatsappDigits(process.env.NEXT_PUBLIC_SALES_WHATSAPP);
 
   const features: [TKey, TKey][] = [
     ["pt_f1_t", "pt_f1_b"],

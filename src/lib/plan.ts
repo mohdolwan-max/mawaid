@@ -73,8 +73,19 @@ export function monthsLabel(n: number, lang: Lang): string {
   return `${n} شهراً`;
 }
 
+/** The sales number as wa.me needs it: international digits, no "+" and
+ *  no "00". A number written the local way ("0505839366") has lost its
+ *  country and wa.me cannot open it, so it is refused (null hides the
+ *  upgrade buttons) rather than rendered as a link that goes nowhere. */
+export function salesWhatsappDigits(raw: string | undefined): string | null {
+  let digits = (raw ?? "").replace(/[^0-9]/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("0") || digits.length < 8 || digits.length > 15) return null;
+  return digits;
+}
+
 /** A WhatsApp chat with the sales number, pre-filled with the plan asked
- *  for. `digits` is the number already reduced to digits. */
+ *  for. `digits` comes from salesWhatsappDigits(). */
 export function upgradeWhatsappUrl(digits: string, planLabel: string, lang: Lang): string {
   const text =
     lang === "ar"

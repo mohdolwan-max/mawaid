@@ -7,6 +7,7 @@ import { PublicLinkCard } from "./PublicLinkCard";
 import { NotificationsCard, type OrgNotification } from "./NotificationsCard";
 import { PlanCard } from "./PlanCard";
 import { getMyPlanUsage } from "@/lib/planServer";
+import { salesWhatsappDigits } from "@/lib/plan";
 
 export default async function DashboardPage() {
   const ctx = await requireOrgContext();
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
 
   // Plans are the owner's business; staff are not shown upgrade prompts.
   const planUsage = ctx.role === "owner" ? await getMyPlanUsage() : null;
-  const salesWhatsapp = process.env.NEXT_PUBLIC_SALES_WHATSAPP?.replace(/[^0-9]/g, "") || null;
+  const salesWhatsapp = salesWhatsappDigits(process.env.NEXT_PUBLIC_SALES_WHATSAPP);
 
   return (
     <div>
