@@ -5,6 +5,7 @@ import { ORG_TAG } from "@/lib/publicOrg";
 import { DIRECTORY_TAG } from "@/lib/directoryServer";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
+import { parseServiceEdit, type ServiceEditError } from "@/lib/serviceEdit";
 
 export async function addService(formData: FormData) {
   const ctx = await requireOrgContext();
@@ -24,6 +25,48 @@ export async function addService(formData: FormData) {
   });
 
   revalidatePath("/services");
+}
+
+// Owner report: "الخدمة بس تنزل ما بقدر اعدل سعرها او غيره". A service
+// could be added, switched off or deleted, but a wrong price or duration
+// meant deleting it and adding it again, which also loses its photo and
+// its staff assignments. This edits the three fields the add form sets.
+export async function updateService(
+  serviceId: string,
+  input: { name: string; duration: string; price: string }
+): Promise<{ error?: ServiceEditError | "error_generic" }> {
+  const ctx = await requireOrgContext();
+  if (ctx.role !== "owner") return { error: "error_generic" };
+
+  const parsed = parseServiceEdit(input);
+  if ("error" in parsed) return { error: parsed.error };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("services")
+    .update({
+      name: parsed.name,
+      duration_minutes: parsed.durationMinutes,
+      price: parsed.price,
+    })
+    .eq("id", serviceId)
+    .eq("org_id", ctx.orgId)
+    .select("id");
+
+  // An update RLS refuses changes zero rows without an error; that is a
+  // failed save, not a successful one.
+  if (error || !data || data.length === 0) {
+    if (error) console.error("updateService failed", error);
+    return { error: "error_generic" };
+  }
+
+  revalidatePath("/services");
+  revalidatePath(`/${ctx.slug}`);
+  // The directory card shows the lowest price, and the public page lists
+  // name, duration and price: both are cached.
+  revalidateTag(ORG_TAG);
+  revalidateTag(DIRECTORY_TAG);
+  return {};
 }
 
 export async function toggleServiceActive(serviceId: string, active: boolean) {

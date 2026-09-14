@@ -2,11 +2,12 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { t, type Lang } from "@/lib/i18n";
+import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { Service } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { validateImageFile, downscaleImage, MAX_DIM } from "@/lib/imageUpload";
-import { addService, toggleServiceActive, deleteService, saveServicePhoto } from "./actions";
+import { addService, toggleServiceActive, deleteService, saveServicePhoto, updateService } from "./actions";
+import { SERVICE_DURATION_MAX, SERVICE_DURATION_MIN, SERVICE_NAME_MAX } from "@/lib/serviceEdit";
 
 export function ServicesClient({
   lang,
@@ -79,6 +80,40 @@ function ServiceCard({
 }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // The form starts from the values this card loaded, so saving never
+  // writes back a field the owner did not see.
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(service.name);
+  const [duration, setDuration] = useState(String(service.duration_minutes));
+  const [price, setPrice] = useState(service.price == null ? "" : String(service.price));
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<TKey | null>(null);
+
+  function startEdit() {
+    setName(service.name);
+    setDuration(String(service.duration_minutes));
+    setPrice(service.price == null ? "" : String(service.price));
+    setEditError(null);
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    setEditError(null);
+    try {
+      const res = await updateService(service.id, { name, duration, price });
+      if (res.error) {
+        setEditError(res.error);
+        return;
+      }
+      setEditing(false);
+      router.refresh();
+    } catch {
+      setEditError("error_generic");
+    } finally {
+      setSaving(false);
+    }
+  }
   const fileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -141,6 +176,57 @@ function ServiceCard({
         />
       </div>
       <div className="service-card-body">
+        {editing ? (
+          <div className="service-edit">
+            <div className="field">
+              <label htmlFor={`svc-name-${service.id}`}>{t(lang, "service_name")}</label>
+              <input
+                id={`svc-name-${service.id}`}
+                value={name}
+                maxLength={SERVICE_NAME_MAX}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="grid2">
+              <div className="field">
+                <label htmlFor={`svc-duration-${service.id}`}>{t(lang, "service_duration")}</label>
+                <input
+                  id={`svc-duration-${service.id}`}
+                  type="number"
+                  inputMode="numeric"
+                  min={SERVICE_DURATION_MIN}
+                  max={SERVICE_DURATION_MAX}
+                  step={5}
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor={`svc-price-${service.id}`}>{t(lang, "service_price")}</label>
+                <input
+                  id={`svc-price-${service.id}`}
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={0.01}
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="hint">{t(lang, "service_edit_hint")}</p>
+            {editError && <p className="error-text">{t(lang, editError)}</p>}
+            <div className="toolbar" style={{ marginTop: 8 }}>
+              <button type="button" className="btn sm" disabled={saving} onClick={saveEdit}>
+                {t(lang, "save")}
+              </button>
+              <button type="button" className="btn ghost sm" disabled={saving} onClick={() => setEditing(false)}>
+                {t(lang, "cancel")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
         <strong>{service.name}</strong>
         <p className="hint">
           {service.duration_minutes} {t(lang, "minutes")}
@@ -154,6 +240,9 @@ function ServiceCard({
         </div>
         {canManage && (
           <div className="toolbar" style={{ marginTop: 8 }}>
+            <button type="button" className="btn sm" onClick={startEdit}>
+              {t(lang, "edit")}
+            </button>
             <button
               className="btn ghost sm"
               onClick={async () => {
@@ -173,6 +262,8 @@ function ServiceCard({
               {t(lang, "delete")}
             </button>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

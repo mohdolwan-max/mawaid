@@ -246,6 +246,9 @@ export const T = {
     service_price: "السعر",
     service_add: "إضافة خدمة",
     service_empty: "لا توجد خدمات بعد",
+    service_duration_invalid: "المدة لازم تكون رقم صحيح بين 5 و600 دقيقة",
+    service_price_invalid: "السعر لازم يكون رقم، صفر أو أكثر. واتركه فاضي إذا ما بدك يظهر سعر",
+    service_edit_hint: "تغيير المدة بيطبق على الحجوزات الجديدة بس، والحجوزات الموجودة بتضل بأوقاتها.",
 
     // ---------- staff ----------
     staff_title: "الموظفون",
@@ -809,6 +812,9 @@ export const T = {
     service_price: "Price",
     service_add: "Add service",
     service_empty: "No services yet",
+    service_duration_invalid: "Duration must be a whole number between 5 and 600 minutes",
+    service_price_invalid: "Price must be a number, zero or more. Leave it empty to show no price",
+    service_edit_hint: "A new duration applies to new bookings only; existing bookings keep their times.",
 
     staff_title: "Staff",
     staff_sub: "Add doctors or staff and assign their services",
