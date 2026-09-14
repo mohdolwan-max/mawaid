@@ -20,6 +20,8 @@ import { DistrictTiles } from "@/components/marketplace/DistrictTiles";
 import { PublicFooter } from "@/components/marketplace/PublicFooter";
 import { InstallPrompt } from "@/components/marketplace/InstallPrompt";
 import { SavedBookings } from "@/components/marketplace/SavedBookings";
+import { OfferBanner } from "@/components/marketplace/OfferBanner";
+import { listActiveBanners } from "@/lib/offersServer";
 
 export default async function MarketplaceHome() {
   const [lang, city, geo] = await Promise.all([getLang(), getCity(), getGeo()]);
@@ -33,7 +35,7 @@ export default async function MarketplaceHome() {
   //   * nearest   — pure distance, only when the customer shared a position
   //   * all       — every listed org, newest signup first, so a clinic
   //     with no reviews yet is visible from day one
-  const [topRated, allNewest, nearby, districts, openNow, featured] = await Promise.all([
+  const [topRated, allNewest, nearby, districts, openNow, featured, banners] = await Promise.all([
     listDirectoryOrgs({
       city,
       limit: 12,
@@ -45,6 +47,7 @@ export default async function MarketplaceHome() {
     listDistrictCounts(city),
     countOpenNow(city),
     listDirectoryOrgs({ city, limit: 12, planFeaturedOnly: true }),
+    listActiveBanners(city),
   ]);
 
   const nothingListed = topRated.length === 0 && allNewest.length === 0;
@@ -72,6 +75,11 @@ export default async function MarketplaceHome() {
         <p>{t(lang, "market_hero_sub")}</p>
         <SearchBar lang={lang} />
       </div>
+
+      {/* Paid clinic offers for this city (0045), directly under search so
+          search stays the first thing on the page. Draws nothing when no
+          offer is running today. */}
+      <OfferBanner banners={banners} lang={lang} />
 
       <CategoryChips lang={lang} />
 
