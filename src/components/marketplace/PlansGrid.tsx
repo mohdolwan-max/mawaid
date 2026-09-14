@@ -39,6 +39,10 @@ export function PlansGrid({
   return (
     <div className="plans-grid">
       {plans.map((p) => {
+        // Only the plan a trial actually runs on promises one: 0046's
+        // _org_start_trial puts every new clinic on basic. Showing "30 days
+        // free" on pro would promise a pro trial nobody gets.
+        const trial = p.id === "basic" ? trialDays : null;
         const months = freeMonthsOnYearly(p);
         const staff =
           p.maxStaff == null
@@ -81,11 +85,11 @@ export function PlansGrid({
               {p.featured && <li>{t(lang, "plan_feat_featured")}</li>}
             </ul>
             <Link href="/signup" className={`btn block${p.id === "basic" ? "" : " ghost"}`}>
-              {t(lang, trialDays ? "plan_trial_cta" : "plan_cta")}
+              {t(lang, trial ? "plan_trial_cta" : "plan_cta")}
             </Link>
-            {trialDays && (
+            {trial && (
               <p className="plan-trial-note">
-                {t(lang, "plan_trial_note", { days: daysLabel(trialDays, lang) })}
+                {t(lang, "plan_trial_note", { days: daysLabel(trial, lang) })}
               </p>
             )}
             {salesWhatsapp && (
