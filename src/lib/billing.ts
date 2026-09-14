@@ -10,7 +10,8 @@ import type { PlanId } from "@/lib/plan";
 
 export type BillingPeriod = "month" | "year";
 
-export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "needs_refund";
+/** "refunded" (0049): money returned through the gateway, recorded by an admin. */
+export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "needs_refund" | "refunded";
 
 export type PurchaseOption = {
   planId: PlanId;
@@ -53,7 +54,9 @@ export function isBillingPeriod(v: unknown): v is BillingPeriod {
   return v === "month" || v === "year";
 }
 
-const STATUSES: readonly PaymentStatus[] = ["pending", "paid", "failed", "cancelled", "needs_refund"];
+// A status missing here would silently drop those rows from the history
+// list (billingServer filters on it), so every database status is listed.
+const STATUSES: readonly PaymentStatus[] = ["pending", "paid", "failed", "cancelled", "needs_refund", "refunded"];
 
 export function isPaymentStatus(v: unknown): v is PaymentStatus {
   return typeof v === "string" && (STATUSES as readonly string[]).includes(v);
@@ -72,6 +75,7 @@ export const PAYMENT_STATUS_TONE: Record<PaymentStatus, "good" | "warn" | "bad" 
   failed: "bad",
   needs_refund: "bad",
   cancelled: "neutral",
+  refunded: "neutral",
 };
 
 /** An amount with up to three decimals (JOD has fils), trailing zeros

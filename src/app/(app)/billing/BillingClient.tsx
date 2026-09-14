@@ -24,6 +24,7 @@ const STATUS_KEY: Record<PaymentStatus, TKey> = {
   failed: "payment_status_failed",
   cancelled: "payment_status_cancelled",
   needs_refund: "payment_status_needs_refund",
+  refunded: "payment_status_refunded",
 };
 
 const PERIOD_KEY: Record<BillingPeriod, TKey> = {

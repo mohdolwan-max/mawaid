@@ -67,6 +67,8 @@ export function PaymentReturn({ lang, paymentId, timezone }: { lang: Lang; payme
             ),
           })
         : t(lang, "billing_return_paid_offer");
+  } else if (payment.status === "refunded") {
+    message = t(lang, "billing_return_refunded");
   } else if (payment.status === "needs_refund") {
     message = t(lang, "billing_return_refund");
     className = "error-text";

@@ -13,6 +13,7 @@ const PROTECTED_PREFIXES = [
   "/settings",
   "/offers",
   "/billing",
+  "/admin",
   "/onboarding",
 ];
 
