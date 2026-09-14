@@ -1,8 +1,9 @@
 import "server-only";
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { publicSupabase } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
-import { isPlanId, type Plan, type PlanUsage } from "@/lib/plan";
+import { isPlanId, isPlanPhase, type Plan, type PlanTerms, type PlanUsage } from "@/lib/plan";
 
 export const PLANS_TAG = "plans";
 
@@ -58,20 +59,53 @@ export async function listPlans(): Promise<Plan[] | null> {
   }
 }
 
+const cachedTerms = unstable_cache(
+  async (): Promise<PlanTerms> => {
+    const { data, error } = await publicSupabase.rpc("get_plan_terms").maybeSingle();
+    if (error) {
+      if (error.code === "PGRST202") {
+        console.error("get_plan_terms missing (0046 unapplied)");
+      } else {
+        console.error("get_plan_terms failed", error);
+      }
+      throw error;
+    }
+    const r = data as { trial_days: number; grace_days: number } | null;
+    if (!r || !Number.isInteger(r.trial_days) || !Number.isInteger(r.grace_days)) {
+      throw new Error("plan_settings row missing");
+    }
+    return { trialDays: r.trial_days, graceDays: r.grace_days };
+  },
+  ["plan-terms"],
+  { revalidate: 300, tags: [PLANS_TAG] }
+);
+
+/** null when unknown — the trial is then not promised with a number. */
+export async function getPlanTerms(): Promise<PlanTerms | null> {
+  try {
+    return await cachedTerms();
+  } catch {
+    return null;
+  }
+}
+
 type UsageRow = {
   plan_id: string;
-  stored_plan_id: string;
+  is_trial: boolean;
   expires_at: string | null;
-  expired: boolean;
+  open_until: string | null;
+  phase: string;
   seats_used: number;
   max_staff: number | null;
   sms_per_month: number;
   featured: boolean;
 };
 
-/** The signed-in member's plan and seat usage. null when it cannot be
- *  read — the dashboard hides the card rather than printing "0 of 1". */
-export async function getMyPlanUsage(): Promise<PlanUsage | null> {
+/** The signed-in member's plan, where it stands, and seat usage. null when
+ *  it cannot be read — the dashboard then hides the card and the notice
+ *  rather than printing "0 of 1" or a wrong end date.
+ *  cache(): the (app) layout and the dashboard ask in the same render. */
+export const getMyPlanUsage = cache(async (): Promise<PlanUsage | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("my_plan_usage").maybeSingle();
   if (error) {
@@ -79,15 +113,17 @@ export async function getMyPlanUsage(): Promise<PlanUsage | null> {
     return null;
   }
   const r = data as UsageRow | null;
-  if (!r || !isPlanId(r.plan_id) || !isPlanId(r.stored_plan_id)) return null;
+  // Before 0046 the row has no phase; hide rather than guess one.
+  if (!r || !isPlanId(r.plan_id) || !isPlanPhase(r.phase)) return null;
   return {
     planId: r.plan_id,
-    storedPlanId: r.stored_plan_id,
+    isTrial: r.is_trial,
     expiresAt: r.expires_at,
-    expired: r.expired,
+    openUntil: r.open_until,
+    phase: r.phase,
     seatsUsed: r.seats_used,
     maxStaff: r.max_staff,
     smsPerMonth: r.sms_per_month,
     featured: r.featured,
   };
-}
+});

@@ -1,4 +1,3 @@
-import type { Lang } from "@/lib/i18n";
 import { addDaysYMD } from "@/lib/date";
 import { bookHref } from "@/lib/serviceSelection";
 
@@ -27,6 +26,9 @@ export type OfferSetup = {
   maxDays: number;
   maxAdvanceDays: number;
   holdMinutes: number;
+  /** Last day an offer may run: the plan and its grace must still be
+   *  open (0046). null = the plan has no end. */
+  lastOfferDay: string | null;
 };
 
 export type DayAvailability = {
@@ -143,6 +145,7 @@ export type OfferDraftError =
   | "offer_title_length"
   | "offer_days_range"
   | "offer_start_range"
+  | "offer_beyond_plan"
   | "offer_org_overlap"
   | "offer_days_full"
   | "offer_days_unknown";
@@ -172,6 +175,9 @@ export function checkOfferDraft(
   if (!Number.isInteger(draft.days) || draft.days < 1 || draft.days > setup.maxDays) {
     return "offer_days_range";
   }
+  if (setup.lastOfferDay !== null && offerEndDate(draft.start, draft.days) > setup.lastOfferDay) {
+    return "offer_beyond_plan";
+  }
 
   const byDay = new Map(availability.map((a) => [a.day, a]));
   let unknown = false;
@@ -192,13 +198,4 @@ export function bannerHref(b: ActiveBanner): string {
 
 export function bannerImage(b: ActiveBanner): string | null {
   return b.servicePhotoUrl ?? b.coverUrl ?? null;
-}
-
-/** Arabic day count with number agreement: يوم / يومين / ٣ أيام / ١١ يوماً. */
-export function daysLabel(n: number, lang: Lang): string {
-  if (lang === "en") return n === 1 ? "1 day" : `${n} days`;
-  if (n === 1) return "يوم";
-  if (n === 2) return "يومين";
-  if (n >= 3 && n <= 10) return `${n} أيام`;
-  return `${n} يوماً`;
 }

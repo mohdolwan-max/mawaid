@@ -278,10 +278,12 @@ values
 -- filters out staff without one, so the specialist step would be empty.
 -- business_hours is left NULL, which means "inherit the clinic's hours".
 -- ---------------------------------------------------------------------
--- Two staff per demo clinic exceeds the free plan (one) that a new org
--- gets by default, and 0043 enforces staff limits on insert — so put the
--- demo clinics on basic before their staff rows go in.
-update public.organizations set plan = 'basic' where slug like 'demo-%';
+-- New clinics start on a trial that ends (0046), and 0043 enforces staff
+-- limits on insert. Demo clinics must neither close nor hit a limit, so
+-- they go on basic with no end date before their staff rows go in.
+update public.organizations
+   set plan = 'basic', plan_expires_at = null, is_trial = false
+ where slug like 'demo-%';
 
 insert into public.memberships (id, org_id, user_id, role, display_name, title)
 values

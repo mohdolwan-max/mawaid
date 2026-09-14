@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { getLang } from "@/lib/lang";
 import { t, type TKey } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
-import { listPlans } from "@/lib/planServer";
-import { salesWhatsappDigits } from "@/lib/plan";
+import { getPlanTerms, listPlans } from "@/lib/planServer";
+import { daysLabel, salesWhatsappDigits } from "@/lib/plan";
 import { PlansGrid } from "@/components/marketplace/PlansGrid";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,7 +24,7 @@ export default async function PartnersPage() {
   const host = process.env.NEXT_PUBLIC_SITE_HOST ?? "maw3ed.me";
   // Every price and limit comes from the plans table (0043). null when it
   // cannot load, and then no prices render rather than invented ones.
-  const plans = await listPlans();
+  const [plans, terms] = await Promise.all([listPlans(), getPlanTerms()]);
   const salesWhatsapp = salesWhatsappDigits(process.env.NEXT_PUBLIC_SALES_WHATSAPP);
 
   const features: [TKey, TKey][] = [
@@ -54,7 +54,11 @@ export default async function PartnersPage() {
           <Link href="/signup" className="btn pt-cta">
             {t(lang, "pt_cta")}
           </Link>
-          <span className="pt-cta-note">{t(lang, "pt_cta_note")}</span>
+          <span className="pt-cta-note">
+            {terms
+              ? t(lang, "pt_cta_note", { days: daysLabel(terms.trialDays, lang) })
+              : t(lang, "pt_cta_no_card")}
+          </span>
         </div>
         <p className="hint">
           {t(lang, "pt_have_account")}{" "}
@@ -99,7 +103,7 @@ export default async function PartnersPage() {
 
       <section className="pt-section" id="plans">
         <h2>{t(lang, "pt_price_title")}</h2>
-        {plans && <PlansGrid plans={plans} lang={lang} salesWhatsapp={salesWhatsapp} />}
+        {plans && <PlansGrid plans={plans} lang={lang} salesWhatsapp={salesWhatsapp} trialDays={terms?.trialDays ?? null} />}
       </section>
 
       <section className="pt-final">

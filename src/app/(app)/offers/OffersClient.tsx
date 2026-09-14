@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import { DateField } from "@/components/DateTimeField";
 import { OfferBanner } from "@/components/marketplace/OfferBanner";
-import { formatJod } from "@/lib/plan";
+import { daysLabel, formatJod } from "@/lib/plan";
 import { dateFromYMD, intlLocale } from "@/lib/date";
 import {
   OFFER_STATE_TONE,
@@ -13,7 +13,6 @@ import {
   OFFER_TITLE_MIN,
   checkOfferDraft,
   dayStatus,
-  daysLabel,
   freePlaces,
   normalizeOfferTitle,
   offerEndDate,
@@ -92,6 +91,7 @@ export function OffersClient({
     max: OFFER_TITLE_MAX,
     days: setup.maxDays,
     advance: setup.maxAdvanceDays,
+    date: setup.lastOfferDay ? fmtDay(setup.lastOfferDay, lang, DAY_MONTH) : "",
   };
 
   const rangeOk = Number.isInteger(days) && days >= 1 && days <= setup.maxDays;

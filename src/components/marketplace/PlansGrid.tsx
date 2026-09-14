@@ -5,34 +5,40 @@ import {
   formatJod,
   freeMonthsOnYearly,
   monthsLabel,
+  daysLabel,
   upgradeWhatsappUrl,
   type Plan,
 } from "@/lib/plan";
 
-// The three plans, every number read from the plans table (0043).
+// The plans, every number read from the database (0043, 0046).
 //
 // Honesty rules for a page that sells:
 //  * SMS is listed with a "soon" marker — nothing sends SMS until OTP is
 //    built, and a clinic must not sign up believing otherwise.
 //  * No "most popular" badge. With no customers yet it would be invented.
-//  * Payments are not wired, so every card starts the same free signup;
-//    paid plans offer an upgrade request instead of a checkout.
+//  * There is no free plan (0046); every clinic starts with a free trial.
+//    The trial is named with its length only when that length was read,
+//    so no card promises a number the database did not give.
+//  * Payments are not wired, so a card starts the trial signup and a
+//    WhatsApp link asks to subscribe.
 export function PlansGrid({
   plans,
   lang,
   salesWhatsapp,
+  trialDays,
 }: {
   plans: Plan[];
   lang: Lang;
   /** Sales WhatsApp number as digits, or null when not configured. */
   salesWhatsapp: string | null;
+  /** null = unknown, and no trial length is shown. */
+  trialDays: number | null;
 }) {
   const currency = t(lang, "currency");
 
   return (
     <div className="plans-grid">
       {plans.map((p) => {
-        const free = p.priceMonthJod <= 0;
         const months = freeMonthsOnYearly(p);
         const staff =
           p.maxStaff == null
@@ -45,12 +51,10 @@ export function PlansGrid({
           <div key={p.id} className={`plan-card${p.id === "basic" ? " mid" : ""}`}>
             <p className="plan-name">{planName(p.id, lang)}</p>
             <div className="plan-price">
-              <strong>{free ? t(lang, "plan_free_price") : formatJod(p.priceMonthJod)}</strong>
-              {!free && (
-                <span>
-                  {currency} / {t(lang, "plan_per_month")}
-                </span>
-              )}
+              <strong>{formatJod(p.priceMonthJod)}</strong>
+              <span>
+                {currency} / {t(lang, "plan_per_month")}
+              </span>
             </div>
             <p className="plan-yearly">
               {months
@@ -77,16 +81,21 @@ export function PlansGrid({
               {p.featured && <li>{t(lang, "plan_feat_featured")}</li>}
             </ul>
             <Link href="/signup" className={`btn block${p.id === "basic" ? "" : " ghost"}`}>
-              {t(lang, "plan_cta")}
+              {t(lang, trialDays ? "plan_trial_cta" : "plan_cta")}
             </Link>
-            {!free && salesWhatsapp && (
+            {trialDays && (
+              <p className="plan-trial-note">
+                {t(lang, "plan_trial_note", { days: daysLabel(trialDays, lang) })}
+              </p>
+            )}
+            {salesWhatsapp && (
               <p className="plan-upgrade">
                 <a
-                  href={upgradeWhatsappUrl(salesWhatsapp, planName(p.id, lang), lang)}
+                  href={upgradeWhatsappUrl(salesWhatsapp, planName(p.id, lang), lang, "subscribe")}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {t(lang, "plan_upgrade_whatsapp")}
+                  {t(lang, "plan_subscribe_whatsapp")}
                 </a>
               </p>
             )}

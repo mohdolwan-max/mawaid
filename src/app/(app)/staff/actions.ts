@@ -29,7 +29,9 @@ export async function inviteStaff(formData: FormData) {
     return {
       error: error.message.includes("plan_staff_limit")
         ? ("plan_staff_limit" as const)
-        : ("error_generic" as const),
+        : error.message.includes("plan_lapsed")
+          ? ("plan_lapsed_error" as const)
+          : ("error_generic" as const),
     };
   }
   revalidatePath("/staff");
@@ -58,7 +60,9 @@ export async function addStaffMember(formData: FormData) {
     return {
       error: error.message.includes("plan_staff_limit")
         ? ("plan_staff_limit" as const)
-        : ("error_generic" as const),
+        : error.message.includes("plan_lapsed")
+          ? ("plan_lapsed_error" as const)
+          : ("error_generic" as const),
     };
   }
 

@@ -16,6 +16,8 @@ const DB_ERRORS = {
   offer_bad_days: "offer_days_range",
   offer_org_overlap: "offer_org_overlap",
   offer_days_full: "offer_days_full",
+  offer_beyond_plan: "offer_beyond_plan",
+  offer_plan_lapsed: "offer_plan_lapsed",
   offer_not_cancellable: "offer_not_cancellable",
 } as const;
 

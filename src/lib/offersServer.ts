@@ -34,6 +34,8 @@ type SetupRow = {
   max_days: number;
   max_advance_days: number;
   hold_minutes: number;
+  /** Absent before 0046; read as no end. */
+  last_offer_day?: string | null;
 };
 
 /** null when it cannot be read — the page then says so instead of
@@ -63,6 +65,7 @@ export async function getOfferSetup(): Promise<OfferSetup | null> {
     maxDays: r.max_days,
     maxAdvanceDays: r.max_advance_days,
     holdMinutes: r.hold_minutes,
+    lastOfferDay: r.last_offer_day ?? null,
   };
 }
 
