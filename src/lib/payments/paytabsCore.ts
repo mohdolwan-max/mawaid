@@ -5,8 +5,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // ./paytabs.ts.
 //
 // Sources (PayTabs documentation, read 2026-09):
-//   * Jordan endpoint base: secure-jordan.paytabs.com ("What is my region /
-//     endpoint URL?").
+//   * Endpoint base per region: secure-jordan.paytabs.com, secure.paytabs.sa,
+//     ... ("What is my region / endpoint URL?").
 //   * Callback: POST, JSON body, header "Signature" = HMAC-SHA256 of the
 //     entire raw body keyed with the profile server key.
 //   * payment_result.response_status: A authorised, P pending, H on hold,
@@ -43,9 +43,10 @@ export type PaytabsTxn = {
 export type Classified =
   | {
       outcome: "paid";
-      /** NaN when the charge was not in JOD or its amount is unreadable:
-       *  confirm_payment then records needs_refund instead of guessing. */
-      amountJod: number;
+      /** NaN when unreadable; confirm_payment then records needs_refund. */
+      amount: number;
+      /** What PayTabs says it charged in; the database compares it. */
+      currency: string | null;
       providerRef: string;
       token: string | null;
       cardLabel: string | null;
@@ -62,13 +63,16 @@ export function cardLabel(info: PaytabsTxn["payment_info"]): string | null {
 }
 
 function chargedAmount(txn: PaytabsTxn): number {
-  const currency = (txn.tran_currency ?? txn.cart_currency ?? "").toUpperCase();
-  if (currency !== "JOD") return Number.NaN;
   // tran_total is what was charged; a create-request echo carries "0".
   const total = Number(txn.tran_total);
   if (Number.isFinite(total) && total > 0) return total;
   const cart = Number(txn.cart_amount);
   return Number.isFinite(cart) && cart > 0 ? cart : Number.NaN;
+}
+
+function chargedCurrency(txn: PaytabsTxn): string | null {
+  const code = (txn.tran_currency ?? txn.cart_currency ?? "").trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(code) ? code : null;
 }
 
 export function classify(txn: PaytabsTxn): Classified | null {
@@ -79,7 +83,8 @@ export function classify(txn: PaytabsTxn): Classified | null {
   if (status === "A") {
     return {
       outcome: "paid",
-      amountJod: chargedAmount(txn),
+      amount: chargedAmount(txn),
+      currency: chargedCurrency(txn),
       providerRef: ref,
       token: txn.token?.trim() || null,
       cardLabel: cardLabel(txn.payment_info),

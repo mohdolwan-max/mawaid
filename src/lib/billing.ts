@@ -1,10 +1,12 @@
+import type { Lang } from "@/lib/i18n";
 import type { PlanId } from "@/lib/plan";
 
-// Payments (0047): shapes and presentation. Every amount and every date a
-// clinic is shown before paying comes from the database
+// Payments (0047, 0048): shapes and presentation. Every amount and every
+// date a clinic is shown before paying comes from the database
 // (plan_purchase_options), the same rule confirm_payment applies, so the
-// screen and the charge cannot disagree. Free of React and the database so
-// it can be tested directly.
+// screen and the charge cannot disagree. Every amount travels with its
+// currency: a number alone is not a price once there is more than one
+// country. Free of React and the database so it can be tested directly.
 
 export type BillingPeriod = "month" | "year";
 
@@ -13,7 +15,9 @@ export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "needs
 export type PurchaseOption = {
   planId: PlanId;
   period: BillingPeriod;
-  amountJod: number;
+  amount: number;
+  /** ISO 4217, e.g. "JOD". */
+  currency: string;
   startsAt: string;
   endsAt: string;
   /** Whole days carried over from the current plan's unused paid days. */
@@ -26,7 +30,8 @@ export type PaymentRecord = {
   planId: PlanId | null;
   period: BillingPeriod | null;
   offerTitle: string | null;
-  amountJod: number;
+  amount: number;
+  currency: string;
   status: PaymentStatus;
   outcome: string | null;
   planEndsAt: string | null;
@@ -54,6 +59,13 @@ export function isPaymentStatus(v: unknown): v is PaymentStatus {
   return typeof v === "string" && (STATUSES as readonly string[]).includes(v);
 }
 
+/** A three-letter currency code, upper-cased; null for anything else. */
+export function normalizeCurrency(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const code = v.trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(code) ? code : null;
+}
+
 export const PAYMENT_STATUS_TONE: Record<PaymentStatus, "good" | "warn" | "bad" | "neutral"> = {
   paid: "good",
   pending: "warn",
@@ -62,13 +74,34 @@ export const PAYMENT_STATUS_TONE: Record<PaymentStatus, "good" | "warn" | "bad" 
   cancelled: "neutral",
 };
 
-/** A dinar amount with up to three decimals (fils), trailing zeros
+/** An amount with up to three decimals (JOD has fils), trailing zeros
  *  dropped: 19 -> "19", 1.25 -> "1.25", 0.125 -> "0.125". Empty for a
  *  value that is not a number, never "NaN". */
-export function formatAmountJod(n: number): string {
+export function formatAmount(n: number): string {
   if (!Number.isFinite(n)) return "";
   if (Number.isInteger(n)) return String(n);
   return n.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+const CURRENCY_LABELS: Record<string, Record<Lang, string>> = {
+  JOD: { ar: "د.أ", en: "JOD" },
+  SAR: { ar: "ر.س", en: "SAR" },
+  AED: { ar: "د.إ", en: "AED" },
+  KWD: { ar: "د.ك", en: "KWD" },
+  QAR: { ar: "ر.ق", en: "QAR" },
+  BHD: { ar: "د.ب", en: "BHD" },
+  OMR: { ar: "ر.ع", en: "OMR" },
+  EGP: { ar: "ج.م", en: "EGP" },
+};
+
+/** The code itself for a currency without a local label, never blank. */
+export function currencyLabel(code: string, lang: Lang): string {
+  return CURRENCY_LABELS[code.toUpperCase()]?.[lang] ?? code.toUpperCase();
+}
+
+export function formatPrice(amount: number, currency: string, lang: Lang): string {
+  const n = formatAmount(amount);
+  return n === "" ? "—" : `${n} ${currencyLabel(currency, lang)}`;
 }
 
 /** The option for one plan and period, or null when it is not for sale. */

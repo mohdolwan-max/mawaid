@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getPaymentProvider, paymentsDb, paymentsSecret } from "@/lib/payments";
-import { formatAmountJod } from "@/lib/billing";
+import { formatAmount } from "@/lib/billing";
 import { siteUrl } from "@/lib/siteUrl";
 
 // Automatic renewal: charges the saved card of every plan ending within a
-// day (claim_due_renewals, 0047), then confirms or fails each payment.
+// day (claim_due_renewals, 0047/0048), then confirms or fails each payment.
 // Gated by CRON_SECRET like the other cron routes; the database calls are
 // gated separately by PAYMENTS_SECRET.
 //
@@ -19,7 +19,8 @@ type DueRow = {
   provider_mandate_ref: string;
   plan_id: string;
   period: string;
-  amount_jod: number | string;
+  amount: number | string;
+  currency: string;
 };
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
   let pending = 0;
 
   for (const row of rows) {
-    const amount = Number(row.amount_jod);
+    const amount = Number(row.amount);
 
     // A card saved with another gateway cannot be charged by this one.
     if (row.provider !== provider.id) {
@@ -68,8 +69,9 @@ export async function POST(request: NextRequest) {
       const charge = await provider.chargeMandate({
         paymentId: row.payment_id,
         mandateRef: row.provider_mandate_ref,
-        amountJod: amount,
-        description: `Maw3ed ${row.plan_id} ${row.period} renewal ${formatAmountJod(amount)} JOD`,
+        amount,
+        currency: row.currency,
+        description: `Maw3ed ${row.plan_id} ${row.period} renewal ${formatAmount(amount)} ${row.currency}`,
         webhookUrl,
       });
 
@@ -77,7 +79,8 @@ export async function POST(request: NextRequest) {
         const { error: confirmError } = await db.rpc("confirm_payment", {
           p_secret: secret,
           p_payment_id: row.payment_id,
-          p_amount_jod: charge.amountJod,
+          p_amount: Number.isFinite(charge.amount) ? charge.amount : null,
+          p_currency: charge.currency,
           p_provider: provider.id,
           p_provider_ref: charge.providerRef,
         });

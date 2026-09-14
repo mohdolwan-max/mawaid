@@ -10,12 +10,15 @@ import { paytabsProvider } from "./paytabs";
 // card payment is not active, instead of offering a button that fails.
 //
 // Card details never pass through this app: checkout is the gateway's
-// hosted page, and renewals charge a token the gateway keeps.
+// hosted page, and renewals charge a token the gateway keeps. Every amount
+// crosses this seam with its currency (0048).
 
 export type CheckoutInput = {
   paymentId: string;
   /** Read from the database's payment row, never from the browser. */
-  amountJod: number;
+  amount: number;
+  /** ISO 4217, from the same row. */
+  currency: string;
   description: string;
   customerEmail: string | null;
   customerName: string;
@@ -30,8 +33,10 @@ export type WebhookEvent =
   | {
       paymentId: string;
       outcome: "paid";
-      /** As the gateway reports it charged, compared with the row in 0047. */
-      amountJod: number;
+      /** As the gateway reports it charged; confirm_payment compares both
+       *  with the row. NaN / null when unreadable, which it refuses. */
+      amount: number;
+      currency: string | null;
       providerRef: string;
       mandateRef: string | null;
       cardLabel: string | null;
@@ -41,7 +46,7 @@ export type WebhookEvent =
   | { paymentId: string; outcome: "pending" };
 
 export type MandateCharge =
-  | { outcome: "paid"; amountJod: number; providerRef: string }
+  | { outcome: "paid"; amount: number; currency: string | null; providerRef: string }
   | { outcome: "failed"; reason: string }
   /** The gateway answers later through the webhook. */
   | { outcome: "pending"; providerRef: string | null };
@@ -55,7 +60,8 @@ export interface PaymentProvider {
   chargeMandate(input: {
     paymentId: string;
     mandateRef: string;
-    amountJod: number;
+    amount: number;
+    currency: string;
     description: string;
     webhookUrl: string;
   }): Promise<MandateCharge>;

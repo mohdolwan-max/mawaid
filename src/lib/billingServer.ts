@@ -4,6 +4,7 @@ import { isPlanId } from "@/lib/plan";
 import {
   isBillingPeriod,
   isPaymentStatus,
+  normalizeCurrency,
   type Mandate,
   type PaymentRecord,
   type PurchaseOption,
@@ -11,7 +12,7 @@ import {
 
 function logRpcError(name: string, error: { code?: string }) {
   if (error.code === "PGRST202") {
-    console.error(`${name} missing (0047 unapplied)`);
+    console.error(`${name} missing or outdated (0047/0048 unapplied)`);
   } else {
     console.error(`${name} failed`, error);
   }
@@ -20,13 +21,16 @@ function logRpcError(name: string, error: { code?: string }) {
 type OptionRow = {
   plan_id: string;
   period: string;
-  amount_jod: number | string;
+  amount: number | string;
+  currency: string;
   starts_at: string;
   ends_at: string;
   credit_days: number;
 };
 
-/** null when it cannot be read: no price or date is then shown at all. */
+/** null when it cannot be read: no price or date is then shown at all.
+ *  A row without a readable amount or currency is dropped, never shown
+ *  as a bare number. */
 export async function getPurchaseOptions(): Promise<PurchaseOption[] | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("plan_purchase_options");
@@ -36,12 +40,14 @@ export async function getPurchaseOptions(): Promise<PurchaseOption[] | null> {
   }
   const out: PurchaseOption[] = [];
   for (const r of (data as OptionRow[]) ?? []) {
-    const amount = Number(r.amount_jod);
-    if (!isPlanId(r.plan_id) || !isBillingPeriod(r.period) || !Number.isFinite(amount)) continue;
+    const amount = Number(r.amount);
+    const currency = normalizeCurrency(r.currency);
+    if (!isPlanId(r.plan_id) || !isBillingPeriod(r.period) || !Number.isFinite(amount) || !currency) continue;
     out.push({
       planId: r.plan_id,
       period: r.period,
-      amountJod: amount,
+      amount,
+      currency,
       startsAt: r.starts_at,
       endsAt: r.ends_at,
       creditDays: r.credit_days,
@@ -56,7 +62,8 @@ type PaymentRow = {
   plan_id: string | null;
   period: string | null;
   offer_title: string | null;
-  amount_jod: number | string;
+  amount: number | string;
+  currency: string;
   status: string;
   outcome: string | null;
   plan_ends_at: string | null;
@@ -72,22 +79,27 @@ export async function listMyPayments(): Promise<PaymentRecord[] | null> {
     logRpcError("list_my_payments", error);
     return null;
   }
-  return ((data as PaymentRow[]) ?? [])
-    .filter((r) => isPaymentStatus(r.status) && (r.kind === "plan" || r.kind === "offer"))
-    .map((r) => ({
+  const out: PaymentRecord[] = [];
+  for (const r of (data as PaymentRow[]) ?? []) {
+    const currency = normalizeCurrency(r.currency);
+    if (!isPaymentStatus(r.status) || (r.kind !== "plan" && r.kind !== "offer") || !currency) continue;
+    out.push({
       id: r.id,
-      kind: r.kind as PaymentRecord["kind"],
+      kind: r.kind,
       planId: isPlanId(r.plan_id) ? r.plan_id : null,
       period: isBillingPeriod(r.period) ? r.period : null,
       offerTitle: r.offer_title,
-      amountJod: Number(r.amount_jod),
-      status: r.status as PaymentRecord["status"],
+      amount: Number(r.amount),
+      currency,
+      status: r.status,
       outcome: r.outcome,
       planEndsAt: r.plan_ends_at,
       isRenewal: r.is_renewal,
       createdAt: r.created_at,
       paidAt: r.paid_at,
-    }));
+    });
+  }
+  return out;
 }
 
 type MandateRow = {

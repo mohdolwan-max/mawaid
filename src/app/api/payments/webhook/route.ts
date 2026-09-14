@@ -4,7 +4,7 @@ import { getPaymentProvider, paymentsDb, paymentsSecret } from "@/lib/payments";
 // The gateway's server-to-server result for a payment. The only place a
 // payment becomes paid: the adapter verifies the gateway's signature and
 // re-reads the transaction from the gateway, then confirm_payment /
-// fail_payment (0047) apply it with PAYMENTS_SECRET.
+// fail_payment (0047, 0048) apply it with PAYMENTS_SECRET.
 //
 // Status codes matter here. A 5xx makes the gateway retry, which is what
 // we want when the database hiccups; both database functions are safe to
@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
       ? await db.rpc("confirm_payment", {
           p_secret: secret,
           p_payment_id: event.paymentId,
-          p_amount_jod: event.amountJod,
+          // NaN serialises to null, which confirm_payment refuses.
+          p_amount: Number.isFinite(event.amount) ? event.amount : null,
+          p_currency: event.currency,
           p_provider: provider.id,
           p_provider_ref: event.providerRef,
           p_mandate_ref: event.mandateRef,

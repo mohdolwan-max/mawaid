@@ -11,17 +11,22 @@ import {
 } from "./paytabsCore";
 
 // PayTabs adapter (hosted payment page). Chosen 2026-09: serves Jordan
-// directly, charges in JOD, and gives a test profile at signup with no
-// company, so the whole flow runs against the sandbox until the company is
-// registered. Environment:
+// directly, charges in JOD, and gives a test profile at signup, so the
+// flow runs against the sandbox until the company is registered.
+// Environment:
 //   PAYTABS_PROFILE_ID   profile id (test profile first)
 //   PAYTABS_SERVER_KEY   that profile's server key
-//   PAYTABS_BASE_URL     optional; defaults to the Jordan endpoint
+//   PAYTABS_BASE_URL     the profile's region endpoint; defaults to Jordan.
+//                        The owner's test profile was opened in the KSA
+//                        region (https://secure.paytabs.sa).
 //
-// Not verified against a live sandbox yet, because no profile exists yet:
-// the "authorization: <server key>" header and sending no customer_details
-// (the hosted page collects them) follow PayTabs' published samples and
-// must be confirmed on the first sandbox payment.
+// One profile, so one country, today. Several countries later means one
+// profile per country, chosen by the clinic's country (0048's note).
+//
+// Not verified against a live sandbox yet: the "authorization: <server
+// key>" header, sending no customer_details (the hosted page collects
+// them), and whether the profile accepts the payment's currency follow
+// PayTabs' published samples and must be confirmed on the first payment.
 
 type Config = { profileId: number; serverKey: string; base: string };
 
@@ -65,8 +70,8 @@ export function paytabsProvider(): PaymentProvider | null {
         tran_type: "sale",
         tran_class: "ecom",
         cart_id: input.paymentId,
-        cart_currency: "JOD",
-        cart_amount: input.amountJod,
+        cart_currency: input.currency,
+        cart_amount: input.amount,
         cart_description: input.description.slice(0, 120),
         paypage_lang: input.lang,
         callback: input.webhookUrl,
@@ -103,7 +108,8 @@ export function paytabsProvider(): PaymentProvider | null {
         return {
           paymentId: body.cart_id,
           outcome: "paid",
-          amountJod: c.amountJod,
+          amount: c.amount,
+          currency: c.currency,
           providerRef: c.providerRef,
           mandateRef: c.token ? packMandate(c.token, c.providerRef) : null,
           cardLabel: c.cardLabel,
@@ -121,8 +127,8 @@ export function paytabsProvider(): PaymentProvider | null {
         tran_type: "sale",
         tran_class: "recurring",
         cart_id: input.paymentId,
-        cart_currency: "JOD",
-        cart_amount: input.amountJod,
+        cart_currency: input.currency,
+        cart_amount: input.amount,
         cart_description: input.description.slice(0, 120),
         token: mandate.token,
         tran_ref: mandate.tranRef,
@@ -131,7 +137,9 @@ export function paytabsProvider(): PaymentProvider | null {
 
       const c = classify(res);
       if (!c) return { outcome: "pending", providerRef: null };
-      if (c.outcome === "paid") return { outcome: "paid", amountJod: c.amountJod, providerRef: c.providerRef };
+      if (c.outcome === "paid") {
+        return { outcome: "paid", amount: c.amount, currency: c.currency, providerRef: c.providerRef };
+      }
       if (c.outcome === "pending") return { outcome: "pending", providerRef: c.providerRef };
       return { outcome: "failed", reason: c.reason };
     },

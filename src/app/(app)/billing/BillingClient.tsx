@@ -8,7 +8,7 @@ import { daysLabel, planName, type PlanId } from "@/lib/plan";
 import {
   PAYMENT_STATUS_TONE,
   defaultPeriod,
-  formatAmountJod,
+  formatPrice,
   pickOption,
   type BillingPeriod,
   type Mandate,
@@ -66,7 +66,6 @@ export function BillingClient({
   const [error, setError] = useState<TKey | null>(null);
 
   const option = pickOption(options, planId, period);
-  const currency = t(lang, "currency");
   const fmtDate = (iso: string) =>
     new Intl.DateTimeFormat(intlLocale(lang), { timeZone: timezone, dateStyle: "medium" }).format(new Date(iso));
   // More than a minute after now: the new period queues behind the current one.
@@ -126,7 +125,7 @@ export function BillingClient({
                   {planName(id, lang)}
                   {currentPlan === id && <span className="bp-current">{t(lang, "plan_card_title")}</span>}
                 </span>
-                <span className="bp-price">{o ? `${formatAmountJod(o.amountJod)} ${currency}` : "—"}</span>
+                <span className="bp-price">{o ? formatPrice(o.amount, o.currency, lang) : "—"}</span>
               </button>
             );
           })}
@@ -136,7 +135,7 @@ export function BillingClient({
       <div className="card billing-summary">
         {option ? (
           <>
-            <p className="bs-total">{`${formatAmountJod(option.amountJod)} ${currency}`}</p>
+            <p className="bs-total">{formatPrice(option.amount, option.currency, lang)}</p>
             <p>{t(lang, "billing_window", { from: fmtDate(option.startsAt), to: fmtDate(option.endsAt) })}</p>
             {startsLater && <p className="hint">{t(lang, "billing_starts_later")}</p>}
             {option.creditDays > 0 && (
@@ -156,7 +155,7 @@ export function BillingClient({
             {!paymentReady && <p className="offer-notice">{t(lang, "billing_not_ready")}</p>}
             {error && <p className="error-text">{t(lang, error)}</p>}
             <button type="button" className="btn block" disabled={pending || !paymentReady} onClick={pay}>
-              {t(lang, "billing_pay", { amount: `${formatAmountJod(option.amountJod)} ${currency}` })}
+              {t(lang, "billing_pay", { amount: formatPrice(option.amount, option.currency, lang) })}
             </button>
           </>
         ) : (
@@ -227,7 +226,7 @@ export function BillingClient({
                 </p>
               </div>
               <div className="br-side">
-                <span>{`${formatAmountJod(p.amountJod)} ${currency}`}</span>
+                <span>{formatPrice(p.amount, p.currency, lang)}</span>
                 <span className={`chip ${PAYMENT_STATUS_TONE[p.status]}`}>{t(lang, STATUS_KEY[p.status])}</span>
               </div>
             </div>

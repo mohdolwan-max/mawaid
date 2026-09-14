@@ -31,7 +31,7 @@ type CheckoutResult = { url: string } | { error: BillingActionError };
 // page for it, it is failed at once rather than left pending forever.
 async function openCheckout(
   ctx: OrgContext,
-  payment: { id: string; amountJod: number },
+  payment: { id: string; amount: number; currency: string },
   description: string,
   saveCard: boolean
 ): Promise<CheckoutResult> {
@@ -48,7 +48,8 @@ async function openCheckout(
   try {
     const { redirectUrl } = await provider.createCheckout({
       paymentId: payment.id,
-      amountJod: payment.amountJod,
+      amount: payment.amount,
+      currency: payment.currency,
       description,
       customerEmail: user?.email ?? null,
       customerName: ctx.name,
@@ -88,11 +89,11 @@ export async function startPlanCheckout(input: {
     .single();
   if (error) return { error: toActionError("start_plan_payment", error) };
 
-  const row = data as { payment_id: string; amount_jod: number | string };
+  const row = data as { payment_id: string; amount: number | string; currency: string };
   const period = input.period === "year" ? "yearly" : "monthly";
   return openCheckout(
     ctx,
-    { id: row.payment_id, amountJod: Number(row.amount_jod) },
+    { id: row.payment_id, amount: Number(row.amount), currency: row.currency },
     `Maw3ed ${planName(input.planId, "en")} plan, ${period}`,
     input.saveCard
   );
@@ -107,8 +108,13 @@ export async function startOfferCheckout(offerId: string): Promise<CheckoutResul
   const { data, error } = await supabase.rpc("start_offer_payment", { p_offer_id: offerId }).single();
   if (error) return { error: toActionError("start_offer_payment", error) };
 
-  const row = data as { payment_id: string; amount_jod: number | string };
-  return openCheckout(ctx, { id: row.payment_id, amountJod: Number(row.amount_jod) }, "Maw3ed offer banner", false);
+  const row = data as { payment_id: string; amount: number | string; currency: string };
+  return openCheckout(
+    ctx,
+    { id: row.payment_id, amount: Number(row.amount), currency: row.currency },
+    "Maw3ed offer banner",
+    false
+  );
 }
 
 export async function setAutoRenew(active: boolean): Promise<{ error?: BillingActionError }> {
