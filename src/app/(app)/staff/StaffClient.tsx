@@ -152,7 +152,12 @@ export function StaffClient({
           <form
             ref={inviteRef}
             action={async (formData) => {
-              await inviteStaff(formData);
+              setError(null);
+              const res = await inviteStaff(formData);
+              if (res?.error) {
+                setError(res.error);
+                return;
+              }
               inviteRef.current?.reset();
             }}
           >

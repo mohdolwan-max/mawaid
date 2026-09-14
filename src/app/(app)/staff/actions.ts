@@ -10,19 +10,30 @@ export async function inviteStaff(formData: FormData) {
   const supabase = await createClient();
 
   const email = String(formData.get("email") ?? "").trim();
-  if (!email) return;
+  if (!email) return { error: "required_field" as const };
 
   // Optional link: when the owner invites someone who is ALREADY listed
   // by name, the invite claims that row on acceptance instead of creating
   // a second bookable copy of the same person (see 0022).
   const membershipId = String(formData.get("membershipId") ?? "").trim();
-  await supabase.rpc("invite_staff", {
+  const { error } = await supabase.rpc("invite_staff", {
     p_org_id: ctx.orgId,
     p_email: email,
     p_role: "staff",
     p_membership_id: membershipId || null,
   });
+  // This result used to be ignored, so a refused invite looked exactly
+  // like a sent one. From 0043 the plan's staff limit refuses invites,
+  // and the owner has to be told.
+  if (error) {
+    return {
+      error: error.message.includes("plan_staff_limit")
+        ? ("plan_staff_limit" as const)
+        : ("error_generic" as const),
+    };
+  }
   revalidatePath("/staff");
+  return {};
 }
 
 // The primary way to add someone: a name (and optionally a phone for
@@ -43,7 +54,13 @@ export async function addStaffMember(formData: FormData) {
     p_title: title || null,
     p_phone: phone || null,
   });
-  if (error) return { error: "error_generic" as const };
+  if (error) {
+    return {
+      error: error.message.includes("plan_staff_limit")
+        ? ("plan_staff_limit" as const)
+        : ("error_generic" as const),
+    };
+  }
 
   revalidatePath("/staff");
   return {};

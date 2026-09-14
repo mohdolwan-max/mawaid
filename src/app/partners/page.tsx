@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { getLang } from "@/lib/lang";
 import { t, type TKey } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
+import { listPlans } from "@/lib/planServer";
+import { PlansGrid } from "@/components/marketplace/PlansGrid";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
@@ -19,6 +21,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function PartnersPage() {
   const lang = await getLang();
   const host = process.env.NEXT_PUBLIC_SITE_HOST ?? "maw3ed.me";
+  // Every price and limit comes from the plans table (0043). null when it
+  // cannot load, and then no prices render rather than invented ones.
+  const plans = await listPlans();
+  const salesWhatsapp = process.env.NEXT_PUBLIC_SALES_WHATSAPP?.replace(/[^0-9]/g, "") || null;
 
   const features: [TKey, TKey][] = [
     ["pt_f1_t", "pt_f1_b"],
@@ -36,8 +42,6 @@ export default async function PartnersPage() {
     ["pt_s2_t", "pt_s2_b"],
     ["pt_s3_t", "pt_s3_b"],
   ];
-
-  const included: TKey[] = ["pt_price_i1", "pt_price_i2", "pt_price_i3", "pt_price_i4"];
 
   return (
     <div className="pt">
@@ -92,27 +96,9 @@ export default async function PartnersPage() {
         </ol>
       </section>
 
-      <section className="pt-section">
+      <section className="pt-section" id="plans">
         <h2>{t(lang, "pt_price_title")}</h2>
-        <div className="pt-price">
-          <div className="pt-price-head">
-            <span className="pt-free">{t(lang, "pt_price_free")}</span>
-            <p className="pt-then">
-              {t(lang, "pt_price_then")}{" "}
-              <strong className="pt-amount">{t(lang, "pt_price_amount")}</strong>{" "}
-              <span>{t(lang, "pt_price_period")}</span>
-            </p>
-          </div>
-          <ul className="pt-included">
-            {included.map((k) => (
-              <li key={k}>{t(lang, k)}</li>
-            ))}
-          </ul>
-          <Link href="/signup" className="btn block">
-            {t(lang, "pt_cta")}
-          </Link>
-          <p className="hint pt-price-note">{t(lang, "pt_price_note")}</p>
-        </div>
+        {plans && <PlansGrid plans={plans} lang={lang} salesWhatsapp={salesWhatsapp} />}
       </section>
 
       <section className="pt-final">

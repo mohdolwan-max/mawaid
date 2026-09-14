@@ -28,6 +28,7 @@ const cachedListDirectoryOrgs = unstable_cache(
     featuredOnly?: boolean;
     order?: "rating" | "newest";
     district?: string | null;
+    planFeaturedOnly?: boolean;
   }): Promise<DirectoryOrg[]> => {
     const { data, error } = await publicSupabase.rpc("list_directory_orgs", {
       p_city: filters.city ?? null,
@@ -44,6 +45,9 @@ const cachedListDirectoryOrgs = unstable_cache(
       ...(filters.order === "newest" ? { p_order: "newest" } : {}),
       // Same deploy-order tolerance for the district filter (0036).
       ...(filters.district ? { p_district: filters.district } : {}),
+      // Pro featuring (0044), sent only when asked for — a database still
+      // on 0043 keeps every other listing working.
+      ...(filters.planFeaturedOnly ? { p_plan_featured_only: true } : {}),
     });
 
     // Not `data ?? []`. An empty marketplace and a broken query look
@@ -51,7 +55,15 @@ const cachedListDirectoryOrgs = unstable_cache(
     // the logs at least (ENGINEERING-STANDARDS §1). Throwing would also
     // stop a failure being cached for the next sixty seconds.
     if (error) {
-      console.error("list_directory_orgs failed", error);
+      // PGRST202 = no function takes the parameters sent: a directory
+      // migration is not applied yet (0044 adds the featured one). Labelled
+      // so the log reads "apply the migration", not "outage". Still thrown,
+      // so the row it feeds degrades to empty and nothing is cached.
+      if (error.code === "PGRST202") {
+        console.error("list_directory_orgs: signature mismatch, a directory migration is unapplied —", error.message);
+      } else {
+        console.error("list_directory_orgs failed", error);
+      }
       throw error;
     }
     return (data as DirectoryOrg[]) ?? [];
@@ -70,6 +82,7 @@ export async function listDirectoryOrgs(filters: {
   featuredOnly?: boolean;
   order?: "rating" | "newest";
   district?: string | null;
+  planFeaturedOnly?: boolean;
 }): Promise<DirectoryOrg[]> {
   try {
     return await cachedListDirectoryOrgs(filters);

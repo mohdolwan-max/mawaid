@@ -5,6 +5,8 @@ import { todayYMD, nowIso } from "@/lib/date";
 import { CalendarIcon, ClockIcon } from "@/components/icons";
 import { PublicLinkCard } from "./PublicLinkCard";
 import { NotificationsCard, type OrgNotification } from "./NotificationsCard";
+import { PlanCard } from "./PlanCard";
+import { getMyPlanUsage } from "@/lib/planServer";
 
 export default async function DashboardPage() {
   const ctx = await requireOrgContext();
@@ -37,6 +39,10 @@ export default async function DashboardPage() {
     .eq("status", "booked")
     .gte("start_at", nowIso());
 
+  // Plans are the owner's business; staff are not shown upgrade prompts.
+  const planUsage = ctx.role === "owner" ? await getMyPlanUsage() : null;
+  const salesWhatsapp = process.env.NEXT_PUBLIC_SALES_WHATSAPP?.replace(/[^0-9]/g, "") || null;
+
   return (
     <div>
       <div className="dash-hero">
@@ -68,6 +74,8 @@ export default async function DashboardPage() {
         notifications={(notifications as OrgNotification[]) ?? []}
         timezone={ctx.timezone}
       />
+
+      {planUsage && <PlanCard usage={planUsage} lang={ctx.lang} salesWhatsapp={salesWhatsapp} />}
 
       <PublicLinkCard lang={ctx.lang} slug={ctx.slug} orgName={ctx.name} />
     </div>

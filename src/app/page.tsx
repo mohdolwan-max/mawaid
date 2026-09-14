@@ -33,7 +33,7 @@ export default async function MarketplaceHome() {
   //   * nearest   — pure distance, only when the customer shared a position
   //   * all       — every listed org, newest signup first, so a clinic
   //     with no reviews yet is visible from day one
-  const [topRated, allNewest, nearby, districts, openNow] = await Promise.all([
+  const [topRated, allNewest, nearby, districts, openNow, featured] = await Promise.all([
     listDirectoryOrgs({
       city,
       limit: 12,
@@ -44,6 +44,7 @@ export default async function MarketplaceHome() {
     geo ? listNearbyOrgs(geo.lat, geo.lng, 12) : Promise.resolve([]),
     listDistrictCounts(city),
     countOpenNow(city),
+    listDirectoryOrgs({ city, limit: 12, planFeaturedOnly: true }),
   ]);
 
   const nothingListed = topRated.length === 0 && allNewest.length === 0;
@@ -78,6 +79,10 @@ export default async function MarketplaceHome() {
         <div className="empty">{t(lang, "market_empty")}</div>
       ) : (
         <>
+          {/* What the pro plan featured placement buys (0043/0044). Empty
+              until a clinic is on pro, and CardRow renders nothing then. */}
+          <CardRow title={t(lang, "featured_title")} orgs={featured} lang={lang} />
+
           <CardRow
             title={t(lang, "sec_featured", { city: cityName })}
             seeAllHref={`/search?city=${city}`}

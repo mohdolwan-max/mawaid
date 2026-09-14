@@ -2675,3 +2675,132 @@ label {
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* ---------- plans (PlansGrid) ---------- */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+/* Visual weight on the middle tier only — no "most popular" claim. */
+.plan-card.mid {
+  border: 2px solid var(--brand);
+}
+.plan-name {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 4px;
+}
+.plan-price strong {
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--brand);
+}
+.plan-price span {
+  font-size: 13px;
+  color: var(--ink2);
+}
+.plan-yearly {
+  min-height: 1.6em;
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--ink2);
+}
+.plan-feats {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.plan-feats li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.plan-feats li::before {
+  content: "\2713";
+  flex-shrink: 0;
+  font-weight: 800;
+  color: var(--brand);
+}
+.plan-feats li.off {
+  color: var(--ink2);
+}
+.plan-feats li.off::before {
+  content: "\2013";
+  color: var(--ink2);
+}
+.plan-soon {
+  flex-shrink: 0;
+  margin-inline-start: 4px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold-ink);
+  background: var(--gold-bg);
+}
+.plan-upgrade {
+  margin: 8px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--ink2);
+}
+.plan-upgrade a {
+  font-weight: 700;
+  color: var(--brand);
+}
+
+/* ---------- dashboard plan card ---------- */
+.plan-usage-card {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.plan-usage-card .pu-body {
+  flex: 1;
+  min-width: 180px;
+}
+.plan-usage-card .pu-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--brand);
+}
+.plan-usage-card .pu-bar {
+  height: 6px;
+  margin: 6px 0 4px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--band);
+}
+.plan-usage-card .pu-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+}
+.plan-usage-card .pu-bar.full > span {
+  background: var(--bad-ink);
+}
