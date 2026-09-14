@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
@@ -25,10 +26,26 @@ function toActionError(name: string, error: { message: string }): BillingActionE
   return "error_generic";
 }
 
+const HOST_SHAPE = /^[a-z0-9.-]+(:\d{1,5})?$/i;
+
+// The origin the gateway is told to call back and send the browser to.
+// Built from the host this owner is actually on, not NEXT_PUBLIC_SITE_HOST:
+// the configured apex (maw3ed.me) answers 308 -> www.maw3ed.me, and PayTabs
+// requires a callback URL that responds directly, with no redirect. The
+// host the owner loaded /billing from is, by definition, one that serves.
+async function paymentOrigin(): Promise<string> {
+  const h = await headers();
+  const host = (h.get("x-forwarded-host") ?? h.get("host") ?? "").split(",")[0].trim();
+  if (!HOST_SHAPE.test(host)) return siteUrl();
+  const proto = host.startsWith("localhost") ? "http" : "https";
+  return `${proto}://${host}`;
+}
+
 type CheckoutResult = { url: string } | { error: BillingActionError };
 
 // The payment row exists before this runs; if the gateway cannot open a
-// page for it, it is failed at once rather than left pending forever.
+// page for it, it is failed at once rather than left pending forever, with
+// the gateway's own reason kept on the row for diagnosis.
 async function openCheckout(
   ctx: OrgContext,
   payment: { id: string; amount: number; currency: string },
@@ -43,7 +60,7 @@ async function openCheckout(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const base = siteUrl();
+  const base = await paymentOrigin();
 
   try {
     const { redirectUrl } = await provider.createCheckout({
@@ -60,12 +77,13 @@ async function openCheckout(
     });
     return { url: redirectUrl };
   } catch (err) {
-    console.error("checkout could not be created", { paymentId: payment.id, err });
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error("checkout could not be created", { paymentId: payment.id, reason });
     await paymentsDb().rpc("fail_payment", {
       p_secret: secret,
       p_payment_id: payment.id,
       p_provider: provider.id,
-      p_reason: "checkout_not_created",
+      p_reason: `checkout_not_created: ${reason}`.slice(0, 300),
     });
     return { error: "billing_checkout_failed" };
   }

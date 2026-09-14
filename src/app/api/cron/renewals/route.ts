@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getPaymentProvider, paymentsDb, paymentsSecret } from "@/lib/payments";
 import { formatAmount } from "@/lib/billing";
-import { siteUrl } from "@/lib/siteUrl";
 
 // Automatic renewal: charges the saved card of every plan ending within a
 // day (claim_due_renewals, 0047/0048), then confirms or fails each payment.
@@ -45,7 +44,9 @@ export async function POST(request: NextRequest) {
   }
 
   const rows = (data as DueRow[] | null) ?? [];
-  const webhookUrl = `${siteUrl()}/api/payments/webhook`;
+  // The origin the job was called on (pg_cron targets www, 0038), not the
+  // configured apex: that one redirects, and a gateway callback must not.
+  const webhookUrl = `${request.nextUrl.origin}/api/payments/webhook`;
   let paid = 0;
   let failed = 0;
   let pending = 0;
