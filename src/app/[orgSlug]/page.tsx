@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { getPublicOrg, listPublicServices } from "@/lib/publicOrg";
@@ -11,6 +10,7 @@ import { PinIcon } from "@/components/icons";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
 import { ShareButton } from "@/components/marketplace/ShareButton";
+import { ServiceSelectionProvider, SelectableServiceList, BookNowLink } from "./ServicePicker";
 import { siteUrl } from "@/lib/siteUrl";
 import { clinicShareUrl } from "@/lib/share";
 import { intlLocale } from "@/lib/date";
@@ -135,48 +135,34 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
           navigable, with the booking CTA always one tap away. Anchor
           links, not client tabs — everything stays server-rendered and
           crawlable, and a tab only exists when its section does. */}
-      <nav className="org-tabs">
-        {org.description && <a href="#overview">{t(lang, "tab_overview")}</a>}
-        <a href="#services">{t(lang, "tab_services")}</a>
-        {reviews.length > 0 && <a href="#reviews">{t(lang, "tab_reviews")}</a>}
-        <Link href={`/${orgSlug}/book`} className="primary">
-          {t(lang, "book_now")}
-        </Link>
-      </nav>
+      <ServiceSelectionProvider>
+        <nav className="org-tabs">
+          {org.description && <a href="#overview">{t(lang, "tab_overview")}</a>}
+          <a href="#services">{t(lang, "tab_services")}</a>
+          {reviews.length > 0 && <a href="#reviews">{t(lang, "tab_reviews")}</a>}
+          <BookNowLink orgSlug={orgSlug} className="primary">
+            {t(lang, "book_now")}
+          </BookNowLink>
+        </nav>
 
-      {org.description && (
-        <div className="card" id="overview">
-          <p style={{ fontSize: 13, color: "var(--ink2)", whiteSpace: "pre-wrap" }}>{org.description}</p>
-        </div>
-      )}
-
-      <div className="card" id="services">
-        {services.length === 0 ? (
-          <div className="empty">{t(lang, "service_empty")}</div>
-        ) : (
-          services.map((s) => (
-            <div key={s.id} className="service-row" style={{ cursor: "default" }}>
-              <div className="service-row-photo">
-                {s.photo_url && (
-                  // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL
-                  <img src={s.photo_url} alt="" />
-                )}
-              </div>
-              <div style={{ flex: 1 }}>
-                <strong>{s.name}</strong>
-                <p className="hint">
-                  {s.duration_minutes} {t(lang, "minutes")}
-                </p>
-              </div>
-              {s.price != null && <span className="num">{s.price} {t(lang, "currency")}</span>}
-            </div>
-          ))
+        {org.description && (
+          <div className="card" id="overview">
+            <p style={{ fontSize: 13, color: "var(--ink2)", whiteSpace: "pre-wrap" }}>{org.description}</p>
+          </div>
         )}
-      </div>
 
-      <Link href={`/${orgSlug}/book`} className="btn block">
-        {t(lang, "book_now")}
-      </Link>
+        <div className="card" id="services">
+          {services.length === 0 ? (
+            <div className="empty">{t(lang, "service_empty")}</div>
+          ) : (
+            <SelectableServiceList services={services} lang={lang} />
+          )}
+        </div>
+
+        <BookNowLink orgSlug={orgSlug} className="btn block">
+          {t(lang, "book_now")}
+        </BookNowLink>
+      </ServiceSelectionProvider>
 
       {reviews.length > 0 && (
         <div className="card" id="reviews" style={{ marginTop: 16 }}>

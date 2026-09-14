@@ -44,20 +44,28 @@ export function BookingClient({
   orgSlug,
   services,
   defaults,
+  initialServiceIds = [],
 }: {
   lang: Lang;
   orgSlug: string;
   services: PublicService[];
   defaults: { name: string; phone: string; email: string } | null;
+  /** Services already chosen on the clinic page, validated server-side. */
+  initialServiceIds?: string[];
 }) {
-  const [step, setStep] = useState<Step>("service");
+  // Arriving with services picked on the clinic page: start with them
+  // chosen and on the staff step, instead of asking for them again.
+  const initialChosen = initialServiceIds
+    .map((id) => services.find((s) => s.id === id))
+    .filter((s): s is PublicService => s !== undefined);
+  const [step, setStep] = useState<Step>(initialChosen.length > 0 ? "staff" : "service");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<TKey | null>(null);
 
   // A visit can be several services back to back (dental then
   // dermatology at a medical centre). Order matters — they are booked in
   // the order chosen, each starting when the previous one ends.
-  const [chosen, setChosen] = useState<PublicService[]>([]);
+  const [chosen, setChosen] = useState<PublicService[]>(initialChosen);
   const service = chosen[0] ?? null;
   const [staffOptions, setStaffOptions] = useState<PublicStaff[]>([]);
   const [staffId, setStaffId] = useState<string | null>(null);
@@ -97,17 +105,32 @@ export function BookingClient({
     if (chosen.length === 0) return;
     setStaffId(null);
     setError(null);
-    // A rejected promise here previously had no .catch() — a transient
-    // network blip left staffOptions stuck at [] silently (degraded but
-    // visible: just "any available staff"). Surfacing the error is
-    // better than pretending the org genuinely has no staff to pick.
-    // Staff choice applies to the whole visit, so only offer people who
-    // can perform the FIRST service; anyone else could not start it.
-    fetchStaffAction(orgSlug, chosen[0].id)
-      .then(setStaffOptions)
-      .catch(() => setError("error_generic"));
     setStep("staff");
   }
+
+  // Staff for the FIRST service, loaded whenever the staff step shows.
+  // This used to run inside goToStaff(), which a visit arriving with
+  // services preselected never passes through; that path would only
+  // have offered "any available staff". Staff choice applies to the
+  // whole visit, so only people who can perform the first service are
+  // offered; anyone else could not start it.
+  const firstServiceId = chosen[0]?.id ?? null;
+  useEffect(() => {
+    if (step !== "staff" || !firstServiceId) return;
+    let cancelled = false;
+    fetchStaffAction(orgSlug, firstServiceId)
+      .then((s) => {
+        if (!cancelled) setStaffOptions(s);
+      })
+      .catch(() => {
+        // A transient network blip once left the list silently empty,
+        // which reads as "this clinic has no staff". Surface it instead.
+        if (!cancelled) setError("error_generic");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [step, firstServiceId, orgSlug]);
 
   useEffect(() => {
     if (step !== "slot" || !service) return;
