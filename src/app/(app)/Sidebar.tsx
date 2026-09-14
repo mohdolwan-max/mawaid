@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/calendar", key: "nav_calendar" as const },
   { href: "/services", key: "nav_services" as const },
   { href: "/offers", key: "nav_offers" as const },
+  { href: "/billing", key: "nav_billing" as const },
   { href: "/staff", key: "nav_staff" as const },
   { href: "/bookings", key: "nav_bookings" as const },
   { href: "/reviews", key: "reviews_title" as const },

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { t } from "@/lib/i18n";
 import { cityLabel } from "@/lib/directory";
 import { getOfferAvailability, getOfferSetup, listMyOffers } from "@/lib/offersServer";
-import { OFFER_PAYMENT_READY } from "@/lib/offerPayment";
+import { paymentsReady } from "@/lib/payments";
 import { OffersClient, type OfferServiceOption } from "./OffersClient";
 
 export default async function OffersPage() {
@@ -81,7 +81,7 @@ export default async function OffersPage() {
         offers={offers}
         services={servicesRes.error ? null : ((servicesRes.data as OfferServiceOption[]) ?? [])}
         cityName={cityLabel(setup.city, lang)}
-        paymentReady={OFFER_PAYMENT_READY}
+        paymentReady={paymentsReady()}
       />
     </div>
   );

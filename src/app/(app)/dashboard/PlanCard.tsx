@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { t, type Lang } from "@/lib/i18n";
-import { daysLabel, daysLeft, planName, upgradeWhatsappUrl, type PlanUsage } from "@/lib/plan";
+import { daysLabel, daysLeft, planName, type PlanUsage } from "@/lib/plan";
 
 // The owner's plan: what it is, when it ends, and how much of it is used.
 // Seats include pending invitations, because that is how the limit counts
@@ -9,15 +9,17 @@ import { daysLabel, daysLeft, planName, upgradeWhatsappUrl, type PlanUsage } fro
 //
 // There is no free plan to fall back to (0046). A trial or plan that ends
 // has grace days, then the clinic closes to the public, so this card says
-// in days which of those the clinic is in and offers the step that fixes it.
+// in days which of those the clinic is in and points at the step that
+// fixes it: paying on /billing (0047).
 export function PlanCard({
   usage,
   lang,
-  salesWhatsapp,
+  showAction = true,
 }: {
   usage: PlanUsage;
   lang: Lang;
-  salesWhatsapp: string | null;
+  /** Off on /billing itself, where the payment form is right below. */
+  showAction?: boolean;
 }) {
   const limited = usage.maxStaff != null;
   const full = limited && usage.seatsUsed >= (usage.maxStaff as number);
@@ -28,10 +30,10 @@ export function PlanCard({
   const endsIn = daysLeft(usage.expiresAt, now);
   const graceLeft = daysLeft(usage.openUntil, now);
 
-  // During a trial or after a plan ends, the step is paying for the plan
-  // the clinic is on; otherwise it is the next tier up.
+  // During a trial or after a plan ends, the step is paying; on a paid
+  // basic plan it is upgrading; on pro there is nothing to offer.
   const mustPay = usage.isTrial || usage.phase !== "active";
-  const offerPlan = mustPay ? usage.planId : usage.planId === "basic" ? "pro" : null;
+  const hasNext = mustPay || usage.planId === "basic";
 
   let status: { text: string; className: string } | null = null;
   if (usage.phase === "lapsed") {
@@ -82,26 +84,11 @@ export function PlanCard({
           </p>
         )}
       </div>
-      {offerPlan && (
+      {showAction && hasNext && (
         <div className="toolbar" style={{ flexShrink: 0 }}>
-          <Link href="/partners#plans" className="btn ghost sm">
-            {t(lang, "plan_see_plans")}
+          <Link href="/billing" className="btn sm">
+            {t(lang, mustPay ? "plan_pay_now" : "plan_upgrade")}
           </Link>
-          {salesWhatsapp && (
-            <a
-              className="btn sm"
-              href={upgradeWhatsappUrl(
-                salesWhatsapp,
-                planName(offerPlan, lang),
-                lang,
-                mustPay ? "subscribe" : "upgrade"
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t(lang, mustPay ? "plan_subscribe_whatsapp" : "plan_upgrade_whatsapp")}
-            </a>
-          )}
         </div>
       )}
     </div>

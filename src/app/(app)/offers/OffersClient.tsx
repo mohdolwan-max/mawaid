@@ -25,6 +25,7 @@ import {
   type OfferState,
 } from "@/lib/offers";
 import { cancelOfferOrder, createOfferOrder } from "./actions";
+import { startOfferCheckout } from "../billing/actions";
 
 export type OfferServiceOption = { id: string; name: string; photo_url: string | null };
 
@@ -345,6 +346,26 @@ function OrderRow({
       </div>
       <div className="oo-side">
         <span className={`chip ${OFFER_STATE_TONE[offer.state]}`}>{t(lang, STATE_KEY[offer.state])}</span>
+        {awaiting && paymentReady && (
+          <button
+            type="button"
+            className="btn sm"
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                setError(null);
+                const res = await startOfferCheckout(offer.id);
+                if ("url" in res) {
+                  window.location.assign(res.url);
+                  return;
+                }
+                setError(res.error);
+              })
+            }
+          >
+            {t(lang, "offer_pay_now")}
+          </button>
+        )}
         {awaiting && (
           <button
             type="button"
