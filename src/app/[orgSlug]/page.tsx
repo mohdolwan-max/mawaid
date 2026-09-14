@@ -10,6 +10,9 @@ import { isSafeHttpUrl } from "@/lib/url";
 import { PinIcon } from "@/components/icons";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
+import { ShareButton } from "@/components/marketplace/ShareButton";
+import { siteUrl } from "@/lib/siteUrl";
+import { clinicShareUrl } from "@/lib/share";
 import { intlLocale } from "@/lib/date";
 
 // Every page previously shared the root layout's static title/description,
@@ -67,6 +70,9 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
   // before this ever reaches the database, but this is rendered as a
   // real <a href> for anonymous visitors, so re-check here too.
   const mapsUrl = org.maps_url && isSafeHttpUrl(org.maps_url) ? org.maps_url : null;
+  // Built server-side from the site host so the shared link is the real
+  // one whatever origin this page was reached on.
+  const shareUrl = clinicShareUrl(siteUrl(), orgSlug);
 
   return (
     <div className="public-shell">
@@ -117,6 +123,12 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
             {tier && <span className="price-tier">{tier}</span>}
           </div>
         </div>
+        <ShareButton
+          lang={lang}
+          url={shareUrl}
+          title={org.name}
+          text={t(lang, "share_text", { name: org.name })}
+        />
       </div>
 
       {/* Wddk venue-page pattern: sticky section tabs so a long page is

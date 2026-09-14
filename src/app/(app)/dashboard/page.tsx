@@ -69,7 +69,7 @@ export default async function DashboardPage() {
         timezone={ctx.timezone}
       />
 
-      <PublicLinkCard lang={ctx.lang} slug={ctx.slug} />
+      <PublicLinkCard lang={ctx.lang} slug={ctx.slug} orgName={ctx.name} />
     </div>
   );
 }
