@@ -3649,3 +3649,10 @@ label {
   font-size: 13px;
   font-weight: 600;
 }
+
+.admin-head-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}

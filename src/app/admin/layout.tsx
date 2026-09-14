@@ -30,7 +30,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <h1>{t(lang, "admin_title")}</h1>
           <p className="hint">{t(lang, "admin_sub")}</p>
         </div>
-        <AdminNav lang={lang} />
+        <div className="admin-head-side">
+          <AdminNav lang={lang} />
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- full navigation to a Route Handler (GET /auth/signout), same as the clinic sidebar */}
+          <a href="/auth/signout" className="btn ghost sm">
+            {t(lang, "signout")}
+          </a>
+        </div>
       </header>
       {children}
     </div>

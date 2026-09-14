@@ -8,7 +8,7 @@ export function SignupForm({ lang }: { lang: Lang }) {
   const [state, formAction, pending] = useActionState(signup, undefined);
 
   if (state?.needsEmailConfirm) {
-    return <p>{lang === "ar" ? "تحقق من بريدك الإلكتروني لتأكيد الحساب." : "Check your email to confirm your account."}</p>;
+    return <p>{t(lang, "signup_check_email")}</p>;
   }
 
   return (
@@ -21,7 +21,7 @@ export function SignupForm({ lang }: { lang: Lang }) {
         <label htmlFor="password">{t(lang, "password")}</label>
         <input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
       </div>
-      {state?.error && <p className="error-text">{state.error}</p>}
+      {state?.error && <p className="error-text">{t(lang, state.error)}</p>}
       <button type="submit" className="btn block" disabled={pending}>
         {pending ? t(lang, "loading") : t(lang, "signup_cta")}
       </button>

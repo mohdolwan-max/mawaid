@@ -1,0 +1,52 @@
+<!--
+  Supabase → Authentication → Emails → Templates → "Change email address"
+  Subject: تأكيد تغيير بريدك الإلكتروني في موعد
+  Variables: {{ .ConfirmationURL }}, {{ .Email }} (current), {{ .NewEmail }}
+  Pasted by hand into the dashboard; this file is the source of truth.
+-->
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <body style="margin:0;padding:0;background:#f7f6f2;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f6f2;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:14px;border:1px solid #e4e6eb;font-family:Tahoma,Arial,sans-serif;color:#23272f;text-align:right;" dir="rtl">
+            <tr>
+              <td style="padding:24px 24px 8px;">
+                <p style="margin:0;font-size:22px;font-weight:bold;color:#146c63;">موعد</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 24px 0;">
+                <h1 style="margin:0 0 12px;font-size:20px;line-height:1.5;color:#23272f;">تأكيد تغيير البريد الإلكتروني</h1>
+                <p style="margin:0 0 8px;font-size:15px;line-height:1.8;color:#23272f;">
+                  وصلنا طلب لتغيير البريد الإلكتروني لحسابك بموعد:
+                </p>
+                <p style="margin:0 0 20px;font-size:14px;line-height:1.8;color:#23272f;direction:ltr;text-align:left;">
+                  {{ .Email }} → {{ .NewEmail }}
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:0 24px 20px;">
+                <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#146c63;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:12px 28px;border-radius:10px;">تأكيد التغيير</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 24px 20px;">
+                <p style="margin:0 0 8px;font-size:13px;line-height:1.7;color:#6b7280;">إذا الزر ما اشتغل، انسخ هذا الرابط وافتحه بالمتصفح:</p>
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#146c63;word-break:break-all;direction:ltr;text-align:left;">{{ .ConfirmationURL }}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 24px 24px;border-top:1px solid #e4e6eb;">
+                <p style="margin:0 0 6px;font-size:12px;line-height:1.7;color:#6b7280;">إذا ما طلبت هالتغيير، تجاهل هالرسالة وبريدك الحالي بيضل زي ما هو.</p>
+                <p style="margin:0;font-size:12px;line-height:1.7;color:#6b7280;direction:ltr;text-align:left;">Confirm changing your Maw3ed email from {{ .Email }} to {{ .NewEmail }}. If you didn't ask for this, ignore this email.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
