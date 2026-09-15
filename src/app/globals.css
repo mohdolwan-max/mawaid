@@ -30,7 +30,7 @@
   --good-bg: #d9f2e3;
   --good-ink: #0e6b41;
   --warn-bg: #fdf0cc;
-  --warn-ink: #8a6a00;
+  --warn-ink: #6f5500;
   --bad-bg: #fbdddd;
   --bad-ink: #b42318;
   --radius: 12px;
@@ -3320,94 +3320,163 @@ label {
 }
 
 /* ---------- platform admin (0049) ---------- */
+/* Owner feedback (2026-09-15): "الالوان باهتة". White tiles on an off-white
+   page with small gray labels read as washed out. The header now carries
+   the brand, sections get an accent bar, tiles a darker border, a brand
+   top edge and bigger dark figures. Status tiles fill with their state
+   color. Every text/background pair below was checked at >= 4.5:1. */
 .admin-shell {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 20px 16px 48px;
+  padding: 16px 16px 48px;
 }
 .admin-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%);
+  color: #fff;
+  box-shadow: var(--shadow);
 }
 .admin-head h1 {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
+  color: #fff;
+}
+.admin-head .hint {
+  color: #e6f2ef;
+}
+.admin-head-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 .admin-nav {
   display: flex;
   gap: 4px;
-  padding: 3px;
+  padding: 4px;
   border-radius: 999px;
-  background: var(--band);
+  background: rgba(255, 255, 255, 0.14);
 }
 .admin-nav a {
   padding: 7px 14px;
   border-radius: 999px;
-  color: var(--ink2);
+  color: #fff;
   font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
 }
+.admin-nav a:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
 .admin-nav a.active {
-  background: var(--white);
-  color: var(--brand);
-  box-shadow: var(--shadow);
+  background: #fff;
+  color: var(--brand2);
+}
+.admin-head .admin-signout {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
+  color: #fff;
+}
+.admin-head .admin-signout:hover {
+  background: rgba(255, 255, 255, 0.14);
 }
 .admin-page {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 .admin-section {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 .admin-sec-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 .admin-sec-head h2 {
-  font-size: 16px;
-  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--ink);
+}
+.admin-sec-head h2::before {
+  content: "";
+  width: 4px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--brand);
+}
+.admin-sec-head a {
+  font-weight: 700;
+  color: var(--brand);
 }
 .admin-tiles {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
 }
 .admin-tile {
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  padding: 16px 18px;
+  border: 1px solid #dfe3e8;
+  border-top: 3px solid var(--brand);
+  border-radius: 14px;
   background: var(--white);
-  box-shadow: var(--shadow);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 2px 8px rgba(16, 24, 40, 0.05);
 }
 .admin-tile .at-label {
-  font-size: 12px;
-  color: var(--ink2);
-}
-.admin-tile .at-value {
-  margin: 4px 0 2px;
-  font-size: 26px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--ink);
 }
-.admin-tile .at-sub {
-  font-size: 12px;
-  color: var(--ink2);
-  line-height: 1.5;
+.admin-tile .at-value {
+  margin: 6px 0 4px;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--brand2);
 }
-/* Status travels with its label text; the stripe only adds emphasis. */
+.admin-tile .at-sub {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #4b5563;
+}
+.admin-tile.emphasis {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%);
+}
+.admin-tile.emphasis .at-label,
+.admin-tile.emphasis .at-value {
+  color: #fff;
+}
+.admin-tile.emphasis .at-sub {
+  color: #e6f2ef;
+}
+/* Status travels with its label text; the fill only adds emphasis. */
 .admin-tile.warn {
-  border-inline-start: 4px solid var(--warn-ink);
+  border-color: #efd88f;
+  border-top-color: var(--warn-ink);
+  background: var(--warn-bg);
+}
+.admin-tile.warn .at-value {
+  color: var(--warn-ink);
 }
 .admin-tile.bad {
-  border-inline-start: 4px solid var(--bad-ink);
+  border-color: #f0b9b5;
+  border-top-color: var(--bad-ink);
+  background: var(--bad-bg);
+}
+.admin-tile.bad .at-value {
+  color: var(--bad-ink);
 }
 .admin-charts {
   display: grid;
@@ -3416,6 +3485,7 @@ label {
 }
 .admin-chart {
   margin: 0;
+  border: 1px solid #dfe3e8;
 }
 .admin-chart .ac-head {
   display: flex;
@@ -3425,7 +3495,8 @@ label {
   margin-bottom: 6px;
 }
 .admin-chart .ac-title {
-  font-weight: 800;
+  font-weight: 900;
+  color: var(--ink);
 }
 .ac-readout {
   min-height: 24px;
@@ -3438,7 +3509,7 @@ label {
 }
 .ac-readout span {
   font-size: 12px;
-  color: var(--ink2);
+  color: #4b5563;
 }
 .ac-plot {
   display: grid;
@@ -3451,7 +3522,7 @@ label {
   justify-content: space-between;
   height: 130px;
   font-size: 10px;
-  color: var(--ink2);
+  color: #4b5563;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -3499,7 +3570,7 @@ label {
   justify-content: space-between;
   margin-top: 4px;
   font-size: 11px;
-  color: var(--ink2);
+  color: #4b5563;
 }
 .ac-table-wrap {
   overflow-x: auto;
@@ -3511,14 +3582,15 @@ label {
 }
 .ac-table th,
 .ac-table td {
-  padding: 7px 8px;
+  padding: 8px;
   border-bottom: 1px solid var(--line);
   text-align: start;
   white-space: nowrap;
 }
 .ac-table th {
-  color: var(--ink2);
-  font-weight: 700;
+  color: var(--ink);
+  font-weight: 800;
+  background: var(--band);
 }
 .ac-table .num {
   font-variant-numeric: tabular-nums;
@@ -3536,23 +3608,26 @@ label {
 }
 .admin-chips button {
   padding: 6px 12px;
-  border: 1px solid var(--line);
+  border: 1px solid #cfd5dc;
   border-radius: 999px;
   background: var(--white);
   color: var(--ink);
   font: inherit;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
 }
 .admin-chips button span {
-  color: var(--ink2);
-  font-weight: 700;
+  color: #4b5563;
+  font-weight: 800;
 }
 .admin-chips button[aria-pressed="true"] {
   border-color: var(--brand);
-  background: var(--cream);
-  color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+.admin-chips button[aria-pressed="true"] span {
+  color: #e6f2ef;
 }
 .admin-search {
   flex: 1 1 220px;
@@ -3570,12 +3645,14 @@ label {
 }
 .admin-row {
   padding: 12px 14px;
-  border: 1px solid var(--line);
+  border: 1px solid #dfe3e8;
+  border-inline-start: 3px solid var(--brand);
   border-radius: var(--radius);
   background: var(--white);
 }
 .admin-row.open {
   border-color: var(--brand);
+  box-shadow: var(--shadow);
 }
 .admin-row .ar-head {
   display: flex;
@@ -3612,13 +3689,13 @@ label {
   flex-wrap: wrap;
   gap: 4px 14px;
   margin-top: 6px;
-  font-size: 12px;
-  color: var(--ink2);
+  font-size: 12.5px;
+  color: #4b5563;
 }
 .admin-row .ar-detail {
   margin-top: 6px;
   font-size: 12px;
-  color: var(--ink2);
+  color: #4b5563;
   overflow-wrap: anywhere;
 }
 .admin-row .ar-body {
@@ -3633,10 +3710,11 @@ label {
   gap: 8px;
   padding: 12px;
   border-radius: 10px;
-  background: var(--bg);
+  background: var(--cream);
 }
 .admin-tool .at-tool-title {
-  font-weight: 800;
+  font-weight: 900;
+  color: var(--brand2);
 }
 .admin-tool .field {
   margin: 0;
@@ -3647,12 +3725,5 @@ label {
   background: var(--warn-bg);
   color: var(--warn-ink);
   font-size: 13px;
-  font-weight: 600;
-}
-
-.admin-head-side {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  font-weight: 700;
 }

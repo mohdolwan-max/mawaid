@@ -61,6 +61,7 @@ export default async function AdminOverviewPage() {
         </div>
         <div className="admin-tiles">
           <StatTile
+            emphasis
             label={t(lang, "admin_kpi_revenue_month")}
             value={rev ? formatPrice(rev.thisMonth, rev.currency, lang) : "—"}
             sub={revenueSub}

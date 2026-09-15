@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
+import { resolveAuthNext } from "@/lib/authNext";
 import { LoginForm } from "./LoginForm";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ link?: string }> }) {
-  const [lang, { link }] = await Promise.all([getLang(), searchParams]);
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ link?: string; next?: string }>;
+}) {
+  const [lang, { link, next }] = await Promise.all([getLang(), searchParams]);
 
   return (
     <div className="center-shell">
@@ -15,7 +20,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             Without this line the person just saw the login form and
             could not tell why the email button had not worked. */}
         {link === "expired" && <p className="offer-notice">{t(lang, "auth_link_expired")}</p>}
-        <LoginForm lang={lang} />
+        <LoginForm lang={lang} next={resolveAuthNext(next, "") || null} />
         <p className="hint" style={{ marginTop: 14 }}>
           <Link href="/forgot-password">{t(lang, "forgot_password_link")}</Link>
         </p>

@@ -33,7 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="admin-head-side">
           <AdminNav lang={lang} />
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- full navigation to a Route Handler (GET /auth/signout), same as the clinic sidebar */}
-          <a href="/auth/signout" className="btn ghost sm">
+          <a href="/auth/signout" className="btn sm admin-signout">
             {t(lang, "signout")}
           </a>
         </div>
