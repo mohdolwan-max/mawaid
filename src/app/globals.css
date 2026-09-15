@@ -29,8 +29,11 @@
   --side-active: #e4e5ea;
   --good-bg: #d9f2e3;
   --good-ink: #0e6b41;
-  --warn-bg: #fdf0cc;
-  --warn-ink: #6f5500;
+  /* Standard orange (Tailwind orange-100/800). The old mustard #6f5500 read
+     as brown; owner on the admin "failed payments" tile: "استعمل لون معروف".
+     #9a3412 on #ffedd5 = 6.38:1. */
+  --warn-bg: #ffedd5;
+  --warn-ink: #9a3412;
   --bad-bg: #fbdddd;
   --bad-ink: #b42318;
   --radius: 12px;
@@ -3462,13 +3465,15 @@ label {
   color: #e6f2ef;
 }
 /* Status travels with its label text; the fill only adds emphasis. */
+/* orange-700 for the bar and the big number: brighter than --warn-ink so
+   it reads as orange at a glance, still 4.52:1 on the tint. */
 .admin-tile.warn {
-  border-color: #efd88f;
-  border-top-color: var(--warn-ink);
+  border-color: #fdba74;
+  border-top-color: #c2410c;
   background: var(--warn-bg);
 }
 .admin-tile.warn .at-value {
-  color: var(--warn-ink);
+  color: #c2410c;
 }
 .admin-tile.bad {
   border-color: #f0b9b5;
