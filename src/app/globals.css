@@ -3732,3 +3732,241 @@ label {
   font-size: 13px;
   font-weight: 700;
 }
+
+/* =====================================================================
+   Admin periods, tax registrations and the printable sales report (0050).
+   ===================================================================== */
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.period-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.period-picker[aria-busy="true"] {
+  opacity: 0.6;
+}
+.period-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.period-range {
+  font-size: 13px;
+  color: #4b5563;
+}
+.period-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.period-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.admin-chips a {
+  padding: 6px 12px;
+  border: 1px solid #cfd5dc;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.admin-chips a.on {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+.tax-regs {
+  display: grid;
+  gap: 12px;
+}
+.tax-reg {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+}
+.tax-reg-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tax-form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.tax-form .field.wide {
+  grid-column: 1 / -1;
+}
+
+.tax-report {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: #111827;
+  font-size: 13px;
+}
+.tr-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #111827;
+}
+.tr-seller h1 {
+  font-size: 20px;
+  font-weight: 900;
+}
+.tr-meta {
+  text-align: end;
+}
+.tr-meta h2 {
+  font-size: 17px;
+  font-weight: 900;
+}
+.tr-seller p,
+.tr-meta p {
+  margin: 2px 0;
+}
+.tr-muted {
+  color: #4b5563;
+}
+.tr-warning {
+  padding: 8px 10px;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font-weight: 700;
+}
+.tr-section h3 {
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 900;
+}
+.tr-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+.tr-scroll {
+  overflow-x: auto;
+}
+.tr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.tr-table th,
+.tr-table td {
+  padding: 5px 6px;
+  border: 1px solid #d1d5db;
+  text-align: start;
+  vertical-align: top;
+}
+.tr-table th {
+  background: #f3f4f6;
+  font-weight: 800;
+}
+.tr-table .num {
+  text-align: end;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tr-table tfoot td {
+  background: #f9fafb;
+  font-weight: 800;
+}
+.tr-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+.tr-foot {
+  padding-top: 8px;
+  border-top: 1px solid #d1d5db;
+  font-size: 11px;
+  color: #4b5563;
+}
+@media (max-width: 640px) {
+  .tax-report {
+    padding: 14px;
+  }
+  .tr-head {
+    grid-template-columns: 1fr;
+  }
+  .tr-meta {
+    text-align: start;
+  }
+  .tr-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Only the report reaches paper: landscape, because the detail table has
+   eleven columns, and every header row repeats on each page. */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  .no-print,
+  .admin-head,
+  .period-picker,
+  .admin-chips {
+    display: none !important;
+  }
+  .admin-shell {
+    max-width: none;
+    padding: 0;
+  }
+  .tax-report {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    font-size: 10.5px;
+  }
+  .tr-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .tr-table {
+    font-size: 9.5px;
+  }
+  .tr-scroll {
+    overflow: visible;
+  }
+  .tr-table thead {
+    display: table-header-group;
+  }
+  .tr-table tr,
+  .tr-head,
+  .tr-summary {
+    break-inside: avoid;
+  }
+  .tax-report,
+  .tax-report * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -93,6 +93,15 @@ order by 1, 2;
 -- delete from public.appointments
 -- where customer_name in ('اختبار QA', 'نور للتقييم');
 --
+-- -- Payments no longer go with their clinic (0050: a tax record outlives
+-- -- the clinic, the link is set null). Test payments are removed by hand,
+-- -- and only while none of them carries an invoice number.
+-- delete from public.payments p
+-- using public.organizations o
+-- where o.id = p.org_id
+--   and o.slug in ('qa-test-clinic', 'test-clinic-smoketest')
+--   and p.invoice_no is null;
+--
 -- -- Orgs: 9 child tables cascade (appointments, services, staff_*,
 -- -- reviews, notifications, org_settings, memberships, invitations).
 -- delete from public.organizations

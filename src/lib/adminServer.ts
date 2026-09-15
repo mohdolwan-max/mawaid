@@ -12,10 +12,11 @@ import {
   type AdminPayment,
   type MoneyByCurrency,
 } from "@/lib/admin";
+import { parseRegistrations, parseTaxReport, type TaxRegistration, type TaxReport, type UnassignedSales } from "@/lib/taxReport";
 
-function logRpcError(name: string, error: { code?: string }) {
+function logRpcError(name: string, error: { code?: string }, migration = "0049") {
   if (error.code === "PGRST202") {
-    console.error(`${name} missing (0049 unapplied)`);
+    console.error(`${name} missing (${migration} unapplied)`);
   } else {
     console.error(`${name} failed`, error);
   }
@@ -34,11 +35,12 @@ export const isPlatformAdmin = cache(async (): Promise<boolean> => {
   return data === true;
 });
 
-export async function getAdminOverview(): Promise<AdminOverview | null> {
+/** from/to: "YYYY-MM-DD", both included (lib/period.ts). */
+export async function getAdminOverview(from: string, to: string): Promise<AdminOverview | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_overview");
+  const { data, error } = await supabase.rpc("admin_overview", { p_from: from, p_to: to });
   if (error) {
-    logRpcError("admin_overview", error);
+    logRpcError("admin_overview", error, "0050");
     return null;
   }
   return parseOverview(data);
@@ -117,9 +119,9 @@ type PaymentRow = {
   id: string;
   created_at: string;
   paid_at: string | null;
-  org_id: string;
+  org_id: string | null;
   org_name: string;
-  org_slug: string;
+  org_slug: string | null;
   kind: string;
   plan_id: string | null;
   period: string | null;
@@ -134,13 +136,18 @@ type PaymentRow = {
   is_renewal: boolean;
   refunded_at: string | null;
   refund_note: string | null;
+  invoice_no: string | null;
+  tax_amount: number | string | null;
 };
 
-export async function listAdminPayments(): Promise<AdminPayment[] | null> {
+/** The payment list's own row cap (0050 admin_payments). */
+export const ADMIN_PAYMENTS_LIMIT = 1000;
+
+export async function listAdminPayments(from: string, to: string): Promise<AdminPayment[] | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_payments");
+  const { data, error } = await supabase.rpc("admin_payments", { p_from: from, p_to: to });
   if (error) {
-    logRpcError("admin_payments", error);
+    logRpcError("admin_payments", error, "0050");
     return null;
   }
   const out: AdminPayment[] = [];
@@ -169,6 +176,8 @@ export async function listAdminPayments(): Promise<AdminPayment[] | null> {
       isRenewal: r.is_renewal,
       refundedAt: r.refunded_at,
       refundNote: r.refund_note,
+      invoiceNo: r.invoice_no,
+      taxAmount: num(r.tax_amount),
     });
   }
   return out;
@@ -216,4 +225,32 @@ export async function listAdminOffers(): Promise<AdminOffer[] | null> {
     });
   }
   return out;
+}
+
+export async function getTaxRegistrations(): Promise<{ registrations: TaxRegistration[]; unassigned: UnassignedSales[] } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_tax_registrations");
+  if (error) {
+    logRpcError("admin_tax_registrations", error, "0050");
+    return null;
+  }
+  const parsed = parseRegistrations(data);
+  if (!parsed) console.error("admin_tax_registrations returned an unreadable payload");
+  return parsed;
+}
+
+export async function getTaxReport(registrationId: string, from: string, to: string): Promise<TaxReport | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_tax_report", {
+    p_registration_id: registrationId,
+    p_from: from,
+    p_to: to,
+  });
+  if (error) {
+    logRpcError("admin_tax_report", error, "0050");
+    return null;
+  }
+  const parsed = parseTaxReport(data);
+  if (!parsed) console.error("admin_tax_report returned an unreadable payload");
+  return parsed;
 }

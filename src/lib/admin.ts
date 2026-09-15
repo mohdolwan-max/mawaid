@@ -12,13 +12,19 @@ export const ADMIN_TZ = "Asia/Amman";
 
 export type MoneyByCurrency = { currency: string; amount: number }[];
 
+/** Money for the chosen period (0050), per currency. */
 export type RevenueRow = {
   currency: string;
-  thisMonth: number;
-  lastMonth: number;
-  plansThisMonth: number;
-  offersThisMonth: number;
-  paymentsThisMonth: number;
+  period: number;
+  /** The period just before, of the same length. */
+  previous: number;
+  plans: number;
+  offers: number;
+  payments: number;
+  /** Tax inside `period`, from each payment's snapshot. */
+  tax: number;
+  /** Payments in `period` with no invoice (no registration yet). */
+  uninvoiced: number;
   allTime: number;
 };
 
@@ -30,14 +36,19 @@ export type SeriesDay = {
   revenue: Record<string, number>;
 };
 
+// Counts of things that happen follow the chosen period; states (active
+// subscriptions, grace, MRR, refunds owed, upcoming bookings) are "now"
+// whatever the period (0050).
 export type AdminOverview = {
   generatedAt: string;
   timezone: string;
+  from: string;
+  to: string;
   clinics: {
     total: number | null;
     listed: number | null;
-    new7d: number | null;
-    new30d: number | null;
+    new: number | null;
+    newPrev: number | null;
     closed: number | null;
   };
   subscriptions: {
@@ -54,17 +65,18 @@ export type AdminOverview = {
   };
   revenue: RevenueRow[];
   mrr: (MoneyByCurrency[number] & { clinics: number })[];
-  attention: { needsRefund: number | null; failed7d: number | null; renewalFailures: number | null };
+  attention: { needsRefund: number | null; failed: number | null; renewalFailures: number | null };
   offers: { liveToday: number | null; scheduled: number | null; removed: number | null };
   activity: {
-    bookings7d: number | null;
-    bookings30d: number | null;
+    bookings: number | null;
+    bookingsPrev: number | null;
     upcoming: number | null;
-    cancelled30d: number | null;
-    noShow30d: number | null;
+    cancelled: number | null;
+    noShow: number | null;
     customersTotal: number | null;
-    customersNew30d: number | null;
-    reviews30d: number | null;
+    customersNew: number | null;
+    reviews: number | null;
+    /** All reviews, not the period's. */
     avgRating: number | null;
   };
   series: SeriesDay[];
@@ -109,17 +121,19 @@ export function parseOverview(raw: unknown): AdminOverview | null {
   for (const r of Array.isArray(raw.revenue) ? raw.revenue : []) {
     if (!isObj(r)) continue;
     const currency = currencyCode(r.currency);
-    const thisMonth = num(r.this_month);
-    const lastMonth = num(r.last_month);
+    const period = num(r.period);
+    const previous = num(r.previous);
     const allTime = num(r.all_time);
-    if (!currency || thisMonth === null || lastMonth === null || allTime === null) continue;
+    if (!currency || period === null || previous === null || allTime === null) continue;
     revenue.push({
       currency,
-      thisMonth,
-      lastMonth,
-      plansThisMonth: num(r.plans_this_month) ?? 0,
-      offersThisMonth: num(r.offers_this_month) ?? 0,
-      paymentsThisMonth: num(r.payments_this_month) ?? 0,
+      period,
+      previous,
+      plans: num(r.plans) ?? 0,
+      offers: num(r.offers) ?? 0,
+      payments: num(r.payments) ?? 0,
+      tax: num(r.tax) ?? 0,
+      uninvoiced: num(r.uninvoiced) ?? 0,
       allTime,
     });
   }
@@ -150,11 +164,13 @@ export function parseOverview(raw: unknown): AdminOverview | null {
   return {
     generatedAt: raw.generated_at,
     timezone: typeof raw.timezone === "string" ? raw.timezone : "Asia/Amman",
+    from: typeof raw.from === "string" ? raw.from.slice(0, 10) : "",
+    to: typeof raw.to === "string" ? raw.to.slice(0, 10) : "",
     clinics: {
       total: num(c.total),
       listed: num(c.listed),
-      new7d: num(c.new_7d),
-      new30d: num(c.new_30d),
+      new: num(c.new),
+      newPrev: num(c.new_prev),
       closed: num(c.closed),
     },
     subscriptions: {
@@ -173,19 +189,19 @@ export function parseOverview(raw: unknown): AdminOverview | null {
     mrr,
     attention: {
       needsRefund: num(a.needs_refund),
-      failed7d: num(a.failed_7d),
+      failed: num(a.failed),
       renewalFailures: num(a.renewal_failures),
     },
     offers: { liveToday: num(o.live_today), scheduled: num(o.scheduled), removed: num(o.removed) },
     activity: {
-      bookings7d: num(act.bookings_7d),
-      bookings30d: num(act.bookings_30d),
+      bookings: num(act.bookings),
+      bookingsPrev: num(act.bookings_prev),
       upcoming: num(act.upcoming),
-      cancelled30d: num(act.cancelled_30d),
-      noShow30d: num(act.no_show_30d),
+      cancelled: num(act.cancelled),
+      noShow: num(act.no_show),
       customersTotal: num(act.customers_total),
-      customersNew30d: num(act.customers_new_30d),
-      reviews30d: num(act.reviews_30d),
+      customersNew: num(act.customers_new),
+      reviews: num(act.reviews),
       avgRating: num(act.avg_rating),
     },
     series,
@@ -205,11 +221,11 @@ export function sharePct(part: number | null, whole: number | null): number | nu
   return Math.round((part / whole) * 100);
 }
 
-/** The currency the revenue chart shows: the one with most money this
- *  month, then all time; null when no money has arrived at all. */
-export function primaryCurrency(revenue: readonly RevenueRow[]): string | null {
+/** The currency the revenue chart shows: the one with most money in the
+ *  period, then all time; null when no money has arrived at all. */
+export function primaryCurrency(revenue: readonly Pick<RevenueRow, "currency" | "period" | "allTime">[]): string | null {
   if (revenue.length === 0) return null;
-  return [...revenue].sort((x, y) => y.thisMonth - x.thisMonth || y.allTime - x.allTime)[0].currency;
+  return [...revenue].sort((x, y) => y.period - x.period || y.allTime - x.allTime)[0].currency;
 }
 
 /** Y-axis top: a clean number at or above the maximum, never 0. */
@@ -278,9 +294,14 @@ export type AdminPayment = {
   id: string;
   createdAt: string;
   paidAt: string | null;
-  orgId: string;
+  /** null once the clinic row is gone: the payment outlives it (0050). */
+  orgId: string | null;
+  /** The live clinic name, or the name kept on the payment. */
   orgName: string;
-  orgSlug: string;
+  orgSlug: string | null;
+  /** Set when the payment became a sale under a tax registration. */
+  invoiceNo: string | null;
+  taxAmount: number | null;
   kind: "plan" | "offer";
   planId: string | null;
   period: "month" | "year" | null;

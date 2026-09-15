@@ -102,6 +102,11 @@ function PaymentRow({ lang, payment: p }: { lang: Lang; payment: AdminPayment })
       <div className="ar-meta">
         <span>{when}</span>
         {p.isRenewal && <span>{t(lang, "billing_item_renewal")}</span>}
+        {p.invoiceNo && (
+          <span dir="ltr">
+            {t(lang, "admin_invoice", { no: p.invoiceNo })}
+          </span>
+        )}
         {p.providerRef && (
           <span dir="ltr">
             <code>{p.providerRef}</code>
