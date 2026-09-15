@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { type Lang } from "@/lib/i18n";
+import { intlLocale } from "@/lib/date";
 
 // Replacements for <input type="date"> and <input type="datetime-local">.
 // Those render their calendar popup in the browser/OS layer, so it can
@@ -68,7 +69,7 @@ export function DateField({
   const selected = parseYmd(value);
   const today = new Date();
   const [view, setView] = useState(() => selected ?? today);
-  const locale = lang === "ar" ? "ar-JO" : "en-US";
+  const locale = intlLocale(lang);
 
   const year = view.getFullYear();
   const month = view.getMonth();
@@ -160,7 +161,7 @@ export function TimeField({
 }) {
   const [open, setOpen] = useState(false);
   const root = useDismiss(open, () => setOpen(false));
-  const locale = lang === "ar" ? "ar-JO" : "en-US";
+  const locale = intlLocale(lang);
 
   const fmt = (hhmm: string) => {
     const [h, m] = hhmm.split(":").map(Number);

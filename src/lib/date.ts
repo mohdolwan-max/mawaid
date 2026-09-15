@@ -73,7 +73,12 @@ export function formatTime(ymd: string, hhmm: string, tz: string, lang: "ar" | "
 // "ar-EG", which makes that a one-line change here instead of thirteen
 // edits scattered across the app. When a second country actually ships,
 // this becomes a lookup on the org's country rather than a constant.
-export const AR_LOCALE = "ar-JO";
+//
+// "-u-nu-latn" keeps the Arabic month names and "م" but writes the digits
+// 0-9. Owner request, from the admin overview showing ٠ and ١٧ beside
+// Latin prices and phone numbers: "وحد الارقام كلها بالانجليزي". Verified in
+// Node: "١٤ أيلول" becomes "14 أيلول", "١٬٢٣٤٫٥" becomes "1,234.5".
+export const AR_LOCALE = "ar-JO-u-nu-latn";
 
 export function intlLocale(lang: "ar" | "en"): string {
   return lang === "ar" ? AR_LOCALE : "en-US";

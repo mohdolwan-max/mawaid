@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
+import { intlLocale } from "@/lib/date";
 import type { BusinessHours, StaffTimeOff } from "@/lib/types";
 import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
 import { DateField, TimeField } from "@/components/DateTimeField";
@@ -99,12 +100,12 @@ export function StaffScheduleEditor({
           <div key={off.id} className="service-row" style={{ cursor: "default", padding: "8px 12px" }}>
             <div>
               <span dir="ltr" style={{ fontSize: 12.5 }}>
-                {new Date(off.starts_at).toLocaleString(lang === "ar" ? "ar-JO" : "en-US", {
+                {new Date(off.starts_at).toLocaleString(intlLocale(lang), {
                   dateStyle: "short",
                   timeStyle: "short",
                 })}
                 {" → "}
-                {new Date(off.ends_at).toLocaleString(lang === "ar" ? "ar-JO" : "en-US", {
+                {new Date(off.ends_at).toLocaleString(intlLocale(lang), {
                   dateStyle: "short",
                   timeStyle: "short",
                 })}

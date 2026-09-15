@@ -5,6 +5,7 @@
 // because they're data rather than UI copy.
 
 import type { Lang } from "@/lib/i18n";
+import { intlLocale } from "@/lib/date";
 
 export type CategoryKey =
   | "dental"
@@ -157,7 +158,7 @@ export const GEO_COOKIE = "mawaid_geo";
 // input does not have.
 export function distanceLabel(km: number | null | undefined, lang: Lang): string {
   if (km == null || !Number.isFinite(km) || km < 0) return "";
-  const locale = lang === "ar" ? "ar-JO" : "en-US";
+  const locale = intlLocale(lang);
   if (km < 1) {
     const m = Math.max(50, Math.round((km * 1000) / 50) * 50);
     return `${m.toLocaleString(locale)} ${lang === "ar" ? "م" : "m"}`;
