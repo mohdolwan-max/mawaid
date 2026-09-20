@@ -3997,3 +3997,53 @@ label {
 .pw-toggle:hover {
   background: var(--tint);
 }
+
+/* What the customer is about to book, above the contact fields. The
+   last step used to ask for a name and a phone with nothing on screen
+   about the service, the day, the time or the price. */
+.book-summary {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--band-line);
+  border-radius: 12px;
+  background: var(--band);
+}
+.bs-row {
+  display: grid;
+  grid-template-columns: 78px 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.bs-label {
+  color: var(--ink2);
+}
+.bs-value {
+  font-weight: 700;
+  color: var(--ink);
+}
+.bs-total .bs-value {
+  color: var(--brand);
+}
+.bs-edit {
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--brand);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bs-edit:hover {
+  background: var(--tint);
+}
+@media (max-width: 420px) {
+  .bs-row {
+    grid-template-columns: 70px 1fr auto;
+    font-size: 13px;
+  }
+}

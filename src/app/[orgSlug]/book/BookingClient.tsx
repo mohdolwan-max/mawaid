@@ -16,8 +16,12 @@ type Step = "service" | "staff" | "slot" | "contact" | "done";
 const STEP_ORDER: Step[] = ["service", "staff", "slot", "contact"];
 const STEP_LABELS: TKey[] = ["step_service", "step_staff", "step_time", "step_info"];
 
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+// The clinic's today. A visitor in another timezone was offered THEIR
+// today as the first bookable day, and read every slot time on their own
+// clock — a customer in Dubai booking a clinic in Amman saw 7:00 for a
+// 6:00 appointment.
+function todayISO(timezone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(new Date());
 }
 
 function StepsBar({ lang, step }: { lang: Lang; step: Step }) {
@@ -44,11 +48,14 @@ export function BookingClient({
   orgSlug,
   services,
   defaults,
+  timezone,
   initialServiceIds = [],
 }: {
   lang: Lang;
   orgSlug: string;
   services: PublicService[];
+  /** The CLINIC's timezone: every time on this screen is its clock. */
+  timezone: string;
   defaults: { name: string; phone: string; email: string } | null;
   /** Services already chosen on the clinic page, validated server-side. */
   initialServiceIds?: string[];
@@ -70,7 +77,7 @@ export function BookingClient({
   const [staffOptions, setStaffOptions] = useState<PublicStaff[]>([]);
   const [staffId, setStaffId] = useState<string | null>(null);
 
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(todayISO(timezone));
   const [slots, setSlots] = useState<string[]>([]);
   // "Any staff" + a real roster renders the Wddk-style grouped view:
   // one block of times PER specialist instead of one anonymous grid.
@@ -94,12 +101,39 @@ export function BookingClient({
   // books for a whole family, so they get to confirm and continue.
   const [conflictPending, setConflictPending] = useState(false);
 
+  // Times as the clinic keeps them, in the page's language.
+  const fmtTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString(intlLocale(lang), {
+      timeZone: timezone,
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
   function toggleService(s: PublicService) {
     setError(null);
     setChosen((prev) =>
       prev.some((c) => c.id === s.id) ? prev.filter((c) => c.id !== s.id) : [...prev, s]
     );
   }
+
+  // One list of times, whoever they are with. When the customer picked
+  // "any available", each time carries the first specialist who has it;
+  // an explicitly chosen specialist has one list anyway.
+  const offered: { iso: string; staffId: string | null }[] =
+    staffSlots.length > 0
+      ? Object.values(
+          staffSlots.reduce<Record<string, { iso: string; staffId: string | null }>>((acc, g) => {
+            for (const iso of g.slots) {
+              if (!acc[iso]) acc[iso] = { iso, staffId: g.staff.membership_id };
+            }
+            return acc;
+          }, {})
+        ).sort((a, b) => a.iso.localeCompare(b.iso))
+      : slots.map((iso) => ({ iso, staffId: staffId }));
+
+  const pickedStaff =
+    staffOptions.find((s) => s.membership_id === (pickedStaffForSlot ?? staffId)) ?? null;
+  const withStaffLabel = pickedStaff ? staffPublicLabel(pickedStaff, lang) : null;
 
   function goToStaff() {
     if (chosen.length === 0) return;
@@ -339,60 +373,45 @@ export function BookingClient({
         <div className="card wizard-step">
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_date_step")}</p>
           <div className="field">
-            <DateField lang={lang} value={date} onChange={setDate} min={todayISO()} />
+            <DateField lang={lang} value={date} onChange={setDate} min={todayISO(timezone)} />
           </div>
           {slotsLoading ? (
             <p className="hint">{t(lang, "loading")}</p>
-          ) : staffSlots.length > 0 ? (
-            // "Any staff" with a real roster: times grouped per
-            // specialist (the Wddk venue pattern) — clearer than one
-            // anonymous grid, and the customer sees WHO each time is
-            // with before committing.
-            staffSlots.map((g) => (
-              <div key={g.staff.membership_id} className="staff-slot-group">
-                <p className="ssg-head">{staffPublicLabel(g.staff, lang)}</p>
-                <div className="slot-grid">
-                  {g.slots.map((slotIso) => {
-                    const isPicked =
-                      selectedSlot === slotIso && pickedStaffForSlot === g.staff.membership_id;
-                    return (
-                      <button
-                        key={slotIso}
-                        type="button"
-                        className={`slot-btn ${isPicked ? "selected" : ""}`}
-                        onClick={() => {
-                          setSelectedSlot(slotIso);
-                          setPickedStaffForSlot(g.staff.membership_id);
-                        }}
-                      >
-                        {new Date(slotIso).toLocaleTimeString(intlLocale(lang), {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))
-          ) : slots.length === 0 ? (
+          ) : offered.length === 0 ? (
             <p className="hint">{t(lang, "book_no_slots")}</p>
           ) : (
-            <div className="slot-grid">
-              {slots.map((slotIso) => (
-                <button
-                  key={slotIso}
-                  type="button"
-                  className={`slot-btn ${selectedSlot === slotIso ? "selected" : ""}`}
-                  onClick={() => setSelectedSlot(slotIso)}
-                >
-                  {new Date(slotIso).toLocaleTimeString(intlLocale(lang), {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </button>
-              ))}
-            </div>
+            <>
+              {/* Why the day starts when it starts. The clinic's own
+                  minimum-notice rule pushes the first slot forward, and
+                  without a word for it a half-empty day reads as a fully
+                  booked one (reviewer, 2026-09-20). */}
+              <p className="hint" style={{ marginBottom: 8 }}>
+                {t(lang, "book_earliest", { time: fmtTime(offered[0].iso) })}
+              </p>
+              <div className="slot-grid">
+                {offered.map((o) => (
+                  <button
+                    key={o.iso}
+                    type="button"
+                    className={`slot-btn ${selectedSlot === o.iso ? "selected" : ""}`}
+                    onClick={() => {
+                      setSelectedSlot(o.iso);
+                      setPickedStaffForSlot(o.staffId);
+                    }}
+                  >
+                    {fmtTime(o.iso)}
+                  </button>
+                ))}
+              </div>
+              {/* Choosing "any available" used to produce one grid per
+                  specialist with identical times in each. One list now,
+                  and the name appears once a time is chosen. */}
+              {selectedSlot && withStaffLabel && (
+                <p className="hint" style={{ marginTop: 8 }}>
+                  {t(lang, "book_with_staff", { staff: withStaffLabel })}
+                </p>
+              )}
+            </>
           )}
           {/* Shown only when EVERY chosen service carries a price — a
               partial sum would understate what the visit costs. */}
@@ -419,6 +438,52 @@ export function BookingClient({
       {step === "contact" && (
         <form className="card wizard-step" onSubmit={handleSubmit}>
           <p style={{ fontWeight: 700, marginBottom: 10 }}>{t(lang, "book_contact_step")}</p>
+
+          {/* What is actually being booked. The reviewer pressed "confirm"
+              on a screen that named neither the service, the day, the
+              time, the specialist nor the price. */}
+          <div className="book-summary">
+            <div className="bs-row">
+              <span className="bs-label">{t(lang, "book_summary_service")}</span>
+              <span className="bs-value">{chosen.map((c) => c.name).join(" · ")}</span>
+              <button type="button" className="bs-edit" onClick={() => setStep("service")}>
+                {t(lang, "book_edit")}
+              </button>
+            </div>
+            <div className="bs-row">
+              <span className="bs-label">{t(lang, "book_summary_when")}</span>
+              <span className="bs-value">
+                {selectedSlot
+                  ? `${new Intl.DateTimeFormat(intlLocale(lang), {
+                      timeZone: timezone,
+                      dateStyle: "full",
+                    }).format(new Date(selectedSlot))} — ${fmtTime(selectedSlot)}`
+                  : "—"}
+              </span>
+              <button type="button" className="bs-edit" onClick={() => setStep("slot")}>
+                {t(lang, "book_edit")}
+              </button>
+            </div>
+            <div className="bs-row">
+              <span className="bs-label">{t(lang, "book_summary_staff")}</span>
+              <span className="bs-value">{withStaffLabel ?? t(lang, "book_any_staff")}</span>
+              <button type="button" className="bs-edit" onClick={() => setStep("staff")}>
+                {t(lang, "book_edit")}
+              </button>
+            </div>
+            {chosen.length > 0 && chosen.every((c) => c.price != null) && (
+              <div className="bs-row bs-total">
+                <span className="bs-label">{t(lang, "book_summary_total")}</span>
+                {/* The row already says "Total"; repeating the whole
+                    sentence read as "Total: Visit total: 25 JOD". */}
+                <span className="bs-value">
+                  {chosen.reduce((sum, c) => sum + Number(c.price), 0).toLocaleString(intlLocale(lang))}{" "}
+                  {t(lang, "currency")}
+                </span>
+                <span />
+              </div>
+            )}
+          </div>
           {/* Honeypot: invisible to real users, but bots that autofill every
               field on a form tend to fill this one too. Server-side rate
               limiting (0010_security_hardening.sql) is the real backstop;
