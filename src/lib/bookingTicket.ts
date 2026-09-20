@@ -18,13 +18,13 @@ import { createClient } from "@/lib/supabase/server";
 // pre-0051 signature still accepts the booking.
 export type TicketResult =
   | { ok: true; ticket: string | null }
-  | { ok: false; error: "book_rate_limited" | "error_generic" };
+  | { ok: false; error: "book_rate_limited" | "book_not_configured" | "error_generic" };
 
 export async function issueBookingTicket(orgSlug: string, sourceHash: string | null): Promise<TicketResult> {
   const secret = process.env.BOOKING_SECRET;
   if (!secret) {
-    console.error("BOOKING_SECRET is not set — public booking cannot be ticketed");
-    return { ok: true, ticket: null };
+    console.error("BOOKING_SECRET is not set: public booking cannot be ticketed");
+    return { ok: false, error: "book_not_configured" };
   }
   // The database wants a stable source id; without a usable address we
   // still mint, keyed on the clinic, so the honest customer is served.
@@ -39,6 +39,18 @@ export async function issueBookingTicket(orgSlug: string, sourceHash: string | n
     if (error.message?.includes("rate_limited")) return { ok: false, error: "book_rate_limited" };
     // 0051 not applied yet: book without a ticket, as before.
     if (error.code === "PGRST202") return { ok: true, ticket: null };
+    // The two setup failures that look identical from the outside, and
+    // cost a live booking to tell apart the first time (2026-09-20):
+    // BOOKING_SECRET not matching app_config.booking_secret, and the
+    // function not being callable by this role.
+    if (error.message?.includes("not_authorized")) {
+      console.error("issue_booking_ticket: BOOKING_SECRET does not match app_config.booking_secret");
+      return { ok: false, error: "book_not_configured" };
+    }
+    if (error.code === "42501") {
+      console.error("issue_booking_ticket: the caller role may not execute it (0052)");
+      return { ok: false, error: "book_not_configured" };
+    }
     console.error("issue_booking_ticket failed", error);
     return { ok: false, error: "error_generic" };
   }
