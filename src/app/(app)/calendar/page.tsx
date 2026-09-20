@@ -32,7 +32,11 @@ export default async function CalendarPage({
     supabase
       .from("appointments")
       .select(
-        "id, service_id, staff_id, customer_name, customer_phone, start_at, end_at, status, notes, services(name, price)"
+        // services!<fk>: two foreign keys reach services since 0042, and
+        // PostgREST refuses an ambiguous embed (PGRST201) rather than
+        // picking one - which is how this page started answering with an
+        // error for every clinic.
+        "id, service_id, staff_id, customer_name, customer_phone, start_at, end_at, status, notes, services!appointments_service_id_fkey(name, price)"
       )
       .eq("org_id", ctx.orgId)
       .gte("start_at", `${from}T00:00:00Z`)

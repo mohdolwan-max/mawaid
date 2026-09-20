@@ -10,16 +10,36 @@ export default async function BookingsPage() {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
 
-  const [{ data: rows }, { data: services }, { data: staff }] = await Promise.all([
+  const [{ data: rows, error }, { data: services }, { data: staff }] = await Promise.all([
     supabase
       .from("appointments")
-      .select("id, org_id, service_id, staff_id, customer_name, customer_phone, customer_email, start_at, end_at, status, notes, services(name)")
+      // The explicit foreign key matters: see the calendar page.
+      .select(
+        "id, org_id, service_id, staff_id, customer_name, customer_phone, customer_email, start_at, end_at, status, notes, services!appointments_service_id_fkey(name)"
+      )
       .eq("org_id", ctx.orgId)
       .gte("start_at", hoursAgoIso(24))
       .order("start_at"),
     supabase.from("services").select("*").eq("org_id", ctx.orgId).eq("active", true).order("sort_order"),
     supabase.rpc("list_org_staff", { p_org_id: ctx.orgId }),
   ]);
+
+  // A failed query must not arrive as an empty day. This page used to
+  // take only `data`, so PGRST201 (above) rendered as "no bookings" for a
+  // clinic that had them, with nothing on screen to say otherwise.
+  if (error) {
+    console.error("bookings: appointment query failed", error);
+    return (
+      <div>
+        <div className="page-head">
+          <h2>{t(ctx.lang, "nav_bookings")}</h2>
+        </div>
+        <div className="card">
+          <p className="error-text">{t(ctx.lang, "error_generic")}</p>
+        </div>
+      </div>
+    );
+  }
 
   // Label by name, not email: a staff member added by name has no email
   // at all now (0022_staff_without_email.sql).
