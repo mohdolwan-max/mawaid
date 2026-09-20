@@ -49,6 +49,21 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // One public home for the app. The .vercel.app alias served the same
+  // live deployment, which doubles the attack surface and splits any
+  // domain-level protection; the external audit (2026-09-20) found it
+  // serving production. Preview deployments have their own hostnames
+  // and are untouched, and both cron jobs already target www (0038).
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "mawaidy.vercel.app" }],
+        destination: "https://www.maw3ed.me/:path*",
+        permanent: true,
+      },
+    ];
+  },
   // X-Powered-By names the framework to anyone scanning for known
   // Next.js issues; nothing in the app needs it. External audit 2026-09-20.
   poweredByHeader: false,

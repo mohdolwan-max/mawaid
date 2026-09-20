@@ -12,3 +12,16 @@ export function isSafeHttpUrl(value: string): boolean {
     return false;
   }
 }
+
+// The browser uploads to the org-media bucket and then tells the server
+// which URL to store, and nothing checked that URL: a tampered client
+// could point a clinic cover at any third-party host, i.e. a tracking
+// beacon on a public page (audit 2026-09-20). A stored media URL has to
+// be this project public object path, inside this org own folder, which
+// is exactly what the upload produces.
+export function isOrgMediaUrl(value: string, orgId: string): boolean {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base || !orgId) return false;
+  const prefix = `${base.replace(/\/+$/, "")}/storage/v1/object/public/org-media/${orgId}/`;
+  return value.startsWith(prefix) && !value.includes("..");
+}

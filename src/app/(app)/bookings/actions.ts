@@ -12,11 +12,22 @@ import {
 } from "@/lib/availability";
 import type { BookingStatus } from "@/lib/types";
 
-export async function setBookingStatus(id: string, status: BookingStatus) {
+// Reports what happened. Firing the update and revalidating regardless
+// made a refused write (RLS, a closed clinic, a stale row) look like a
+// completed one: the row simply came back unchanged. Audit 2026-09-20.
+export async function setBookingStatus(
+  id: string,
+  status: BookingStatus
+): Promise<{ ok: true } | { ok: false; message: string }> {
   const supabase = await createClient();
-  await supabase.from("appointments").update({ status }).eq("id", id);
+  const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
+  if (error) {
+    console.error("setBookingStatus failed", error);
+    return { ok: false, message: error.message };
+  }
   revalidatePath("/bookings");
   revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 // Same availability source the customer booking page uses, so the owner
@@ -49,6 +60,8 @@ export async function addManualBooking(input: {
   const ctx = await requireOrgContext();
 
   const result = await bookAppointment({
+    // A clinic member is exempt from the public ticket (0051).
+    ticket: null,
     orgSlug: ctx.slug,
     serviceId: input.serviceId,
     startAt: input.startAt,

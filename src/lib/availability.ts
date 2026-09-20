@@ -40,6 +40,9 @@ export type BookResult =
   | { ok: false; error: string };
 
 export async function bookAppointment(input: {
+  /** 0051: minted by our server for a public booking; null for a clinic
+   *  member, who is exempt, and in the window before 0051 is applied. */
+  ticket?: string | null;
   orgSlug: string;
   serviceId: string;
   startAt: string;
@@ -56,6 +59,7 @@ export async function bookAppointment(input: {
   const supabase = await createClient();
   const { data, error } = await supabase
     .rpc("book_appointment", {
+      p_ticket: input.ticket ?? null,
       p_org_slug: input.orgSlug,
       p_service_id: input.serviceId,
       p_start_at: input.startAt,
@@ -69,8 +73,9 @@ export async function bookAppointment(input: {
     .maybeSingle();
 
   // PGRST202 = no function with these parameters. Happens only in the
-  // window between this code deploying and 0026 being applied; retry on
-  // the pre-0026 signature so booking never breaks on migration order.
+  // window between this code deploying and the matching migration being
+  // applied (0026 then, 0051 now); retry on the older signature so booking
+  // never breaks on migration order.
   if (error?.code === "PGRST202") {
     const legacy = await supabase
       .rpc("book_appointment", {
@@ -113,6 +118,16 @@ function parseRpcError(message?: string): string {
   if (message.includes("slot_taken")) return "book_slot_taken";
   if (message.includes("rate_limited")) return "book_rate_limited";
   if (message.includes("customer_time_conflict")) return "book_customer_conflict";
+  // 0051. A spent or missing ticket means the page was left open too
+  // long, or the request did not come from this site at all.
+  if (message.includes("booking_ticket") || message.includes("booking_unavailable")) return "book_session_expired";
+  if (message.includes("slot_not_aligned")) return "book_bad_time";
+  if (message.includes("duplicate_service")) return "book_duplicate_service";
+  if (message.includes("name_too_long") || message.includes("notes_too_long")) return "book_text_too_long";
+  // Named refusals that used to collapse into a blank failure.
+  if (message.includes("outside_business_hours")) return "book_outside_hours";
+  if (message.includes("too_soon")) return "book_too_soon";
+  if (message.includes("too_far_ahead")) return "book_too_far";
   return "error_generic";
 }
 
@@ -137,6 +152,11 @@ export type BookingRow = {
 // .maybeSingle(): since 0027 the RPC returns the whole visit, and
 // maybeSingle() throws on more than one row.
 export async function getBookingVisitByToken(token: string): Promise<BookingRow[]> {
+  // A malformed token is a mistyped or truncated link, and Postgres
+  // rejects it as bad uuid syntax — which used to surface as a 500 error
+  // page (audit 2026-09-20). It belongs with "no such booking": the page
+  // below turns an empty result into notFound().
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) return [];
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_booking_by_token", { p_cancel_token: token });
   if (error) {
@@ -217,6 +237,7 @@ export async function getAvailableSlotsChain(
 // keeps the common path on the older, simpler RPC and means the chain
 // function is only ever reached when it is genuinely needed.
 export async function bookAppointmentChain(input: {
+  ticket?: string | null;
   orgSlug: string;
   serviceIds: string[];
   startAt: string;
@@ -229,6 +250,7 @@ export async function bookAppointmentChain(input: {
 }): Promise<BookResult> {
   if (input.serviceIds.length === 1) {
     return bookAppointment({
+      ticket: input.ticket ?? null,
       orgSlug: input.orgSlug,
       serviceId: input.serviceIds[0],
       startAt: input.startAt,
@@ -242,6 +264,7 @@ export async function bookAppointmentChain(input: {
   }
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("book_appointment_chain", {
+    p_ticket: input.ticket ?? null,
     p_org_slug: input.orgSlug,
     p_service_ids: input.serviceIds,
     p_start_at: input.startAt,

@@ -9,6 +9,7 @@ import { listPublicStaffForService, listPublicServices, getPublicOrg, type Publi
 import { sendBookingConfirmation } from "@/lib/email";
 import { getLang } from "@/lib/lang";
 import { currentSourceHash } from "@/lib/sourceLimit";
+import { issueBookingTicket } from "@/lib/bookingTicket";
 import { createClient } from "@/lib/supabase/server";
 
 export async function fetchStaffAction(orgSlug: string, serviceId: string): Promise<PublicStaff[]> {
@@ -43,8 +44,9 @@ export async function submitBookingAction(input: {
   // FAIL OPEN, deliberately: if the guard itself errors — RPC missing
   // because 0040 is not applied yet, a network blip — the booking still
   // goes through. A broken doorman must not close the shop.
+  let sourceHash: string | null = null;
   try {
-    const sourceHash = await currentSourceHash();
+    sourceHash = await currentSourceHash();
     const supabase = await createClient();
     const { error } = await supabase.rpc("check_booking_source", {
       p_source_hash: sourceHash,
@@ -59,7 +61,17 @@ export async function submitBookingAction(input: {
     console.error("check_booking_source threw", e);
   }
 
+  // The ceiling that cannot be walked around (0051): the database only
+  // accepts a public booking that carries a ticket, and only this server
+  // can mint one. Spent on first use, so a refused attempt costs the same
+  // as a successful booking.
+  const ticket = await issueBookingTicket(input.orgSlug, sourceHash);
+  if (!ticket.ok) {
+    return { ok: false, error: ticket.error };
+  }
+
   const result = await bookAppointmentChain({
+    ticket: ticket.ticket,
     orgSlug: input.orgSlug,
     serviceIds: input.serviceIds,
     startAt: input.startAt,

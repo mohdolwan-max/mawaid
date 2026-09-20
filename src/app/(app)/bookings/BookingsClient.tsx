@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import { todayYMD, intlLocale } from "@/lib/date";
-import type { Appointment, Service, StaffMember } from "@/lib/types";
+import type { Appointment, BookingStatus, Service, StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
 import { DateField } from "@/components/DateTimeField";
 import { setBookingStatus, addManualBooking, fetchOwnerSlotsAction } from "./actions";
@@ -74,10 +74,22 @@ function BookingSection({
   timezone: string;
 }) {
   const router = useRouter();
+  const [error, setError] = useState<TKey | null>(null);
+
+  async function mark(id: string, status: BookingStatus) {
+    const res = await setBookingStatus(id, status);
+    if (!res.ok) {
+      setError("error_generic");
+      return;
+    }
+    setError(null);
+    router.refresh();
+  }
 
   return (
     <div className="card">
       <p style={{ fontWeight: 700, marginBottom: 10 }}>{title}</p>
+      {error && <p className="error-text">{t(lang, error)}</p>}
       {rows.length === 0 ? (
         <div className="empty">{t(lang, "bookings_empty")}</div>
       ) : (
@@ -107,13 +119,13 @@ function BookingSection({
                   </td>
                   <td>
                     <div className="toolbar">
-                      <button className="btn ghost sm" onClick={async () => { await setBookingStatus(a.id, "completed"); router.refresh(); }}>
+                      <button className="btn ghost sm" onClick={() => mark(a.id, "completed")}>
                         {t(lang, "booking_status_completed")}
                       </button>
-                      <button className="btn ghost sm" onClick={async () => { await setBookingStatus(a.id, "no_show"); router.refresh(); }}>
+                      <button className="btn ghost sm" onClick={() => mark(a.id, "no_show")}>
                         {t(lang, "booking_status_no_show")}
                       </button>
-                      <button className="btn danger sm" onClick={async () => { await setBookingStatus(a.id, "cancelled"); router.refresh(); }}>
+                      <button className="btn danger sm" onClick={() => mark(a.id, "cancelled")}>
                         {t(lang, "cancel")}
                       </button>
                     </div>

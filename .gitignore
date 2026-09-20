@@ -46,3 +46,4 @@ next-env.d.ts
 
 # Local operational notes must never reach a public repo.
 supabase/*.txt
+supabase/.temp/

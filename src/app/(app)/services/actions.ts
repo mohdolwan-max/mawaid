@@ -6,6 +6,7 @@ import { DIRECTORY_TAG } from "@/lib/directoryServer";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { parseServiceEdit, type ServiceEditError } from "@/lib/serviceEdit";
+import { isOrgMediaUrl } from "@/lib/url";
 
 export async function addService(formData: FormData) {
   const ctx = await requireOrgContext();
@@ -86,6 +87,10 @@ export async function deleteService(serviceId: string) {
 // SettingsClient.tsx's handleUpload).
 export async function saveServicePhoto(serviceId: string, url: string) {
   const ctx = await requireOrgContext();
+  // Same rule as the org cover and logo (lib/url.ts).
+  if (!isOrgMediaUrl(url, ctx.orgId)) {
+    throw new Error("invalid_media_url");
+  }
   const supabase = await createClient();
   const { error } = await supabase.from("services").update({ photo_url: url }).eq("id", serviceId);
   if (error) throw error;

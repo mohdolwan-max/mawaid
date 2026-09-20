@@ -3,6 +3,7 @@ import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 import { T } from "@/lib/i18n";
 import { AR_LOCALE } from "@/lib/date";
+import { bearerOk } from "@/lib/cronAuth";
 
 // Sends "your appointment is in ~30 minutes" Web Push notifications.
 // Invoked every 5 minutes by a Supabase pg_cron job (Vercel Hobby crons
@@ -32,7 +33,7 @@ type DueRow = {
 export async function POST(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
-  if (!secret || authHeader !== `Bearer ${secret}`) {
+  if (!bearerOk(authHeader, secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

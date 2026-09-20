@@ -1,3 +1,21 @@
+-- ARCHIVE ONLY — DO NOT REPLAY THIS FILE INTO A DATABASE.
+--
+-- Snapshot taken 2025-08-31, at migration 0030. It has 15 of the 25
+-- tables the app now has, and NONE of the tenant-isolation work that
+-- followed: no composite (id, org_id) foreign keys from 0034/0042, no
+-- column grants hiding appointments.cancel_token from clinic members,
+-- no table revokes for plans, offers, payments, platform_admins or
+-- tax_registrations, and none of 0032's secret gates.
+--
+-- 0033 records that this file was once used to rebuild the project after
+-- a region move. Doing that today would reintroduce the cross-tenant
+-- write that 0034 was written to close, silently.
+--
+-- To rebuild a database, replay supabase/migrations/0001..latest in
+-- order. To refresh this snapshot, dump the live schema and replace the
+-- whole file, including this header.
+-- (External audit, 2026-09-20.)
+
 -- =====================================================================
 -- COMPLETE SCHEMA for Maw3ed — every migration, in order, as one file.
 --

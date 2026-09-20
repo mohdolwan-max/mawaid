@@ -94,7 +94,7 @@ function AuthTabs({ lang, next }: { lang: Lang; next: string | null }) {
             <label htmlFor="cs_password">{t(lang, "password")}</label>
             <input id="cs_password" name="password" type="password" required minLength={8} autoComplete="new-password" />
           </div>
-          {signupState?.error && <p className="error-text">{signupState.error}</p>}
+          {signupState?.error && <p className="error-text">{t(lang, signupState.error)}</p>}
           <button type="submit" className="btn block" disabled={signupPending}>
             {signupPending ? t(lang, "loading") : t(lang, "cust_signup_tab")}
           </button>

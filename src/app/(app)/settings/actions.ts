@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { isSafeHttpUrl } from "@/lib/url";
 import type { BusinessHours } from "@/lib/types";
+import { isOrgMediaUrl } from "@/lib/url";
 
 // Every save reports back. The old shape — fire the update, ignore the
 // error, revalidate anyway — meant a failed write looked EXACTLY like a
@@ -113,6 +114,10 @@ export async function saveDirectoryProfile(input: {
 // resulting public URL on the org row.
 export async function saveMediaUrl(kind: "cover" | "logo", url: string): Promise<SaveResult> {
   const ctx = await requireOrgContext();
+  if (!isOrgMediaUrl(url, ctx.orgId)) {
+    console.error("saveMediaUrl refused a URL outside this org folder", { kind });
+    return { ok: false, message: "invalid_media_url" };
+  }
   const supabase = await createClient();
   const { error } = await supabase
     .from("organizations")

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getPaymentProvider, paymentsSecret } from "@/lib/payments";
+import { bearerOk } from "@/lib/cronAuth";
 
 // Which payment settings the RUNNING deployment actually sees. Added after
 // the keys were entered on Vercel and the webhook still answered
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+  if (!bearerOk(request.headers.get("authorization"), cronSecret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

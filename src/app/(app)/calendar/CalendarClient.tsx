@@ -420,7 +420,13 @@ function BookingSheet({
 
   async function mark(status: BookingStatus) {
     setPending(true);
-    await setBookingStatus(booking.id, status);
+    setError(null);
+    const res = await setBookingStatus(booking.id, status);
+    if (!res.ok) {
+      setPending(false);
+      setError("error_generic");
+      return;
+    }
     setPending(false);
     onChanged();
   }

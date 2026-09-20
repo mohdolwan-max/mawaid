@@ -14,6 +14,22 @@ import { samePath } from "@/lib/authNext";
 // on a guaranteed-empty list instead of the marketplace.
 const DEFAULT_AFTER_AUTH = "/";
 
+export type CustomerSignupError =
+  | "required_field"
+  | "password_too_short"
+  | "auth_email_rate_limited"
+  | "auth_already_registered"
+  | "error_generic";
+
+function toCustomerSignupError(error: { message: string; code?: string }): CustomerSignupError {
+  const code = error.code ?? "";
+  const msg = error.message.toLowerCase();
+  if (code === "over_email_send_rate_limit" || msg.includes("rate limit")) return "auth_email_rate_limited";
+  if (code === "user_already_exists" || msg.includes("already registered")) return "auth_already_registered";
+  console.error("customer signup failed", error);
+  return "error_generic";
+}
+
 function safeNext(raw: string | null | undefined, fallback: string): string {
   return (raw ? samePath(raw) : null) ?? fallback;
 }
@@ -62,7 +78,11 @@ export async function customerSignup(
   });
 
   if (error) {
-    return { error: error.message };
+    // Supabase returns English sentences that change between versions,
+    // and they were rendered raw on an Arabic page — which also told a
+    // stranger whether an address is registered. Same mapping the owner
+    // signup uses (src/app/signup/actions.ts). Audit 2026-09-20.
+    return { error: toCustomerSignupError(error) };
   }
 
   if (!data.session) {

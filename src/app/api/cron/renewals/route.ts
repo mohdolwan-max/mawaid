@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getPaymentProvider, paymentsDb, paymentsSecret } from "@/lib/payments";
 import { formatAmount } from "@/lib/billing";
+import { bearerOk } from "@/lib/cronAuth";
 
 // Automatic renewal: charges the saved card of every plan ending within a
 // day (claim_due_renewals, 0047/0048), then confirms or fails each payment.
@@ -26,7 +27,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+  if (!bearerOk(request.headers.get("authorization"), cronSecret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
