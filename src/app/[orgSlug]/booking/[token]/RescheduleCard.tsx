@@ -14,14 +14,15 @@ export function RescheduleCard({
   lang,
   token,
   orgSlug,
-  serviceId,
+  serviceIds,
   staffId,
   timezone,
 }: {
   lang: Lang;
   token: string;
   orgSlug: string;
-  serviceId: string;
+  /** Every service in the visit, in order: the whole visit moves (0053). */
+  serviceIds: string[];
   staffId: string | null;
   timezone: string;
 }) {
@@ -40,7 +41,7 @@ export function RescheduleCard({
     setError(null);
     setPicked(null);
     try {
-      setSlots(await fetchRescheduleSlotsAction(orgSlug, serviceId, d, staffId));
+      setSlots(await fetchRescheduleSlotsAction(orgSlug, serviceIds, d, staffId));
     } catch {
       // Not an empty list: "no times" and "the lookup broke" must not
       // look identical to the customer.

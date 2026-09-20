@@ -314,6 +314,7 @@ function parseRescheduleError(message?: string): string {
   if (message.includes("too_far_ahead")) return "resched_too_far";
   if (message.includes("booking_not_active")) return "resched_not_active";
   if (message.includes("booking_not_found")) return "booking_not_found";
+  if (message.includes("booking_link_expired")) return "booking_link_expired";
   if (message.includes("not_authorized")) return "error_generic";
   return "error_generic";
 }

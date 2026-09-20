@@ -127,21 +127,33 @@ export async function saveStaffSchedule(membershipId: string, businessHours: Bus
   revalidatePath("/staff");
 }
 
+// Returns how many booked appointments the time off covers (0053). The
+// insert is not refused — the clinic knows about its own day off — but
+// silence left staff with a day off that still had patients on it.
 export async function addTimeOff(input: {
   membershipId: string;
   startsAt: string;
   endsAt: string;
   reason: string;
-}) {
+}): Promise<{ ok: true; conflicts: number } | { ok: false }> {
   await requireOrgContext();
   const supabase = await createClient();
-  await supabase.rpc("add_staff_time_off", {
-    p_membership_id: input.membershipId,
-    p_starts_at: input.startsAt,
-    p_ends_at: input.endsAt,
-    p_reason: input.reason || null,
-  });
+  const { data, error } = await supabase
+    .rpc("add_staff_time_off", {
+      p_membership_id: input.membershipId,
+      p_starts_at: input.startsAt,
+      p_ends_at: input.endsAt,
+      p_reason: input.reason || null,
+    })
+    .maybeSingle();
+  if (error) {
+    console.error("add_staff_time_off failed", error);
+    return { ok: false };
+  }
   revalidatePath("/staff");
+  revalidatePath("/bookings");
+  const row = data as { conflicts: number | null } | null;
+  return { ok: true, conflicts: row?.conflicts ?? 0 };
 }
 
 export async function removeTimeOff(id: string) {

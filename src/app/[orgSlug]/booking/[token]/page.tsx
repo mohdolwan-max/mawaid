@@ -97,7 +97,7 @@ export default async function BookingStatusPage({
               lang={lang}
               token={token}
               orgSlug={first.org_slug}
-              serviceId={first.service_id}
+              serviceIds={segments.map((s) => s.service_id)}
               staffId={first.staff_id}
               timezone={timezone}
             />

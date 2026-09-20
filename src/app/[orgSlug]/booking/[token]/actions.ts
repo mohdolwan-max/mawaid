@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   cancelVisitByToken,
-  getAvailableSlots,
+  getAvailableSlotsChain,
   rescheduleByToken,
   type RescheduleResult,
 } from "@/lib/availability";
@@ -29,13 +29,16 @@ export async function submitReviewAction(
 // The picker deliberately calls the same availability RPC the customer
 // used when booking, rather than a reschedule-specific one, so "what is
 // available" can never mean two different things.
+// Every service in the visit, not just the first: since 0053 the whole
+// visit moves together, so the times offered must be the ones where ALL
+// of it fits.
 export async function fetchRescheduleSlotsAction(
   orgSlug: string,
-  serviceId: string,
+  serviceIds: string[],
   date: string,
   staffId: string | null
 ): Promise<string[]> {
-  return getAvailableSlots(orgSlug, serviceId, date, staffId);
+  return getAvailableSlotsChain(orgSlug, serviceIds, date, staffId);
 }
 
 export async function rescheduleAction(

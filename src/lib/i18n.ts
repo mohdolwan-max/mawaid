@@ -567,9 +567,11 @@ export const T = {
     resched_too_soon: "الوقت قريب كتير. اختر وقت أبعد شوي.",
     resched_too_far: "هذا التاريخ أبعد من المسموح للحجز.",
     resched_not_active: "هذا الحجز ملغي أو منتهي، ما بينفع يتغيّر.",
-    resched_visit_note: "هاي الزيارة فيها أكثر من خدمة — كل خدمة بتتغيّر لحالها.",
+    resched_visit_note: "وتغيير الموعد بيحرّك كل خدمات الزيارة مع بعض، بنفس الترتيب والفواصل.",
     booking_cancel_whole_visit: "الإلغاء بيشمل كل خدمات الزيارة ({n}).",
     booking_not_found: "لم يتم العثور على الحجز",
+    time_off_conflicts: "انحفظت الإجازة، بس في {n} موعد محجوز داخل وقتها. راجعهم من صفحة الحجوزات وحوّلهم أو ألغهم.",
+    booking_link_expired: "انتهت صلاحية رابط الحجز. تواصل مع العيادة مباشرة.",
 
     // ---------- owner bookings dashboard ----------
     dash_overview_sub: "نظرة سريعة على حجوزات عيادتك",
@@ -1394,9 +1396,11 @@ export const T = {
     resched_too_soon: "That is too soon. Pick a slightly later time.",
     resched_too_far: "That date is further ahead than bookings are allowed.",
     resched_not_active: "This booking is cancelled or finished, so it cannot be moved.",
-    resched_visit_note: "This visit has more than one service — each moves on its own.",
+    resched_visit_note: "Changing the time moves every service in the visit together, in the same order and with the same gaps.",
     booking_cancel_whole_visit: "Cancelling removes all {n} services in this visit.",
     booking_not_found: "Booking not found",
+    time_off_conflicts: "The time off was saved, but {n} booked appointments fall inside it. Review them in Bookings and move or cancel them.",
+    booking_link_expired: "This booking link has expired. Please contact the clinic directly.",
 
     dash_overview_sub: "A quick look at your clinic's bookings",
     bookings_title: "Bookings",

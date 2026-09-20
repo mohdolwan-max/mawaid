@@ -25,6 +25,9 @@ export function StaffScheduleEditor({
   timeOff: StaffTimeOff[];
 }) {
   const [customized, setCustomized] = useState(staffHours !== null);
+  // What the last save of a time off had to say: nothing, a refusal, or
+  // the bookings it now sits on top of (0053).
+  const [timeOffNote, setTimeOffNote] = useState<{ kind: "error" } | { kind: "conflicts"; n: number } | null>(null);
   const [hours, setHours] = useState<BusinessHours>(staffHours ?? orgHours);
   const [saving, setSaving] = useState(false);
 
@@ -126,12 +129,19 @@ export function StaffScheduleEditor({
           e.preventDefault();
           if (!start || !end) return;
           setAddingOff(true);
-          await addTimeOff({
+          setTimeOffNote(null);
+          const res = await addTimeOff({
             membershipId,
             startsAt: new Date(start).toISOString(),
             endsAt: new Date(end).toISOString(),
             reason,
           });
+          if (!res.ok) {
+            setTimeOffNote({ kind: "error" });
+            setAddingOff(false);
+            return;
+          }
+          if (res.conflicts > 0) setTimeOffNote({ kind: "conflicts", n: res.conflicts });
           setStartDate("");
           setStartTime("");
           setEndDate("");
@@ -162,6 +172,18 @@ export function StaffScheduleEditor({
           {t(lang, "time_off_add")}
         </button>
       </form>
+
+      {timeOffNote && (
+        <p
+          className={timeOffNote.kind === "error" ? "error-text" : "offer-notice"}
+          style={{ marginTop: 10 }}
+          role="status"
+        >
+          {timeOffNote.kind === "error"
+            ? t(lang, "error_generic")
+            : t(lang, "time_off_conflicts", { n: timeOffNote.n.toLocaleString(intlLocale(lang)) })}
+        </p>
+      )}
     </div>
   );
 }
