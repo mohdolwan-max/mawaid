@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import { LinkIcon } from "@/components/icons";
-import { siteUrl } from "@/lib/siteUrl";
+import { canonicalSiteUrl } from "@/lib/siteUrl";
 import { clinicShareUrl } from "@/lib/share";
 import { ShareButton } from "@/components/marketplace/ShareButton";
 
@@ -25,7 +25,7 @@ export function PublicLinkCard({
   // mismatch is the exact hydration failure that once left the bookings
   // page's buttons dead. It also meant a link copied from a preview
   // deployment pointed at the preview, not the real site.
-  const fullUrl = clinicShareUrl(siteUrl(), slug);
+  const fullUrl = clinicShareUrl(canonicalSiteUrl(), slug);
 
   return (
     <div className="card link-card">

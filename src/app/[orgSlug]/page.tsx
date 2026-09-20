@@ -11,7 +11,7 @@ import { BottomNav } from "@/components/marketplace/BottomNav";
 import { BackBar } from "@/components/marketplace/BackBar";
 import { ShareButton } from "@/components/marketplace/ShareButton";
 import { ServiceSelectionProvider, SelectableServiceList, BookNowLink } from "./ServicePicker";
-import { siteUrl } from "@/lib/siteUrl";
+import { canonicalSiteUrl } from "@/lib/siteUrl";
 import { clinicShareUrl } from "@/lib/share";
 import { intlLocale } from "@/lib/date";
 
@@ -72,7 +72,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
   const mapsUrl = org.maps_url && isSafeHttpUrl(org.maps_url) ? org.maps_url : null;
   // Built server-side from the site host so the shared link is the real
   // one whatever origin this page was reached on.
-  const shareUrl = clinicShareUrl(siteUrl(), orgSlug);
+  const shareUrl = clinicShareUrl(canonicalSiteUrl(), orgSlug);
 
   return (
     <div className="public-shell">

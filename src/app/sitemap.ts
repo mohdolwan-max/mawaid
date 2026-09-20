@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { siteUrl } from "@/lib/siteUrl";
+import { canonicalSiteUrl } from "@/lib/siteUrl";
 import { listDirectoryOrgs } from "@/lib/directoryServer";
 import { isIndexableSlug } from "@/lib/directory";
 
@@ -8,7 +8,7 @@ import { isIndexableSlug } from "@/lib/directory";
 // city/category filter here means every listed org across every city,
 // not just one city's page.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = siteUrl();
+  const base = canonicalSiteUrl();
   const orgs = await listDirectoryOrgs({ limit: 1000 });
 
   const staticRoutes: MetadataRoute.Sitemap = [
