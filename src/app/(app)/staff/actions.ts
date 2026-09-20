@@ -156,6 +156,22 @@ export async function addTimeOff(input: {
   return { ok: true, conflicts: row?.conflicts ?? 0 };
 }
 
+// Withdraws an invitation that was never accepted, giving the seat back.
+// A pending invite counts against the plan (0043), so an owner who mistyped
+// an address had no way to recover the seat before 0055.
+export async function cancelInvitation(invitationId: string): Promise<{ ok: boolean }> {
+  await requireOrgContext();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_invitation", { p_invitation_id: invitationId });
+  if (error) {
+    console.error("cancel_invitation failed", error);
+    return { ok: false };
+  }
+  revalidatePath("/staff");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 export async function removeTimeOff(id: string) {
   await requireOrgContext();
   const supabase = await createClient();

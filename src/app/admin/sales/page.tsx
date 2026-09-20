@@ -6,7 +6,7 @@ import { ADMIN_PAYMENTS_LIMIT, getAdminOverview, listAdminOffers, listAdminPayme
 import { ADMIN_TZ } from "@/lib/admin";
 import { parsePeriod, periodSearch } from "@/lib/period";
 import { formatPrice } from "@/lib/billing";
-import { PeriodPicker } from "../PeriodPicker";
+import { PeriodPicker } from "@/components/PeriodPicker";
 import { PaymentsClient } from "./PaymentsClient";
 import { OffersAdminClient } from "./OffersAdminClient";
 

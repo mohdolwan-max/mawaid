@@ -245,7 +245,7 @@ function ManualBookingForm({
             {staff
               .filter((m) => m.role === "staff")
               .map((m) => (
-                <option key={m.membership_id} value={m.membership_id}>
+                <option key={m.membership_id} value={m.membership_id ?? ""}>
                   {staffOwnerLabel(m, lang)}
                 </option>
               ))}

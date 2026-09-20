@@ -5,7 +5,7 @@ import { t } from "@/lib/i18n";
 import { getTaxRegistrations, getTaxReport } from "@/lib/adminServer";
 import { ADMIN_TZ } from "@/lib/admin";
 import { parsePeriod, periodSearch } from "@/lib/period";
-import { PeriodPicker } from "../PeriodPicker";
+import { PeriodPicker } from "@/components/PeriodPicker";
 import { PrintButton } from "./PrintButton";
 import { TaxReportDocument } from "./TaxReportDocument";
 

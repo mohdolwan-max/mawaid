@@ -34,7 +34,8 @@ export type Service = {
 };
 
 export type StaffMember = {
-  membership_id: string;
+  /** null on a pending invitation: nobody has joined yet (0055). */
+  membership_id: string | null;
   user_id: string | null;
   // Both null for a staff member added by name with no login at all —
   // the common case in Jordan, where most clinic/salon staff have no
@@ -48,6 +49,8 @@ export type StaffMember = {
   bio: string | null;
   photo_url: string | null;
   business_hours: BusinessHours | null; // null = inherits the org's hours
+  /** Set only on a pending invitation, so it can be withdrawn (0055). */
+  invitation_id?: string | null;
 };
 
 export type StaffTimeOff = {

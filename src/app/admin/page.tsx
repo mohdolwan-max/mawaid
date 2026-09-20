@@ -6,9 +6,9 @@ import { getAdminOverview } from "@/lib/adminServer";
 import { ADMIN_TZ, changePct, primaryCurrency } from "@/lib/admin";
 import { bucketSeries, bucketSize, parsePeriod, periodSearch } from "@/lib/period";
 import { currencyLabel, formatPrice } from "@/lib/billing";
-import { StatTile } from "./StatTile";
-import { DailyBars } from "./DailyBars";
-import { PeriodPicker } from "./PeriodPicker";
+import { StatTile } from "@/components/StatTile";
+import { DailyBars } from "@/components/DailyBars";
+import { PeriodPicker } from "@/components/PeriodPicker";
 
 function count(v: number | null, lang: Lang): string {
   return v === null ? "—" : v.toLocaleString(intlLocale(lang));

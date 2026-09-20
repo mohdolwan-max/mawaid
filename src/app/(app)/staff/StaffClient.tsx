@@ -3,9 +3,17 @@
 import { Fragment, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
+import { intlLocale } from "@/lib/date";
 import type { BusinessHours, Service, StaffMember, StaffTimeOff } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
-import { addStaffMember, removeStaffMember, renameStaffMember, inviteStaff, toggleStaffService } from "./actions";
+import {
+  addStaffMember,
+  cancelInvitation,
+  removeStaffMember,
+  renameStaffMember,
+  inviteStaff,
+  toggleStaffService,
+} from "./actions";
 import { StaffScheduleEditor } from "./StaffScheduleEditor";
 
 // Inline rename. Until this existed nothing in the app could set
@@ -61,7 +69,7 @@ function NameCell({ lang, member }: { lang: Lang; member: StaffMember }) {
         disabled={saving || !name.trim()}
         onClick={async () => {
           setSaving(true);
-          await renameStaffMember(member.membership_id, name, title, phone);
+          await renameStaffMember(member.membership_id ?? "", name, title, phone);
           setSaving(false);
           setEditing(false);
           router.refresh();
@@ -84,6 +92,8 @@ export function StaffClient({
   timeOff,
   orgHours,
   canManage,
+  seatsUsed,
+  seatsMax,
 }: {
   lang: Lang;
   staff: StaffMember[];
@@ -92,15 +102,23 @@ export function StaffClient({
   timeOff: StaffTimeOff[];
   orgHours: BusinessHours;
   canManage: boolean;
+  /** Seats the plan counts as used, and the ceiling. null when the plan
+   *  could not be read — never 0, which would read as "none used". A
+   *  pending invitation holds a seat, which is what made "4 of 5" look
+   *  wrong next to one staff member (0055). */
+  seatsUsed: number | null;
+  seatsMax: number | null;
 }) {
   const addRef = useRef<HTMLFormElement>(null);
   const inviteRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [error, setError] = useState<TKey | null>(null);
 
-  const isAssigned = (membershipId: string, serviceId: string) =>
+  // A pending invitation has no membership yet, so it is assigned nothing.
+  const isAssigned = (membershipId: string | null, serviceId: string) =>
+    membershipId !== null &&
     assignments.some((a) => a.staff_membership_id === membershipId && a.service_id === serviceId);
 
   return (
@@ -176,6 +194,22 @@ export function StaffClient({
 
       {error && <p className="error-text">{t(lang, error)}</p>}
 
+      {/* The counter on the dashboard says "4 of 5" and the list shows one
+          person: a pending invitation holds a seat until it is accepted or
+          withdrawn (0043/0055). Saying so where the list is beats leaving
+          the owner to work it out. */}
+      {canManage && seatsUsed !== null && (
+        <p className="hint" style={{ marginBottom: 8 }}>
+          {seatsMax === null
+            ? t(lang, "staff_seats_unlimited", { used: seatsUsed.toLocaleString(intlLocale(lang)) })
+            : t(lang, "staff_seats", {
+                used: seatsUsed.toLocaleString(intlLocale(lang)),
+                max: seatsMax.toLocaleString(intlLocale(lang)),
+              })}{" "}
+          {t(lang, "staff_seats_hint")}
+        </p>
+      )}
+
       <div className="table-wrap">
         <table>
           <thead>
@@ -202,7 +236,29 @@ export function StaffClient({
                 <td dir="ltr">{member.phone ?? "—"}</td>
                 <td>{t(lang, member.role === "owner" ? "staff_role_owner" : "staff_role_staff")}</td>
                 <td>
-                  {member.pending && <span className="chip warn">{t(lang, "staff_pending")}</span>}
+                  {member.pending && (
+                    <div className="toolbar" style={{ gap: 6 }}>
+                      <span className="chip warn">{t(lang, "staff_pending")}</span>
+                      {canManage && member.invitation_id && (
+                        <button
+                          type="button"
+                          className="btn ghost sm"
+                          disabled={pending}
+                          onClick={() => {
+                            if (!confirm(t(lang, "staff_confirm_cancel_invite", { email: member.email ?? "" }))) return;
+                            setError(null);
+                            startTransition(async () => {
+                              const res = await cancelInvitation(member.invitation_id!);
+                              if (!res.ok) setError("error_generic");
+                              router.refresh();
+                            });
+                          }}
+                        >
+                          {t(lang, "staff_cancel_invite")}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </td>
                 {canManage && (
                   <td>
@@ -219,7 +275,7 @@ export function StaffClient({
                               checked={isAssigned(member.membership_id, s.id)}
                               onChange={() =>
                                 toggleStaffService(
-                                  member.membership_id,
+                                  member.membership_id ?? "",
                                   s.id,
                                   isAssigned(member.membership_id, s.id)
                                 )
@@ -253,7 +309,7 @@ export function StaffClient({
                               if (!confirm(t(lang, "staff_remove_confirm"))) return;
                               setError(null);
                               startTransition(async () => {
-                                const res = await removeStaffMember(member.membership_id);
+                                const res = await removeStaffMember(member.membership_id ?? "");
                                 if (res?.error) setError(res.error);
                                 else router.refresh();
                               });
@@ -278,7 +334,7 @@ export function StaffClient({
                     <td colSpan={canManage ? 6 : 4} style={{ padding: 0 }}>
                       <StaffScheduleEditor
                         lang={lang}
-                        membershipId={member.membership_id}
+                        membershipId={member.membership_id ?? ""}
                         orgHours={orgHours}
                         staffHours={member.business_hours}
                         timeOff={timeOff.filter((o) => o.staff_membership_id === member.membership_id)}

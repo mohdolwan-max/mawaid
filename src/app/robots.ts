@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         "/services",
         "/staff",
         "/bookings",
+        "/reports",
         "/settings",
         "/onboarding",
         "/account",
