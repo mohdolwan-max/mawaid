@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { signup } from "./actions";
 import { t, type Lang } from "@/lib/i18n";
+import { PasswordField } from "@/components/PasswordField";
 
 export function SignupForm({ lang }: { lang: Lang }) {
   const [state, formAction, pending] = useActionState(signup, undefined);
@@ -19,7 +20,7 @@ export function SignupForm({ lang }: { lang: Lang }) {
       </div>
       <div className="field">
         <label htmlFor="password">{t(lang, "password")}</label>
-        <input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
+        <PasswordField lang={lang} id="password" autoComplete="new-password" minLength={8} />
       </div>
       {state?.error && <p className="error-text">{t(lang, state.error)}</p>}
       <button type="submit" className="btn block" disabled={pending}>

@@ -3970,3 +3970,30 @@ label {
     print-color-adjust: exact;
   }
 }
+
+/* Password fields carry a show/hide control inside the input; the
+   padding keeps the text clear of it in both directions. */
+.pw-field {
+  position: relative;
+}
+.pw-field input {
+  padding-inline-end: 62px;
+}
+.pw-toggle {
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--brand);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pw-toggle:hover {
+  background: var(--tint);
+}

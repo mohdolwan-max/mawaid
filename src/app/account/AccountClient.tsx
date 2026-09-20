@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import type { CustomerProfile } from "@/lib/customer";
 import { customerLogin, customerSignup, updateCustomerProfile } from "./actions";
+import { PasswordField } from "@/components/PasswordField";
 
 export function AccountClient({
   lang,
@@ -63,7 +64,7 @@ function AuthTabs({ lang, next }: { lang: Lang; next: string | null }) {
           </div>
           <div className="field">
             <label htmlFor="cl_password">{t(lang, "password")}</label>
-            <input id="cl_password" name="password" type="password" required autoComplete="current-password" />
+            <PasswordField lang={lang} id="cl_password" autoComplete="current-password" />
           </div>
           {loginState?.error && <p className="error-text">{t(lang, "auth_error")}</p>}
           <button type="submit" className="btn block" disabled={loginPending}>
@@ -92,7 +93,7 @@ function AuthTabs({ lang, next }: { lang: Lang; next: string | null }) {
           </div>
           <div className="field">
             <label htmlFor="cs_password">{t(lang, "password")}</label>
-            <input id="cs_password" name="password" type="password" required minLength={8} autoComplete="new-password" />
+            <PasswordField lang={lang} id="cs_password" autoComplete="new-password" minLength={8} />
           </div>
           {signupState?.error && <p className="error-text">{t(lang, signupState.error)}</p>}
           <button type="submit" className="btn block" disabled={signupPending}>
