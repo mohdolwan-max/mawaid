@@ -4047,3 +4047,23 @@ label {
     font-size: 13px;
   }
 }
+
+/* The booking link on the confirmation screen: readable, selectable,
+   and never wider than the card. */
+.manage-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.manage-link {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--band);
+  font-size: 12px;
+  word-break: break-all;
+  user-select: all;
+}

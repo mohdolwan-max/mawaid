@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { PublicService, PublicStaff } from "@/lib/publicOrg";
@@ -49,6 +49,7 @@ export function BookingClient({
   services,
   defaults,
   timezone,
+  orgPhone,
   initialServiceIds = [],
 }: {
   lang: Lang;
@@ -56,6 +57,9 @@ export function BookingClient({
   services: PublicService[];
   /** The CLINIC's timezone: every time on this screen is its clock. */
   timezone: string;
+  /** Shown on the confirmation, so the customer has a way to reach the
+   *  clinic that does not depend on finding this page again. */
+  orgPhone: string | null;
   defaults: { name: string; phone: string; email: string } | null;
   /** Services already chosen on the clinic page, validated server-side. */
   initialServiceIds?: string[];
@@ -96,6 +100,7 @@ export function BookingClient({
   const [honeypot, setHoneypot] = useState("");
 
   const [cancelToken, setCancelToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   // Set when the server reports the customer already holds an
   // overlapping appointment. Not a hard block: one phone legitimately
   // books for a whole family, so they get to confirm and continue.
@@ -108,6 +113,24 @@ export function BookingClient({
       hour: "numeric",
       minute: "2-digit",
     });
+
+  // Absolute, because the point is to paste it somewhere else.
+  const manageUrl =
+    cancelToken && typeof window !== "undefined"
+      ? `${window.location.origin}/${orgSlug}/booking/${cancelToken}`
+      : "";
+
+  async function copyManageLink() {
+    try {
+      await navigator.clipboard.writeText(manageUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // Clipboard access can be refused (permissions, http, older
+      // browsers). The link is on screen and selectable either way.
+      setCopied(false);
+    }
+  }
 
   function toggleService(s: PublicService) {
     setError(null);
@@ -166,8 +189,24 @@ export function BookingClient({
     };
   }, [step, firstServiceId, orgSlug]);
 
+  // What the last slot load was for. Coming back to this step from the
+  // summary's "change" button re-ran the effect and cleared the chosen
+  // time even when the customer had changed nothing — reported after
+  // pressing "change" beside the staff row and leaving it as it was.
+  const lastSlotLoad = useRef<string | null>(null);
+
   useEffect(() => {
     if (step !== "slot" || !service) return;
+    const loadKey = [
+      orgSlug,
+      chosen.map((c) => c.id).join(","),
+      date,
+      staffId ?? "any",
+      staffOptions.map((s) => s.membership_id).join(","),
+    ].join("|");
+    if (lastSlotLoad.current === loadKey) return;
+    lastSlotLoad.current = loadKey;
+
     let cancelled = false;
     setSlotsLoading(true);
     setSelectedSlot(null);
@@ -477,8 +516,11 @@ export function BookingClient({
                 {/* The row already says "Total"; repeating the whole
                     sentence read as "Total: Visit total: 25 JOD". */}
                 <span className="bs-value">
-                  {chosen.reduce((sum, c) => sum + Number(c.price), 0).toLocaleString(intlLocale(lang))}{" "}
-                  {t(lang, "currency")}
+                  {/* A 0 total is a free visit, not a missing price: the
+                      directory already treats 0 that way (0037). */}
+                  {chosen.reduce((sum, c) => sum + Number(c.price), 0) === 0
+                    ? t(lang, "book_free_visit")
+                    : `${chosen.reduce((sum, c) => sum + Number(c.price), 0).toLocaleString(intlLocale(lang))} ${t(lang, "currency")}`}
                 </span>
                 <span />
               </div>
@@ -571,12 +613,75 @@ export function BookingClient({
       )}
 
       {step === "done" && cancelToken && (
-        <div className="card wizard-step" style={{ textAlign: "center" }}>
-          <h2 style={{ color: "var(--brand)", marginBottom: 6 }}>{t(lang, "book_success_title")}</h2>
-          <p className="hint" style={{ marginBottom: 16 }}>
+        <div className="card wizard-step">
+          <h2 style={{ color: "var(--brand)", marginBottom: 6, textAlign: "center" }}>
+            {t(lang, "book_success_title")}
+          </h2>
+          <p className="hint" style={{ marginBottom: 16, textAlign: "center" }}>
             {t(lang, "book_success_sub")}
           </p>
-          <div className="toolbar" style={{ justifyContent: "center", marginBottom: 12 }}>
+
+          {/* What was booked. The screen used to say only "confirmed",
+              which leaves the customer with nothing to check against and
+              nothing to show at reception. */}
+          <div className="book-summary">
+            <div className="bs-row">
+              <span className="bs-label">{t(lang, "book_summary_service")}</span>
+              <span className="bs-value">{chosen.map((c) => c.name).join(" · ")}</span>
+              <span />
+            </div>
+            {selectedSlot && (
+              <div className="bs-row">
+                <span className="bs-label">{t(lang, "book_summary_when")}</span>
+                <span className="bs-value">
+                  {`${new Intl.DateTimeFormat(intlLocale(lang), {
+                    timeZone: timezone,
+                    dateStyle: "full",
+                  }).format(new Date(selectedSlot))} — ${fmtTime(selectedSlot)}`}
+                </span>
+                <span />
+              </div>
+            )}
+            {withStaffLabel && (
+              <div className="bs-row">
+                <span className="bs-label">{t(lang, "book_summary_staff")}</span>
+                <span className="bs-value">{withStaffLabel}</span>
+                <span />
+              </div>
+            )}
+            {orgPhone && (
+              <div className="bs-row">
+                <span className="bs-label">{t(lang, "book_summary_clinic")}</span>
+                <span className="bs-value" dir="ltr">{orgPhone}</span>
+                <span />
+              </div>
+            )}
+          </div>
+
+          {/* The manage link is the ONLY way a guest reaches this booking
+              again, and it used to live on this screen alone: closing the
+              tab lost it for good, and then a cancellation becomes a phone
+              call — or a no-show. */}
+          <p style={{ fontWeight: 700, marginTop: 14, marginBottom: 4 }}>{t(lang, "book_keep_link")}</p>
+          <p className="hint" style={{ marginBottom: 8 }}>
+            {email.trim() !== "" ? t(lang, "book_link_emailed", { email: email.trim() }) : t(lang, "book_link_no_email")}
+          </p>
+          <div className="manage-link-row">
+            <code className="manage-link" dir="ltr">{manageUrl}</code>
+            <button type="button" className="btn ghost sm" onClick={copyManageLink}>
+              {copied ? t(lang, "book_copied") : t(lang, "book_copy_link")}
+            </button>
+            <a
+              className="btn ghost sm"
+              href={`https://wa.me/?text=${encodeURIComponent(`${t(lang, "book_share_text")} ${manageUrl}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t(lang, "book_share_whatsapp")}
+            </a>
+          </div>
+
+          <div className="toolbar" style={{ justifyContent: "center", marginTop: 14, marginBottom: 12 }}>
             <Link href={`/${orgSlug}/booking/${cancelToken}`} className="btn">
               {t(lang, "book_manage_link")}
             </Link>
