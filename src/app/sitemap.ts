@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/siteUrl";
 import { listDirectoryOrgs } from "@/lib/directoryServer";
+import { isIndexableSlug } from "@/lib/directory";
 
 // list_directory_orgs already only returns is_listed=true, non-deleted
 // orgs (see 0006_directory.sql) — exactly the set worth indexing. No
@@ -18,11 +19,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  const orgRoutes: MetadataRoute.Sitemap = orgs.map((org) => ({
-    url: `${base}/${org.slug}`,
-    changeFrequency: "weekly",
-    priority: 0.7,
-  }));
+  const orgRoutes: MetadataRoute.Sitemap = orgs
+    .filter((org) => isIndexableSlug(org.slug))
+    .map((org) => ({
+      url: `${base}/${org.slug}`,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }));
 
   return [...staticRoutes, ...orgRoutes];
 }

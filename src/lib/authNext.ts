@@ -9,7 +9,12 @@
 
 const OUR_HOSTS = new Set(["maw3ed.me", "www.maw3ed.me", "mawaidy.vercel.app", "localhost", "127.0.0.1"]);
 
-function samePath(v: string): string | null {
+/** A path that stays on this site, or null. "/x" is fine; "//host"
+ *  and "/\\host" are not, because the URL parser resolves both to
+ *  another origin — external audit 2026-09-20 turned the first into a
+ *  working /login?next= redirect to an attacker page. Exported because
+ *  the customer pages had a weaker copy of this same test. */
+export function samePath(v: string): string | null {
   // "/x" but not "//host" or "/\host", which browsers treat as another site.
   if (!v.startsWith("/") || v.startsWith("//") || v.startsWith("/\\")) return null;
   return v;
@@ -30,7 +35,9 @@ export function resolveAuthNext(raw: string | null | undefined, fallback: string
       return fallback;
     }
     if (!OUR_HOSTS.has(url.hostname)) return fallback;
-    path = url.pathname + url.search;
+    // Our hostname does not make the path safe: the path itself can
+    // carry an authority, so it takes the same test as a direct one.
+    path = samePath(url.pathname + url.search);
   }
 
   if (!path) return fallback;

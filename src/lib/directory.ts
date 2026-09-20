@@ -152,6 +152,18 @@ export type DirectoryOrg = {
 // cookie needs the same constant.
 export const GEO_COOKIE = "mawaid_geo";
 
+// Seed and test clinics are listed on purpose (the home page needs
+// something to show while the marketplace fills up), but handing them
+// to search engines as real businesses is another matter: an external
+// audit (2026-09-20) found demo-* and qa-test-clinic in sitemap.xml,
+// indexed weekly at priority 0.7. Names match supabase/seed/
+// demo_clinics.sql and supabase/maintenance/cleanup_test_data.sql.
+const NOT_INDEXABLE = new Set(["qa-test-clinic", "test-clinic-smoketest", "moon"]);
+
+export function isIndexableSlug(slug: string): boolean {
+  return !slug.startsWith("demo-") && !NOT_INDEXABLE.has(slug);
+}
+
 // "850 م" under a kilometre, "1.2 كم" above it. Metres are rounded to
 // 50 because the customer's own position is rounded to ~110m before it
 // ever leaves their device — showing 837م would claim a precision the

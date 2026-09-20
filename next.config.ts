@@ -49,6 +49,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // X-Powered-By names the framework to anyone scanning for known
+  // Next.js issues; nothing in the app needs it. External audit 2026-09-20.
+  poweredByHeader: false,
   async headers() {
     return [
       {

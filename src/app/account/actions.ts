@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ensureCustomerProfile } from "@/lib/customer";
+import { samePath } from "@/lib/authNext";
 
 // Where a customer lands after login/signup when nothing specific was
 // requested. The home page, NOT /my: `next` is only populated when the
@@ -14,7 +15,7 @@ import { ensureCustomerProfile } from "@/lib/customer";
 const DEFAULT_AFTER_AUTH = "/";
 
 function safeNext(raw: string | null | undefined, fallback: string): string {
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : fallback;
+  return (raw ? samePath(raw) : null) ?? fallback;
 }
 
 export async function customerLogin(

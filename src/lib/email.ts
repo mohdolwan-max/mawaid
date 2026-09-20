@@ -10,6 +10,29 @@ import { intlLocale } from "@/lib/date";
 // Gracefully no-ops without RESEND_API_KEY (e.g. local dev before a Resend
 // account is wired up) — logs instead of throwing, since a missing email
 // confirmation should never break the booking flow itself.
+
+// The booking form is public, and both the customer name and the
+// recipient address come straight from it. Interpolated raw, that let
+// anyone send an HTML link of their choosing from bookings@maw3ed.me to
+// an address of their choosing: a phishing mail carrying this domain DMARC
+// pass. External audit, 2026-09-20. Length is capped too, so the greeting
+// line cannot be used as a message board (customer_name has no DB limit).
+function esc(value: string, max = 120): string {
+  return value
+    .slice(0, max)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Subject lines are plain text, not HTML: cut, and no line breaks that
+// could reach the mail headers.
+function oneLine(value: string, max = 120): string {
+  return value.slice(0, max).replace(/[\r\n]+/g, " ").trim();
+}
+
 export async function sendBookingConfirmation(input: {
   toEmail: string;
   toName: string;
@@ -48,25 +71,25 @@ export async function sendBookingConfirmation(input: {
     });
 
   const isAr = input.lang === "ar";
-  const subject = isAr ? `تأكيد حجزك في ${input.orgName}` : `Your booking at ${input.orgName} is confirmed`;
+  const subject = isAr ? `تأكيد حجزك في ${oneLine(input.orgName)}` : `Your booking at ${oneLine(input.orgName)} is confirmed`;
   const services =
     input.services.length === 1
-      ? `<p><strong>${input.orgName}</strong> — ${input.services[0].name}</p>
+      ? `<p><strong>${esc(input.orgName)}</strong> — ${esc(input.services[0].name)}</p>
       <p>${when}</p>`
-      : `<p><strong>${input.orgName}</strong></p>
+      : `<p><strong>${esc(input.orgName)}</strong></p>
       <p>${when}</p>
       <ul style="padding-inline-start:18px;margin:8px 0;">
         ${input.services
-          .map((s) => `<li>${s.name} — ${timeOf(s.startAt)}</li>`)
+          .map((s) => `<li>${esc(s.name)} — ${timeOf(s.startAt)}</li>`)
           .join("\n        ")}
       </ul>`;
 
   const html = `
     <div dir="${isAr ? "rtl" : "ltr"}" style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
       <h2 style="color:#146c63;">${isAr ? "تم تأكيد حجزك ✓" : "Booking confirmed ✓"}</h2>
-      <p>${isAr ? `مرحباً ${input.toName}،` : `Hi ${input.toName},`}</p>
+      <p>${isAr ? `مرحباً ${esc(input.toName, 80)}،` : `Hi ${esc(input.toName, 80)},`}</p>
       ${services}
-      <p><a href="${input.manageUrl}">${isAr ? "إدارة الحجز" : "Manage booking"}</a></p>
+      <p><a href="${esc(input.manageUrl, 300)}">${isAr ? "إدارة الحجز" : "Manage booking"}</a></p>
     </div>
   `;
 

@@ -3,6 +3,7 @@ import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { ResetPasswordForm } from "./ResetPasswordForm";
+import { samePath } from "@/lib/authNext";
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -10,7 +11,8 @@ export default async function ResetPasswordPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const [lang, { next }, supabase] = await Promise.all([getLang(), searchParams, createClient()]);
-  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/login";
+  // Same rule as the auth links: a path starting // or /\ resolves off-site.
+  const safeNext = (next ? samePath(next) : null) ?? "/login";
 
   // /auth/callback already exchanged the recovery link's code for a
   // session before landing here — if there's no user, the link was
