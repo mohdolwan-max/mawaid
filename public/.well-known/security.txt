@@ -1,0 +1,7 @@
+# How to report a security problem with Maw3ed (maw3ed.me).
+# Please write to the address below and give us time to fix it before
+# telling anyone else. We read this mailbox and will answer.
+Contact: mailto:support@maw3ed.me
+Expires: 2027-09-24T00:00:00.000Z
+Preferred-Languages: ar, en
+Canonical: https://www.maw3ed.me/.well-known/security.txt
