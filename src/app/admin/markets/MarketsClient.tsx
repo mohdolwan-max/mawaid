@@ -401,7 +401,9 @@ function OfferTool({ lang, market: m }: { lang: Lang; market: AdminMarket }) {
     Number.isInteger(values.holdMinutes) &&
     values.holdMinutes >= 5;
 
-  const input = (label: TKey, value: string, set: (v: string) => void, vars?: Record<string, string>) => (
+  // Each number with a line saying what it controls: the labels alone
+  // left the owner asking what "furthest start" and "hold" meant.
+  const input = (label: TKey, hint: TKey, value: string, set: (v: string) => void, vars?: Record<string, string>) => (
     <div className="field">
       <label>{t(lang, label, vars)}</label>
       <input
@@ -413,6 +415,7 @@ function OfferTool({ lang, market: m }: { lang: Lang; market: AdminMarket }) {
           tool.touch();
         }}
       />
+      <p className="hint">{t(lang, hint)}</p>
     </div>
   );
 
@@ -421,11 +424,11 @@ function OfferTool({ lang, market: m }: { lang: Lang; market: AdminMarket }) {
       <p className="at-tool-title">{t(lang, "markets_offer_title")}</p>
       {!o && <p className="hint">{t(lang, "markets_offer_none")}</p>}
       <div className="grid3">
-        {input("markets_offer_price", price, setPrice, { cur })}
-        {input("markets_offer_slots", slots, setSlots)}
-        {input("markets_offer_max_days", maxDays, setMaxDays)}
-        {input("markets_offer_advance", advance, setAdvance)}
-        {input("markets_offer_hold", hold, setHold)}
+        {input("markets_offer_price", "markets_offer_price_hint", price, setPrice, { cur })}
+        {input("markets_offer_slots", "markets_offer_slots_hint", slots, setSlots)}
+        {input("markets_offer_max_days", "markets_offer_max_days_hint", maxDays, setMaxDays)}
+        {input("markets_offer_advance", "markets_offer_advance_hint", advance, setAdvance)}
+        {input("markets_offer_hold", "markets_offer_hold_hint", hold, setHold)}
       </div>
       <ToolFooter
         lang={lang}
