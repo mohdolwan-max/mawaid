@@ -51,7 +51,7 @@ export function InvoiceDocument({ inv, countryName }: { inv: Invoice; countryNam
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="inv-sym" src="/brand/symbol-128.png" alt="" width={128} height={128} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="inv-word" src="/brand/wordmark-ar-teal.png" alt="موعد" width={640} height={149} />
+          <img className="inv-word" src="/brand/wordmark-ar-teal.png" alt="موعد" width={640} height={153} />
         </div>
         <div className="inv-title">
           <h1>فاتورة ضريبية</h1>

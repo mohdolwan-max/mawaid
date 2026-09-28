@@ -44,7 +44,7 @@ export function Sidebar({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/brand/symbol-128.png" alt="" width={22} height={22} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/wordmark-ar-teal.png" alt={t(lang, "brand")} width={61} height={14} />
+          <img src="/brand/wordmark-ar-teal.png" alt={t(lang, "brand")} width={59} height={14} />
         </div>
       </div>
       <nav className="nav">
