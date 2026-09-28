@@ -3,6 +3,9 @@ import { t, type Lang } from "@/lib/i18n";
 import { categoryLabel, cityLabel, distanceLabel, priceTierLabel, type DirectoryOrg } from "@/lib/directory";
 import { PinIcon } from "@/components/icons";
 import { formatPrice } from "@/lib/billing";
+import { canonicalSiteUrl } from "@/lib/siteUrl";
+import { clinicShareUrl } from "@/lib/share";
+import { ShareButton } from "./ShareButton";
 
 export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
   // distanceLabel returns "" when distance_km is absent, so cards from
@@ -18,43 +21,57 @@ export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
   // broken data, never as a gift.
   const fromPrice = org.min_price != null && Number(org.min_price) > 0 ? Number(org.min_price) : null;
 
+  // A share button on every card (owner, 2026-09-28: "سهم للمشاركة بكل
+  // كرت عيادة"). It sits beside the link, not inside it: a button inside
+  // an <a> is invalid and would open the clinic as well as sharing it.
   return (
-    <Link href={`/${org.slug}`} className="org-card">
-      <div className="oc-cover">
-        {org.cover_image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL, unoptimized by design
-          <img className="cover" src={org.cover_image_url} alt={org.name} />
-        ) : org.logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="logo-fallback" src={org.logo_url} alt={org.name} />
-        ) : null}
-        {/* Rating overlays the photo (Wddk-style card density) instead of
-            spending a body row on it. Absent rating = no badge, not 0. */}
-        {org.avg_rating != null && (
-          <span className="oc-rate">★ {Number(org.avg_rating).toFixed(1)}</span>
-        )}
-      </div>
-      <div className="oc-body">
-        <div className="oc-name">{org.name}</div>
-        {meta && (
-          <div className="oc-meta">
-            <PinIcon size={11} /> {meta}
-          </div>
-        )}
-        <div className="oc-foot">
-          <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-            {category && <span className="chip neutral">{category}</span>}
-            {tier && <span className="price-tier">{tier}</span>}
-          </span>
-          {/* In the clinic's own currency (0056); no currency, no price line
-              rather than a guessed one. */}
-          {fromPrice != null && org.currency && (
-            <span className="oc-price">
-              {t(lang, "card_from")} {formatPrice(fromPrice, org.currency, lang)}
-            </span>
+    <div className="org-card-wrap">
+      <Link href={`/${org.slug}`} className="org-card">
+        <div className="oc-cover">
+          {org.cover_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL, unoptimized by design
+            <img className="cover" src={org.cover_image_url} alt={org.name} />
+          ) : org.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="logo-fallback" src={org.logo_url} alt={org.name} />
+          ) : null}
+          {/* Rating overlays the photo (Wddk-style card density) instead of
+              spending a body row on it. Absent rating = no badge, not 0. */}
+          {org.avg_rating != null && (
+            <span className="oc-rate">★ {Number(org.avg_rating).toFixed(1)}</span>
           )}
         </div>
+        <div className="oc-body">
+          <div className="oc-name">{org.name}</div>
+          {meta && (
+            <div className="oc-meta">
+              <PinIcon size={11} /> {meta}
+            </div>
+          )}
+          <div className="oc-foot">
+            <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              {category && <span className="chip neutral">{category}</span>}
+              {tier && <span className="price-tier">{tier}</span>}
+            </span>
+            {/* In the clinic's own currency (0056); no currency, no price line
+                rather than a guessed one. */}
+            {fromPrice != null && org.currency && (
+              <span className="oc-price">
+                {t(lang, "card_from")} {formatPrice(fromPrice, org.currency, lang)}
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+      <div className="oc-share">
+        <ShareButton
+          lang={lang}
+          variant="overlay"
+          url={clinicShareUrl(canonicalSiteUrl(), org.slug)}
+          title={org.name}
+          text={t(lang, "share_text", { name: org.name })}
+        />
       </div>
-    </Link>
+    </div>
   );
 }

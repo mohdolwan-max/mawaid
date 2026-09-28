@@ -26,8 +26,9 @@ export function ShareButton({
   url: string;
   title: string;
   text: string;
-  /** "icon" = round button for page headers; "button" = labelled, for cards. */
-  variant?: "icon" | "button";
+  /** "icon" = round button for page headers; "button" = labelled;
+   *  "overlay" = small button over a clinic card's photo. */
+  variant?: "icon" | "button" | "overlay";
   /** Off where a copy button already sits beside this one. */
   showCopy?: boolean;
 }) {
@@ -102,15 +103,15 @@ export function ShareButton({
 
   return (
     <div className="share-wrap" ref={wrapRef}>
-      {variant === "icon" ? (
+      {variant === "icon" || variant === "overlay" ? (
         <button
           type="button"
-          className="share-icon-btn"
+          className={variant === "overlay" ? "share-icon-btn overlay" : "share-icon-btn"}
           aria-label={t(lang, "share")}
           aria-expanded={open}
           onClick={share}
         >
-          <ShareIcon size={18} />
+          <ShareIcon size={variant === "overlay" ? 15 : 18} />
         </button>
       ) : (
         <button type="button" className="btn ghost sm" aria-expanded={open} onClick={share}>
