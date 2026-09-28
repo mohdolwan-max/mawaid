@@ -76,7 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Only the installed app shows the intro, so only it pays for
             these; a browser tab skips the preload. */}
         <link rel="preload" as="image" href="/brand/splash-symbol.webp" media="(display-mode: standalone)" />
-        <link rel="preload" as="image" href="/brand/wordmark-ar-320.png" media="(display-mode: standalone)" />
+        <link rel="preload" as="image" href="/brand/wordmark-ar-teal.png" media="(display-mode: standalone)" />
       </head>
       <body>
         <SplashIntro />

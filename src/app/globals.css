@@ -926,6 +926,14 @@ label {
 .market-header .mh-brand .mh-symbol {
   height: 40px;
 }
+/* The wordmark's letters fill the top 70% of its image; below them only
+   the ع's thin tail. Centred by its box, the word read as sitting high
+   beside the symbol (owner: "خلي الكلمة متوسطة اللوجو مش للاعلى"). 13% of
+   its own height moves the letters' centre onto the symbol's. */
+.market-header .mh-brand .mh-word,
+.brand-lockup img:last-child {
+  transform: translateY(13%);
+}
 .market-header .mh-brand .mh-word {
   height: 24px;
 }
@@ -2700,7 +2708,7 @@ html.splash-seen .splash-intro {
   left: 50%;
   width: 147px;
   height: 34px;
-  background: url("/brand/wordmark-ar-320.png") center / contain no-repeat;
+  background: url("/brand/wordmark-ar-teal.png") center / contain no-repeat;
   transform: translate(-50%, 10px);
   opacity: 0;
   animation: si-rise 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) 0.3s forwards;

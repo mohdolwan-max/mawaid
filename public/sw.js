@@ -16,11 +16,11 @@
 // (SplashIntro) repeats the native splash and must have its picture on the
 // very first frame, even on a slow connection. Their names carry no hash,
 // so replacing any of them means bumping CACHE.
-const CACHE = "maw3ed-offline-v2";
+const CACHE = "maw3ed-offline-v3";
 const OFFLINE_URL = "/offline.html";
 const BRAND_ASSETS = [
   "/brand/splash-symbol.webp",
-  "/brand/wordmark-ar-320.png",
+  "/brand/wordmark-ar-teal.png",
   "/brand/symbol-128.png",
   "/brand/badge-96.png",
   "/icon-192.png",

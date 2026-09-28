@@ -28,7 +28,7 @@ export async function PublicNav({ lang, city }: { lang: Lang; city: string }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="mh-symbol" src="/brand/symbol-128.png" alt="" width={128} height={128} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="mh-word" src="/brand/wordmark-ar-320.png" alt={t(lang, "brand")} width={320} height={74} />
+          <img className="mh-word" src="/brand/wordmark-ar-teal.png" alt={t(lang, "brand")} width={640} height={149} />
         </Link>
       </div>
       <nav className="header-nav-links">
