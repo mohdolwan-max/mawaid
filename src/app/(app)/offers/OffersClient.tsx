@@ -52,6 +52,16 @@ function fmtDay(ymd: string, lang: Lang, opts: Intl.DateTimeFormatOptions): stri
 
 const DAY_MONTH: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
 
+/** The months a run of days covers, named once above the grid: "أيلول –
+ *  تشرين الأول 2026". Arabic has no short month names, so a month in every
+ *  cell spilled across its neighbours on a phone (owner's screenshot). */
+function monthSpan(first: string, last: string, lang: Lang): string {
+  const tail = fmtDay(last, lang, { month: "long", year: "numeric" });
+  if (first.slice(0, 7) === last.slice(0, 7)) return tail;
+  const sameYear = first.slice(0, 4) === last.slice(0, 4);
+  return `${fmtDay(first, lang, sameYear ? { month: "long" } : { month: "long", year: "numeric" })} – ${tail}`;
+}
+
 export function OffersClient({
   lang,
   setup,
@@ -82,6 +92,7 @@ export function OffersClient({
   const [serverError, setServerError] = useState<TKey | null>(null);
 
   const days = Number(daysText);
+  const gridDays = availability.slice(0, GRID_DAYS);
   const draftError = checkOfferDraft({ title, start, days }, setup, availability);
   // The title rule is not shouted at an empty field the clinic has not
   // reached yet; every other rule shows as soon as it applies.
@@ -203,10 +214,21 @@ export function OffersClient({
             </div>
           </div>
 
+          {gridDays.length > 0 && (
+            <p className="offer-days-month">
+              {monthSpan(gridDays[0].day, gridDays[gridDays.length - 1].day, lang)}
+            </p>
+          )}
           <div className="offer-days" role="group" aria-label={t(lang, "offer_start_label")}>
-            {availability.slice(0, GRID_DAYS).map((a) => {
+            {gridDays.map((a) => {
               const status = dayStatus(a, setup.slotsPerDay);
               const inRange = end !== null && a.day >= start && a.day <= end;
+              const statusText =
+                status === "full"
+                  ? t(lang, "offer_day_full")
+                  : status === "mine"
+                    ? t(lang, "offer_day_mine")
+                    : t(lang, "offer_free_slots", { n: freePlaces(a, setup.slotsPerDay) ?? "" });
               return (
                 <button
                   key={a.day}
@@ -214,17 +236,12 @@ export function OffersClient({
                   className={`offer-day ${status}${inRange ? " in-range" : ""}`}
                   disabled={status !== "free"}
                   aria-pressed={a.day === start}
+                  aria-label={`${fmtDay(a.day, lang, { weekday: "long", day: "numeric", month: "long" })}${lang === "ar" ? "، " : ", "}${statusText}`}
                   onClick={() => editing(setStart)(a.day)}
                 >
                   <span className="od-week">{fmtDay(a.day, lang, { weekday: "short" })}</span>
-                  <span className="od-date">{fmtDay(a.day, lang, DAY_MONTH)}</span>
-                  <span className="od-free">
-                    {status === "full"
-                      ? t(lang, "offer_day_full")
-                      : status === "mine"
-                        ? t(lang, "offer_day_mine")
-                        : t(lang, "offer_free_slots", { n: freePlaces(a, setup.slotsPerDay) ?? "" })}
-                  </span>
+                  <span className="od-date">{fmtDay(a.day, lang, { day: "numeric" })}</span>
+                  <span className="od-free">{statusText}</span>
                 </button>
               );
             })}

@@ -3174,9 +3174,15 @@ html.splash-seen .splash-intro {
   color: var(--ink2);
 }
 .offer-day .od-date {
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 800;
-  white-space: nowrap;
+  line-height: 1.2;
+}
+.offer-days-month {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 6px 0 2px;
 }
 .offer-day .od-free {
   font-size: 10px;
@@ -3214,7 +3220,7 @@ html.splash-seen .splash-intro {
     gap: 4px;
   }
   .offer-day .od-date {
-    font-size: 11px;
+    font-size: 15px;
   }
   .offer-day .od-free {
     font-size: 9px;
