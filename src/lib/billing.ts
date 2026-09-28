@@ -39,6 +39,9 @@ export type PaymentRecord = {
   isRenewal: boolean;
   createdAt: string;
   paidAt: string | null;
+  /** Set once the payment became a sale under a tax registration (0050);
+   *  the billing page links its invoice then (0057). */
+  invoiceNo: string | null;
 };
 
 export type Mandate = {

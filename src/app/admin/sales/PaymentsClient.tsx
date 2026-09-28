@@ -103,9 +103,9 @@ function PaymentRow({ lang, payment: p }: { lang: Lang; payment: AdminPayment })
         <span>{when}</span>
         {p.isRenewal && <span>{t(lang, "billing_item_renewal")}</span>}
         {p.invoiceNo && (
-          <span dir="ltr">
+          <a href={`/invoice/${p.id}`} dir="ltr">
             {t(lang, "admin_invoice", { no: p.invoiceNo })}
-          </span>
+          </a>
         )}
         {p.providerRef && (
           <span dir="ltr">

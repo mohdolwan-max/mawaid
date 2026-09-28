@@ -229,6 +229,11 @@ export function BillingClient({
               <div className="br-side">
                 <span>{formatPrice(p.amount, p.currency, lang)}</span>
                 <span className={`chip ${PAYMENT_STATUS_TONE[p.status]}`}>{t(lang, STATUS_KEY[p.status])}</span>
+                {p.invoiceNo && (
+                  <a href={`/invoice/${p.id}`} className="br-invoice">
+                    {t(lang, "invoice_open")}
+                  </a>
+                )}
               </div>
             </div>
           ))

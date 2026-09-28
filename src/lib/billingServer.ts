@@ -70,6 +70,8 @@ type PaymentRow = {
   is_renewal: boolean;
   created_at: string;
   paid_at: string | null;
+  /** Absent before 0057: no invoice links, nothing else changes. */
+  invoice_no?: string | null;
 };
 
 export async function listMyPayments(): Promise<PaymentRecord[] | null> {
@@ -97,6 +99,7 @@ export async function listMyPayments(): Promise<PaymentRecord[] | null> {
       isRenewal: r.is_renewal,
       createdAt: r.created_at,
       paidAt: r.paid_at,
+      invoiceNo: r.invoice_no ?? null,
     });
   }
   return out;

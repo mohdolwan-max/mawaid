@@ -139,7 +139,8 @@ function RegistrationForm({
   const [fieldErrors, setFieldErrors] = useState<RegistrationField[]>([]);
   const [error, setError] = useState<TKey | null>(null);
 
-  // Currency and prefix are fixed once invoices exist (0050).
+  // Currency, prefix, legal name and tax number are fixed once invoices
+  // exist (0050, 0057): an issued invoice keeps printing them.
   const locked = r !== null && r.invoices > 0;
   const rate = parseRate(values.taxRate);
   const rateChanged = r !== null && rate !== null && rate !== r.taxRate;
@@ -187,8 +188,8 @@ function RegistrationForm({
     <div className="card tax-reg">
       <strong>{t(lang, r ? "tax_edit_title" : "tax_add_title")}</strong>
       <div className="tax-form">
-        {field("legalName", "tax_legal_name", <input value={values.legalName} onChange={(e) => set("legalName", e.target.value)} />, true)}
-        {field("taxNumber", "tax_tax_number", <input dir="ltr" value={values.taxNumber} onChange={(e) => set("taxNumber", e.target.value)} />)}
+        {field("legalName", "tax_legal_name", <input disabled={locked} value={values.legalName} onChange={(e) => set("legalName", e.target.value)} />, true)}
+        {field("taxNumber", "tax_tax_number", <input dir="ltr" disabled={locked} value={values.taxNumber} onChange={(e) => set("taxNumber", e.target.value)} />)}
         {field(
           "taxRate",
           "tax_rate",
