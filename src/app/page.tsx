@@ -11,6 +11,7 @@ import {
 import { getGeo } from "@/lib/location";
 import { NearMeBar } from "@/components/marketplace/NearMeBar";
 import { PublicNav } from "@/components/marketplace/PublicNav";
+import { CitySelector } from "@/components/marketplace/CitySelector";
 import { BottomNav } from "@/components/marketplace/BottomNav";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { CategoryChips } from "@/components/marketplace/CategoryChips";
@@ -58,14 +59,21 @@ export default async function MarketplaceHome() {
       <PublicNav lang={lang} city={city} />
 
       <div className="greeting-row">
-        <p className="market-greeting">{t(lang, "market_greeting")}</p>
-        {/* The playbook's "context header" — its weather idea replaced by
-            something a patient actually uses. Hidden when null (query
-            failed / 0036 unapplied) AND when 0: "open now: 0" at 3am is
-            true but sells nothing — this chip is invitation, not data. */}
-        {openNow != null && openNow > 0 && (
-          <span className="open-now-chip">{t(lang, "open_now_count", { n: openNow })}</span>
-        )}
+        <div className="greeting-start">
+          <p className="market-greeting">{t(lang, "market_greeting")}</p>
+          {/* The playbook's "context header" — its weather idea replaced by
+              something a patient actually uses. Hidden when null (query
+              failed / 0036 unapplied) AND when 0: "open now: 0" at 3am is
+              true but sells nothing — this chip is invitation, not data. */}
+          {openNow != null && openNow > 0 && (
+            <span className="open-now-chip">{t(lang, "open_now_count", { n: openNow })}</span>
+          )}
+        </div>
+        {/* Phone only: the header's city control is desktop-only (see
+            PublicNav), and every list on this page is filtered by it. */}
+        <div className="greeting-city">
+          <CitySelector lang={lang} city={city} variant="inline" />
+        </div>
       </div>
 
       <SavedBookings lang={lang} />

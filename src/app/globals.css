@@ -893,20 +893,49 @@ label {
   width: auto;
   display: block;
 }
+.market-header .mh-start,
+.market-header .mh-side,
+.market-header .mh-desk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Phone header: menu, logo, bell — nothing else (owner: "الهيدر مزدحم و
+   شكل اللوجو طالع غبي"). With city and language in the row too, the
+   lockup got 118px squeezed off-centre between five controls. A 1fr/auto/1fr
+   grid centres the logo on the screen whatever the side controls measure,
+   and mh-start dissolves (display: contents) so the menu and the logo
+   become separate grid cells without changing the desktop markup. */
 @media (max-width: 700px) {
-  .market-header .mh-brand img {
-    height: 30px;
+  .market-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    padding: 12px 0;
   }
-}
-.market-header .mh-side {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.market-header .mh-start {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  .market-header .mh-start {
+    display: contents;
+  }
+  .market-header .mh-start > .dd-root {
+    justify-self: start;
+  }
+  .market-header .mh-brand {
+    justify-self: center;
+  }
+  .market-header .mh-brand img {
+    height: 36px;
+  }
+  .market-header .mh-side {
+    justify-self: end;
+  }
+  /* The bell is now the row's last control, so its panel opens inward;
+     start-anchored it ran off the screen's edge. */
+  .market-header .mh-side .dd-panel {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+  }
+  .market-header .mh-desk {
+    display: none;
+  }
 }
 .icon-btn {
   display: inline-flex;
@@ -928,7 +957,14 @@ label {
 .menu-panel {
   min-width: 190px;
 }
-.menu-panel a {
+.menu-panel a,
+.menu-panel button[role="menuitem"] {
+  width: 100%;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -940,8 +976,17 @@ label {
   text-decoration: none;
   transition: background 0.12s ease;
 }
-.menu-panel a:hover {
+.menu-panel a:hover,
+.menu-panel button[role="menuitem"]:hover {
   background: var(--cream);
+}
+.menu-phone-only {
+  display: none;
+}
+@media (max-width: 700px) {
+  .menu-phone-only {
+    display: block;
+  }
 }
 .menu-divider {
   height: 1px;
@@ -992,9 +1037,12 @@ label {
   cursor: pointer;
   color: var(--brand);
 }
+/* An SVG, not the "⌄" glyph it replaced: the glyph's size and baseline
+   came from whichever font the phone had, and it sat small and low beside
+   the city name (owner: "شكل السهم عند المدينة مش عاجبني"). */
 .dd-chevron {
-  font-size: 11px;
-  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.75;
   transition: transform 0.15s ease;
 }
 .dd-trigger[aria-expanded="true"] .dd-chevron {
@@ -1073,6 +1121,26 @@ label {
 }
 .hero-banner .btn:hover {
   background: #08382f;
+}
+/* Desktop spacing made the banner 176px tall on a phone, a fifth of the
+   first screen for one input (owner: "صندوق البحث كبير زيادة عن اللزوم"). */
+@media (max-width: 700px) {
+  .hero-banner {
+    padding: 18px 16px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+  .hero-banner h1 {
+    font-size: 20px;
+  }
+  .hero-banner p {
+    margin-bottom: 12px;
+  }
+  .hero-banner input,
+  .hero-banner .btn {
+    height: 40px;
+    padding-block: 0;
+  }
 }
 
 /* ---------- scrollable-row arrow controls ---------- */
@@ -2301,6 +2369,10 @@ label {
    the scroller transparent at both ends and the band shows through by
    itself — no seam, and nothing here has to match --bg. */
 .card-band .hrow { padding-bottom: 14px; }
+/* The band has no bottom padding because rows bring their own; the
+   district grid had none, so its tiles sat 1px off the band's edge
+   (owner: "تصفح حسب المنطقة تقريبا تلامس ارضية الصندوق"). */
+.card-band .zone-grid { padding-bottom: 14px; }
 
 /* "Nearest to you" opt-in bar on the marketplace home. Sits between the
    category chips and the rows; deliberately quiet — the permission ask
@@ -2395,6 +2467,45 @@ label {
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
+}
+/* Desktop: the wrapper dissolves so greeting and chip keep their places at
+   either end of the row. Phone: they pair up at the start and the city
+   control takes the far end. */
+.greeting-start {
+  display: contents;
+}
+.greeting-city {
+  display: none;
+}
+@media (max-width: 700px) {
+  .greeting-row {
+    margin-bottom: 10px;
+  }
+  .greeting-row .market-greeting {
+    margin: 0;
+  }
+  .greeting-start {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .greeting-city {
+    display: block;
+  }
+}
+.city-inline .dd-trigger {
+  height: 32px;
+  margin-top: 0;
+  padding: 0 10px;
+  gap: 4px;
+  border-radius: 999px;
+  color: var(--brand);
+}
+/* The control sits at the row's far end, so its list opens inward. */
+.city-inline .dd-panel {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
 }
 .open-now-chip {
   display: inline-flex;

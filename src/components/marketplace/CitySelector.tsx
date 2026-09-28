@@ -6,12 +6,24 @@ import { useTransition } from "react";
 import type { Lang } from "@/lib/i18n";
 import { CITIES } from "@/lib/directory";
 import { setCityAction } from "./actions";
+import { ChevronDownIcon, PinIcon } from "@/components/icons";
 
 // A native <select>'s open dropdown panel is rendered by the OS/browser,
 // not by us — it can't be given rounded corners, our brand colors, or a
 // selected-row highlight that matches the rest of the UI. A custom
 // listbox gives full control over that popup's appearance.
-export function CitySelector({ lang, city }: { lang: Lang; city: string }) {
+// "inline" is the phone placement beside the greeting, where the header
+// has no room for it; the pin makes it read as "your city", not as a
+// stray button.
+export function CitySelector({
+  lang,
+  city,
+  variant = "header",
+}: {
+  lang: Lang;
+  city: string;
+  variant?: "header" | "inline";
+}) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -45,7 +57,7 @@ export function CitySelector({ lang, city }: { lang: Lang; city: string }) {
   }
 
   return (
-    <div className="dd-root" ref={rootRef}>
+    <div className={variant === "inline" ? "dd-root city-inline" : "dd-root"} ref={rootRef}>
       <button
         type="button"
         className="mh-link dd-trigger"
@@ -53,8 +65,9 @@ export function CitySelector({ lang, city }: { lang: Lang; city: string }) {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
+        {variant === "inline" && <PinIcon size={14} />}
         {current ? current[lang] : city}
-        <span className="dd-chevron" aria-hidden="true">⌄</span>
+        <ChevronDownIcon size={14} className="dd-chevron" />
       </button>
       {open && (
         <ul className="dd-panel" role="listbox" aria-label={lang === "ar" ? "المدينة" : "City"}>

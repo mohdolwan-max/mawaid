@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { t, type Lang } from "@/lib/i18n";
-import { MenuIcon, SearchIcon, CalendarIcon, UserIcon } from "@/components/icons";
+import { MenuIcon, SearchIcon, CalendarIcon, UserIcon, GlobeIcon } from "@/components/icons";
+import { togglePublicLang } from "./actions";
 
 // Hamburger menu — mainly useful on mobile, where header-nav-links is
 // hidden (BottomNav covers search/bookings/account there instead) and
@@ -12,6 +14,8 @@ import { MenuIcon, SearchIcon, CalendarIcon, UserIcon } from "@/components/icons
 export function HeaderMenu({ lang }: { lang: Lang }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
@@ -57,6 +61,24 @@ export function HeaderMenu({ lang }: { lang: Lang }) {
             <Link href="/account" role="menuitem" onClick={() => setOpen(false)}>
               <UserIcon size={16} /> {t(lang, "nav_my_account")}
             </Link>
+          </li>
+          {/* Phone only: the header there has room for the menu, the logo
+              and the bell and nothing else (owner: "الهيدر مزدحم"), so the
+              language switch moves in here. Desktop keeps its header button. */}
+          <li role="none" className="menu-phone-only">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                startTransition(async () => {
+                  await togglePublicLang(lang);
+                  router.refresh();
+                });
+              }}
+            >
+              <GlobeIcon size={16} /> {t(lang, "lang_toggle")}
+            </button>
           </li>
           <li className="menu-divider" role="separator" />
           <li role="none">

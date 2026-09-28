@@ -51,6 +51,23 @@ export function HomeIcon({ size = 18, className }: IconProps) {
   );
 }
 
+export function ChevronDownIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg {...base} strokeWidth={2.2} width={size} height={size} className={className} aria-hidden="true">
+      <path d="M6 9.5l6 6 6-6" />
+    </svg>
+  );
+}
+
+export function GlobeIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base} width={size} height={size} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.3 3.5 8.5s-1.1 6.1-3.5 8.5c-2.4-2.4-3.5-5.3-3.5-8.5s1.1-6.1 3.5-8.5z" />
+    </svg>
+  );
+}
+
 export function PinIcon({ size = 18, className }: IconProps) {
   return (
     <svg {...base} width={size} height={size} className={className} aria-hidden="true">

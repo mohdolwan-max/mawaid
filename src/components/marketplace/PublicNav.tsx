@@ -41,8 +41,15 @@ export function PublicNav({ lang, city }: { lang: Lang; city: string }) {
       </nav>
       <div className="mh-side">
         <NotificationBell lang={lang} />
-        <CitySelector lang={lang} city={city} />
-        <LangToggle lang={lang} />
+        {/* Desktop only. On a phone five controls in one row squeezed the
+            logo into a sliver (owner: "الهيدر مزدحم و شكل اللوجو طالع
+            غبي"): the language switch moves into the menu, and the city
+            sits beside the greeting on the home page, the one page whose
+            lists depend on it (/search has its own city filter). */}
+        <div className="mh-desk">
+          <CitySelector lang={lang} city={city} />
+          <LangToggle lang={lang} />
+        </div>
       </div>
     </header>
   );
