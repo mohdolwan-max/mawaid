@@ -1,6 +1,7 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { t, type Lang } from "@/lib/i18n";
+import { currencyLabel } from "@/lib/billing";
 import { intlLocale, todayYMD } from "@/lib/date";
 import type { StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
@@ -35,7 +36,7 @@ export default async function ReportsPage({
   const lang: Lang = ctx.lang;
   const locale = intlLocale(lang);
   const money = (v: number) =>
-    `${v.toLocaleString(locale, { maximumFractionDigits: 2 })} ${t(lang, "currency")}`;
+    `${v.toLocaleString(locale, { maximumFractionDigits: 2 })} ${currencyLabel(ctx.currency, lang)}`;
   const count = (v: number) => v.toLocaleString(locale);
 
   const head = (
@@ -186,7 +187,7 @@ export default async function ReportsPage({
           subtitle={chartSub}
           size={size}
           points={value}
-          unit={t(lang, "currency")}
+          unit={currencyLabel(ctx.currency, lang)}
         />
       </section>
 

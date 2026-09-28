@@ -16,6 +16,18 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const PAYTABS_JORDAN_BASE = "https://secure-jordan.paytabs.com";
 
+/** Each country's own PayTabs region (0056: one profile per country). A
+ *  country missing here must set its base URL explicitly. */
+export const PAYTABS_REGION_BASE: Record<string, string> = {
+  JO: PAYTABS_JORDAN_BASE,
+  SA: "https://secure.paytabs.sa",
+};
+
+/** A country code as the environment variable names use it. */
+export function isCountryCode(v: unknown): v is string {
+  return typeof v === "string" && /^[A-Z]{2}$/.test(v);
+}
+
 export function signBody(rawBody: string, serverKey: string): string {
   return createHmac("sha256", serverKey).update(rawBody, "utf8").digest("hex");
 }

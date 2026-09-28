@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getPaymentProvider, paymentsSecret } from "@/lib/payments";
+import { paytabsConfigReport } from "@/lib/payments/paytabs";
 import { bearerOk } from "@/lib/cronAuth";
 
 // Which payment settings the RUNNING deployment actually sees. Added after
@@ -10,8 +11,11 @@ import { bearerOk } from "@/lib/cronAuth";
 //
 // Reports presence only, never a value, and only to a caller holding
 // CRON_SECRET. The deployed commit comes from Vercel's own system variable.
+// One gateway account per country (0056), each reported on its own.
 
 export const dynamic = "force-dynamic";
+
+const COUNTRIES = ["JO", "SA"];
 
 export function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -20,22 +24,15 @@ export function GET(request: NextRequest) {
   }
 
   const providerId = process.env.PAYMENT_PROVIDER?.trim() ?? "";
-  const profileId = process.env.PAYTABS_PROFILE_ID?.trim() ?? "";
-  let baseHost: string | null = null;
-  try {
-    baseHost = process.env.PAYTABS_BASE_URL ? new URL(process.env.PAYTABS_BASE_URL.trim()).host : null;
-  } catch {
-    baseHost = "unparseable";
-  }
+  const countries = Object.fromEntries(
+    COUNTRIES.map((cc) => [cc, { ...paytabsConfigReport(cc), adapter_loaded: getPaymentProvider(cc) !== null }])
+  );
 
   return NextResponse.json({
     commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
     environment: process.env.VERCEL_ENV ?? null,
     PAYMENT_PROVIDER: providerId ? providerId : "missing",
-    PAYTABS_PROFILE_ID: profileId === "" ? "missing" : /^\d+$/.test(profileId) ? "ok" : "not a number",
-    PAYTABS_SERVER_KEY: process.env.PAYTABS_SERVER_KEY?.trim() ? "present" : "missing",
-    PAYTABS_BASE_URL: baseHost ?? "default (Jordan)",
     PAYMENTS_SECRET: paymentsSecret() ? "present" : "missing",
-    adapter_loaded: getPaymentProvider() !== null,
+    countries,
   });
 }

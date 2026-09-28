@@ -10,6 +10,7 @@ const LINKS: { href: string; key: TKey }[] = [
   { href: "/admin/sales", key: "admin_nav_sales" },
   { href: "/admin/reports", key: "admin_nav_reports" },
   { href: "/admin/tax", key: "admin_nav_tax" },
+  { href: "/admin/markets", key: "admin_nav_markets" },
 ];
 
 export function AdminNav({ lang }: { lang: Lang }) {

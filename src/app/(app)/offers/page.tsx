@@ -44,6 +44,17 @@ export default async function OffersPage() {
       .order("created_at"),
   ]);
 
+  // The clinic's country sells no offers yet (0056): said plainly, not as
+  // a failure.
+  if (setup === "unavailable") {
+    return (
+      <div>
+        {head}
+        <div className="empty">{t(lang, "offer_country_unavailable")}</div>
+      </div>
+    );
+  }
+
   // Without the price or the free days there is nothing honest to show.
   // Services and past orders degrade on their own (null, said on screen).
   if (!setup || !availability) {
@@ -81,7 +92,7 @@ export default async function OffersPage() {
         offers={offers}
         services={servicesRes.error ? null : ((servicesRes.data as OfferServiceOption[]) ?? [])}
         cityName={cityLabel(setup.city, lang)}
-        paymentReady={paymentsReady()}
+        paymentReady={paymentsReady(ctx.country)}
       />
     </div>
   );

@@ -9,6 +9,7 @@ import {
   countOpenNow,
 } from "@/lib/directoryServer";
 import { getGeo } from "@/lib/location";
+import { getMarkets } from "@/lib/marketsServer";
 import { NearMeBar } from "@/components/marketplace/NearMeBar";
 import { PublicNav } from "@/components/marketplace/PublicNav";
 import { CitySelector } from "@/components/marketplace/CitySelector";
@@ -25,7 +26,7 @@ import { OfferBanner } from "@/components/marketplace/OfferBanner";
 import { listActiveBanners } from "@/lib/offersServer";
 
 export default async function MarketplaceHome() {
-  const [lang, city, geo] = await Promise.all([getLang(), getCity(), getGeo()]);
+  const [lang, city, geo, markets] = await Promise.all([getLang(), getCity(), getGeo(), getMarkets()]);
 
   // Section rhythm follows the Wddk study (owner's playbook): context →
   // search → browse intents → top-rated → zones → nearest → everything.
@@ -72,7 +73,7 @@ export default async function MarketplaceHome() {
         {/* Phone only: the header's city control is desktop-only (see
             PublicNav), and every list on this page is filtered by it. */}
         <div className="greeting-city">
-          <CitySelector lang={lang} city={city} variant="inline" />
+          <CitySelector lang={lang} city={city} markets={markets} variant="inline" />
         </div>
       </div>
 

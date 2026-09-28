@@ -20,6 +20,8 @@ export type BillingActionError =
 
 function toActionError(name: string, error: { message: string }): BillingActionError {
   if (error.message.includes("not_authorized")) return "billing_owner_only";
+  // The clinic's country does not sell this plan (0056).
+  if (error.message.includes("payment_bad_plan")) return "billing_not_ready";
   if (error.message.includes("offer_not_payable")) return "offer_not_payable";
   if (error.message.includes("no_saved_card")) return "billing_no_saved_card";
   console.error(`${name} failed`, error);
@@ -48,11 +50,13 @@ type CheckoutResult = { url: string } | { error: BillingActionError };
 // the gateway's own reason kept on the row for diagnosis.
 async function openCheckout(
   ctx: OrgContext,
-  payment: { id: string; amount: number; currency: string },
+  payment: { id: string; amount: number; currency: string; country: string },
   description: string,
   saveCard: boolean
 ): Promise<CheckoutResult> {
-  const provider = getPaymentProvider();
+  // The payment's own country's gateway account (0056), not the clinic's
+  // current one: the row was priced for that country.
+  const provider = getPaymentProvider(payment.country);
   const secret = paymentsSecret();
   if (!provider || !secret) return { error: "billing_not_ready" };
 
@@ -72,7 +76,8 @@ async function openCheckout(
       customerName: ctx.name,
       saveCard,
       returnUrl: `${base}/api/payments/return?payment=${payment.id}`,
-      webhookUrl: `${base}/api/payments/webhook`,
+      // The country tells the webhook which account's key verifies it.
+      webhookUrl: `${base}/api/payments/webhook?country=${payment.country}`,
       lang: ctx.lang,
     });
     return { url: redirectUrl };
@@ -99,7 +104,7 @@ export async function startPlanCheckout(input: {
   if (!isPlanId(input.planId) || !isBillingPeriod(input.period)) return { error: "error_generic" };
   // Checked before a payment row is written, so an unconfigured gateway
   // leaves no pending rows behind.
-  if (!getPaymentProvider() || !paymentsSecret()) return { error: "billing_not_ready" };
+  if (!getPaymentProvider(ctx.country) || !paymentsSecret()) return { error: "billing_not_ready" };
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -107,11 +112,11 @@ export async function startPlanCheckout(input: {
     .single();
   if (error) return { error: toActionError("start_plan_payment", error) };
 
-  const row = data as { payment_id: string; amount: number | string; currency: string };
+  const row = data as { payment_id: string; amount: number | string; currency: string; country: string };
   const period = input.period === "year" ? "yearly" : "monthly";
   return openCheckout(
     ctx,
-    { id: row.payment_id, amount: Number(row.amount), currency: row.currency },
+    { id: row.payment_id, amount: Number(row.amount), currency: row.currency, country: row.country },
     `Maw3ed ${planName(input.planId, "en")} plan, ${period}`,
     input.saveCard
   );
@@ -120,16 +125,16 @@ export async function startPlanCheckout(input: {
 export async function startOfferCheckout(offerId: string): Promise<CheckoutResult> {
   const ctx = await requireOrgContext();
   if (ctx.role !== "owner") return { error: "billing_owner_only" };
-  if (!getPaymentProvider() || !paymentsSecret()) return { error: "billing_not_ready" };
+  if (!getPaymentProvider(ctx.country) || !paymentsSecret()) return { error: "billing_not_ready" };
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("start_offer_payment", { p_offer_id: offerId }).single();
   if (error) return { error: toActionError("start_offer_payment", error) };
 
-  const row = data as { payment_id: string; amount: number | string; currency: string };
+  const row = data as { payment_id: string; amount: number | string; currency: string; country: string };
   return openCheckout(
     ctx,
-    { id: row.payment_id, amount: Number(row.amount), currency: row.currency },
+    { id: row.payment_id, amount: Number(row.amount), currency: row.currency, country: row.country },
     "Maw3ed offer banner",
     false
   );

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import type { BusinessHours } from "@/lib/types";
-import { CATEGORIES, CITIES } from "@/lib/directory";
+import { CATEGORIES, citiesOf } from "@/lib/directory";
+import { marketName, type Market } from "@/lib/markets";
 import { BusinessHoursGrid, DEFAULT_BUSINESS_HOURS } from "@/components/BusinessHoursGrid";
 import { createOrgAction, saveHoursAction, finishOnboardingAction } from "./actions";
 
@@ -21,10 +22,15 @@ export function OnboardingWizard({
   lang,
   existingOrgId,
   existingBusinessHours,
+  markets,
+  initialCountry,
 }: {
   lang: Lang;
   existingOrgId: string | null;
   existingBusinessHours: BusinessHours | null;
+  /** Countries open for sign-up (0056). */
+  markets: Market[];
+  initialCountry: string | null;
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(existingOrgId ? 2 : 1);
   const [orgId, setOrgId] = useState<string | null>(existingOrgId);
@@ -38,6 +44,9 @@ export function OnboardingWizard({
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [category, setCategory] = useState("");
+  // The country decides the currency, prices and payment account for good
+  // once the clinic has paid (0056), so it is the first choice made.
+  const [country, setCountry] = useState(initialCountry ?? "");
   const [city, setCity] = useState("");
 
   // step 2
@@ -52,7 +61,7 @@ export function OnboardingWizard({
     e.preventDefault();
     setPending(true);
     setError(null);
-    const result = await createOrgAction({ name, slug, address, phone, category, city });
+    const result = await createOrgAction({ name, slug, address, phone, category, city, country });
     setPending(false);
     if ("error" in result) {
       setError(result.error);
@@ -102,6 +111,26 @@ export function OnboardingWizard({
       {step === 1 && (
         <form onSubmit={handleStep1}>
           <div className="field">
+            <label htmlFor="org_country">{t(lang, "org_country")}</label>
+            <select
+              id="org_country"
+              required
+              value={country}
+              onChange={(e) => {
+                setCountry(e.target.value);
+                setCity("");
+              }}
+            >
+              <option value="">{t(lang, "choose_option")}</option>
+              {markets.map((m) => (
+                <option key={m.code} value={m.code}>
+                  {marketName(m, lang)}
+                </option>
+              ))}
+            </select>
+            <p className="hint">{t(lang, "org_country_hint")}</p>
+          </div>
+          <div className="field">
             <label htmlFor="org_name">{t(lang, "org_name")}</label>
             <input
               id="org_name"
@@ -143,7 +172,7 @@ export function OnboardingWizard({
               <label htmlFor="org_city">{t(lang, "dir_city")}</label>
               <select id="org_city" required value={city} onChange={(e) => setCity(e.target.value)}>
                 <option value="">{t(lang, "choose_option")}</option>
-                {CITIES.map((c) => (
+                {citiesOf(country).map((c) => (
                   <option key={c.key} value={c.key}>
                     {c[lang]}
                   </option>

@@ -19,6 +19,8 @@ const DB_ERRORS = {
   offer_beyond_plan: "offer_beyond_plan",
   offer_plan_lapsed: "offer_plan_lapsed",
   offer_not_cancellable: "offer_not_cancellable",
+  // The clinic's country sells no offers (0056).
+  offer_not_available: "offer_country_unavailable",
 } as const;
 
 export type OfferActionError =

@@ -155,7 +155,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
           {services.length === 0 ? (
             <div className="empty">{t(lang, "service_empty")}</div>
           ) : (
-            <SelectableServiceList services={services} lang={lang} />
+            <SelectableServiceList services={services} lang={lang} currency={org.currency} />
           )}
         </div>
 

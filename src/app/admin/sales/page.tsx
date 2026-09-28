@@ -3,6 +3,9 @@ import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
 import { ADMIN_PAYMENTS_LIMIT, getAdminOverview, listAdminOffers, listAdminPayments } from "@/lib/adminServer";
+import { getAdminCountry } from "@/lib/adminCountry";
+import { getMarkets } from "@/lib/marketsServer";
+import { marketByCode, marketName } from "@/lib/markets";
 import { ADMIN_TZ } from "@/lib/admin";
 import { parsePeriod, periodSearch } from "@/lib/period";
 import { formatPrice } from "@/lib/billing";
@@ -20,11 +23,17 @@ export default async function AdminSalesPage({
   // what the home page shows.
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: ADMIN_TZ }).format(new Date());
   const period = parsePeriod(params, today);
+  const markets = await getMarkets();
+  const country = await getAdminCountry(markets);
+  const countryLabel = (code: string | null) => {
+    const m = marketByCode(markets, code);
+    return m ? marketName(m, lang) : (code ?? "—");
+  };
 
   const [overview, payments, offers] = await Promise.all([
-    getAdminOverview(period.from, period.to),
-    listAdminPayments(period.from, period.to),
-    listAdminOffers(),
+    getAdminOverview(period.from, period.to, country),
+    listAdminPayments(period.from, period.to, country),
+    listAdminOffers(country),
   ]);
 
   return (
@@ -49,6 +58,7 @@ export default async function AdminSalesPage({
             <table className="ac-table">
               <thead>
                 <tr>
+                  <th>{t(lang, "admin_col_country")}</th>
                   <th>{t(lang, "admin_col_currency")}</th>
                   <th>{t(lang, "admin_col_period")}</th>
                   <th>{t(lang, "admin_col_previous")}</th>
@@ -59,9 +69,10 @@ export default async function AdminSalesPage({
               </thead>
               <tbody>
                 {overview.revenue.map((r) => {
-                  const mrr = overview.mrr.find((m) => m.currency === r.currency);
+                  const mrr = overview.mrr.find((m) => m.currency === r.currency && m.country === r.country);
                   return (
-                    <tr key={r.currency}>
+                    <tr key={`${r.country}_${r.currency}`}>
+                      <td>{countryLabel(r.country)}</td>
                       <td>{r.currency}</td>
                       <td className="num">{formatPrice(r.period, r.currency, lang)}</td>
                       <td className="num">{formatPrice(r.previous, r.currency, lang)}</td>

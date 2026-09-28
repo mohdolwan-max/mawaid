@@ -59,7 +59,7 @@ export default async function BillingPage() {
         payments={payments}
         mandate={mandateRes?.mandate ?? null}
         mandateLoaded={mandateRes !== null}
-        paymentReady={paymentsReady()}
+        paymentReady={paymentsReady(ctx.country)}
       />
     </div>
   );

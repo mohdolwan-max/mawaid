@@ -17,6 +17,7 @@ export type TaxActionError =
   | "admin_err_tax_locked"
   | "admin_err_tax_prefix_taken"
   | "admin_err_tax_currency_taken"
+  | "admin_err_tax_country_currency"
   | "admin_err_tax_no_registration"
   | "error_generic";
 
@@ -27,6 +28,9 @@ const DB_ERRORS: [string, TaxActionError][] = [
   ["tax_locked_fields", "admin_err_tax_locked"],
   ["tax_prefix_taken", "admin_err_tax_prefix_taken"],
   ["tax_currency_taken", "admin_err_tax_currency_taken"],
+  // 0056: one active registration per country, in that country's currency.
+  ["tax_country_taken", "admin_err_tax_currency_taken"],
+  ["tax_country_currency", "admin_err_tax_country_currency"],
   ["tax_bad_input", "admin_err_tax_input"],
   ["tax_no_registration", "admin_err_tax_no_registration"],
 ];
@@ -72,14 +76,14 @@ export async function adminSaveTaxRegistration(input: {
 }
 
 export async function adminInvoiceUnassigned(input: {
-  currency: string;
+  country: string;
   reason: string;
 }): Promise<{ error?: TaxActionError; invoiced?: number }> {
   if (!reasonOk(input.reason)) return { error: "admin_err_reason" };
-  if (!/^[A-Z]{3}$/.test(input.currency)) return { error: "error_generic" };
+  if (!/^[A-Z]{2}$/.test(input.country)) return { error: "error_generic" };
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_invoice_unassigned", {
-    p_currency: input.currency,
+    p_country: input.country,
     p_reason: input.reason.trim(),
   });
   if (error) return { error: toError("admin_invoice_unassigned", error) };

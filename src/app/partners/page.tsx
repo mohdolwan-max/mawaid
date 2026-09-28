@@ -4,6 +4,9 @@ import { getLang } from "@/lib/lang";
 import { t, type TKey } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
 import { getPlanTerms, listPlans } from "@/lib/planServer";
+import { headers } from "next/headers";
+import { pricingMarket } from "@/lib/markets";
+import { getMarkets } from "@/lib/marketsServer";
 import { daysLabel, salesWhatsappDigits } from "@/lib/plan";
 import { PlansGrid } from "@/components/marketplace/PlansGrid";
 
@@ -24,7 +27,10 @@ export default async function PartnersPage() {
   const host = process.env.NEXT_PUBLIC_SITE_HOST ?? "maw3ed.me";
   // Every price and limit comes from the plans table (0043). null when it
   // cannot load, and then no prices render rather than invented ones.
-  const [plans, terms] = await Promise.all([listPlans(), getPlanTerms()]);
+  // Prices are per country (0056): the visitor's own when clinics can
+  // sign up there, otherwise the first open country's.
+  const market = pricingMarket(await getMarkets(), (await headers()).get("x-vercel-ip-country"));
+  const [plans, terms] = await Promise.all([market ? listPlans(market.code) : null, getPlanTerms()]);
   const salesWhatsapp = salesWhatsappDigits(process.env.NEXT_PUBLIC_SALES_WHATSAPP);
 
   const features: [TKey, TKey][] = [

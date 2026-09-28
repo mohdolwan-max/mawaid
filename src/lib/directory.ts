@@ -38,6 +38,8 @@ export const CATEGORIES: {
   { key: "general", ar: "عام", en: "General", color: "#f0f2f5" },
 ];
 
+export type CountryCode = "JO" | "SA";
+
 export type CityKey =
   | "amman"
   | "zarqa"
@@ -48,20 +50,67 @@ export type CityKey =
   | "mafraq"
   | "karak"
   | "madaba"
-  | "jerash";
+  | "jerash"
+  | "riyadh"
+  | "jeddah"
+  | "makkah"
+  | "madinah"
+  | "dammam"
+  | "khobar"
+  | "dhahran"
+  | "al_ahsa"
+  | "jubail"
+  | "taif"
+  | "abha"
+  | "khamis_mushait"
+  | "tabuk"
+  | "buraidah"
+  | "hail"
+  | "jazan"
+  | "najran"
+  | "yanbu";
 
-export const CITIES: { key: CityKey; ar: string; en: string }[] = [
-  { key: "amman", ar: "عمّان", en: "Amman" },
-  { key: "zarqa", ar: "الزرقاء", en: "Zarqa" },
-  { key: "irbid", ar: "إربد", en: "Irbid" },
-  { key: "russeifa", ar: "الرصيفة", en: "Russeifa" },
-  { key: "aqaba", ar: "العقبة", en: "Aqaba" },
-  { key: "salt", ar: "السلط", en: "Salt" },
-  { key: "mafraq", ar: "المفرق", en: "Mafraq" },
-  { key: "karak", ar: "الكرك", en: "Karak" },
-  { key: "madaba", ar: "مادبا", en: "Madaba" },
-  { key: "jerash", ar: "جرش", en: "Jerash" },
+// Mirrored by public.market_cities (0056), which refuses a clinic whose
+// city is not in its country: a city added here must be added there in
+// the same change, or clinics in it cannot save.
+export const CITIES: { key: CityKey; country: CountryCode; ar: string; en: string }[] = [
+  { key: "amman", country: "JO", ar: "عمّان", en: "Amman" },
+  { key: "zarqa", country: "JO", ar: "الزرقاء", en: "Zarqa" },
+  { key: "irbid", country: "JO", ar: "إربد", en: "Irbid" },
+  { key: "russeifa", country: "JO", ar: "الرصيفة", en: "Russeifa" },
+  { key: "aqaba", country: "JO", ar: "العقبة", en: "Aqaba" },
+  { key: "salt", country: "JO", ar: "السلط", en: "Salt" },
+  { key: "mafraq", country: "JO", ar: "المفرق", en: "Mafraq" },
+  { key: "karak", country: "JO", ar: "الكرك", en: "Karak" },
+  { key: "madaba", country: "JO", ar: "مادبا", en: "Madaba" },
+  { key: "jerash", country: "JO", ar: "جرش", en: "Jerash" },
+  { key: "riyadh", country: "SA", ar: "الرياض", en: "Riyadh" },
+  { key: "jeddah", country: "SA", ar: "جدة", en: "Jeddah" },
+  { key: "makkah", country: "SA", ar: "مكة المكرمة", en: "Makkah" },
+  { key: "madinah", country: "SA", ar: "المدينة المنورة", en: "Madinah" },
+  { key: "dammam", country: "SA", ar: "الدمام", en: "Dammam" },
+  { key: "khobar", country: "SA", ar: "الخبر", en: "Khobar" },
+  { key: "dhahran", country: "SA", ar: "الظهران", en: "Dhahran" },
+  { key: "al_ahsa", country: "SA", ar: "الأحساء", en: "Al Ahsa" },
+  { key: "jubail", country: "SA", ar: "الجبيل", en: "Jubail" },
+  { key: "taif", country: "SA", ar: "الطائف", en: "Taif" },
+  { key: "abha", country: "SA", ar: "أبها", en: "Abha" },
+  { key: "khamis_mushait", country: "SA", ar: "خميس مشيط", en: "Khamis Mushait" },
+  { key: "tabuk", country: "SA", ar: "تبوك", en: "Tabuk" },
+  { key: "buraidah", country: "SA", ar: "بريدة", en: "Buraidah" },
+  { key: "hail", country: "SA", ar: "حائل", en: "Hail" },
+  { key: "jazan", country: "SA", ar: "جازان", en: "Jazan" },
+  { key: "najran", country: "SA", ar: "نجران", en: "Najran" },
+  { key: "yanbu", country: "SA", ar: "ينبع", en: "Yanbu" },
 ];
+
+export function citiesOf(country: string): typeof CITIES {
+  return CITIES.filter((c) => c.country === country);
+}
+
+export function countryOfCity(key: string | null | undefined): CountryCode | null {
+  return CITIES.find((c) => c.key === key)?.country ?? null;
+}
 
 // Categories promoted on the home page's rows + given a tiebreaker boost
 // in search ordering — a pure display/business decision (V2 blueprint
@@ -144,6 +193,8 @@ export type DirectoryOrg = {
    *  list_nearby_orgs and pre-0036 databases don't return it; absent or
    *  null renders NO price line — never 0, which would read as free. */
   min_price?: number | null;
+  /** The clinic's own currency (0056): a Saudi clinic's prices are riyals. */
+  currency: string;
 };
 
 // Client-writable cookie carrying the customer's ROUNDED position

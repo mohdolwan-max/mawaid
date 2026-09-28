@@ -28,6 +28,7 @@ export default async function ServicesPage() {
         services={(services as Service[]) ?? []}
         orgId={ctx.orgId}
         canManage={ctx.role === "owner"}
+        currency={ctx.currency}
       />
     </div>
   );

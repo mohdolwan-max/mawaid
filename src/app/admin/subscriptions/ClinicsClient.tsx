@@ -14,7 +14,9 @@ import {
   type AdminClinic,
   type ClinicBucket,
 } from "@/lib/admin";
-import { adminExtendTrial, adminSetPlan, type AdminActionError } from "../actions";
+import { adminExtendTrial, adminMoveOrgCountry, adminSetPlan, type AdminActionError } from "../actions";
+import { citiesOf, cityLabel } from "@/lib/directory";
+import { marketByCode, marketName, type Market } from "@/lib/markets";
 
 const BUCKETS: ClinicBucket[] = ["paid", "trial", "grace", "lapsed", "closed"];
 
@@ -34,7 +36,17 @@ const BUCKET_TONE: Record<ClinicBucket, string> = {
   closed: "neutral",
 };
 
-export function ClinicsClient({ lang, clinics, nowIso }: { lang: Lang; clinics: AdminClinic[]; nowIso: string }) {
+export function ClinicsClient({
+  lang,
+  clinics,
+  markets,
+  nowIso,
+}: {
+  lang: Lang;
+  clinics: AdminClinic[];
+  markets: Market[];
+  nowIso: string;
+}) {
   const [bucket, setBucket] = useState<ClinicBucket | "all">("all");
   const [query, setQuery] = useState("");
   const [showDemo, setShowDemo] = useState(false);
@@ -82,6 +94,7 @@ export function ClinicsClient({ lang, clinics, nowIso }: { lang: Lang; clinics: 
               key={c.id}
               lang={lang}
               clinic={c}
+              markets={markets}
               nowIso={nowIso}
               open={openId === c.id}
               onToggle={() => setOpenId((id) => (id === c.id ? null : c.id))}
@@ -96,16 +109,19 @@ export function ClinicsClient({ lang, clinics, nowIso }: { lang: Lang; clinics: 
 function ClinicRow({
   lang,
   clinic: c,
+  markets,
   nowIso,
   open,
   onToggle,
 }: {
   lang: Lang;
   clinic: AdminClinic;
+  markets: Market[];
   nowIso: string;
   open: boolean;
   onToggle: () => void;
 }) {
+  const market = marketByCode(markets, c.country);
   const b = clinicBucket(c);
   const fmtDate = (iso: string) =>
     new Intl.DateTimeFormat(intlLocale(lang), { timeZone: ADMIN_TZ, dateStyle: "medium" }).format(new Date(iso));
@@ -128,6 +144,7 @@ function ClinicRow({
           {c.isDemo && <span className="chip neutral">{t(lang, "admin_demo")}</span>}
         </span>
         <span className="ar-chips">
+          <span className="chip neutral">{market ? marketName(market, lang) : c.country}</span>
           <span className="chip neutral">
             {isPlanId(c.plan) ? planName(c.plan, lang) : c.plan}
           </span>
@@ -159,6 +176,7 @@ function ClinicRow({
           </p>
           {c.phase !== "closed" && <PlanTool lang={lang} clinic={c} />}
           {c.phase !== "closed" && c.isTrial && <TrialTool lang={lang} clinic={c} />}
+          {c.phase !== "closed" && <MoveCountryTool lang={lang} clinic={c} markets={markets} />}
         </div>
       )}
     </div>
@@ -172,6 +190,12 @@ const ERROR_KEY: Record<AdminActionError, TKey> = {
   admin_err_org_closed: "admin_err_org_closed",
   admin_err_not_refundable: "admin_err_not_refundable",
   admin_err_offer_not_removable: "admin_err_offer_not_removable",
+  admin_err_country: "admin_err_country",
+  admin_err_city_country: "admin_err_city_country",
+  admin_err_market_not_ready: "admin_err_market_not_ready",
+  admin_err_open_needs_prices: "admin_err_open_needs_prices",
+  admin_err_price: "admin_err_price",
+  admin_err_offer_settings: "admin_err_offer_settings",
   error_generic: "error_generic",
 };
 
@@ -329,6 +353,137 @@ function TrialTool({ lang, clinic }: { lang: Lang; clinic: AdminClinic }) {
           <button
             type="button"
             className="btn sm"
+            onClick={() => {
+              setDone(false);
+              if (!reasonOk(reason)) {
+                setError("admin_err_reason");
+                return;
+              }
+              setError(null);
+              setReviewing(true);
+            }}
+          >
+            {t(lang, "admin_review")}
+          </button>
+        ) : (
+          <>
+            <button type="button" className="btn sm" disabled={pending} onClick={apply}>
+              {t(lang, "admin_confirm")}
+            </button>
+            <button type="button" className="btn ghost sm" disabled={pending} onClick={() => setReviewing(false)}>
+              {t(lang, "admin_back")}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// A clinic's country is locked once it has an invoice (0056); this is the
+// one way to change it, logged with its reason. The confirmation names what
+// the move does to money: new prices and currency, and the saved card stops.
+function MoveCountryTool({ lang, clinic, markets }: { lang: Lang; clinic: AdminClinic; markets: Market[] }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [country, setCountry] = useState(clinic.country);
+  const [city, setCity] = useState(clinic.city ?? "");
+  const [reason, setReason] = useState("");
+  const [reviewing, setReviewing] = useState(false);
+  const [error, setError] = useState<TKey | null>(null);
+  const [done, setDone] = useState(false);
+
+  const target = marketByCode(markets, country);
+  const unchanged = country === clinic.country && city === (clinic.city ?? "");
+
+  function apply() {
+    setError(null);
+    startTransition(async () => {
+      const res = await adminMoveOrgCountry({ orgId: clinic.id, country, city, reason });
+      if (res.error) {
+        setError(ERROR_KEY[res.error]);
+        setReviewing(false);
+        return;
+      }
+      setReviewing(false);
+      setReason("");
+      setDone(true);
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="admin-tool">
+      <p className="at-tool-title">{t(lang, "admin_move_country")}</p>
+      {clinic.hasInvoice && <p className="hint">{t(lang, "admin_country_locked_hint")}</p>}
+      <div className="grid2">
+        <div className="field">
+          <label>{t(lang, "admin_country")}</label>
+          <select
+            value={country}
+            onChange={(e) => {
+              setCountry(e.target.value);
+              setCity("");
+              setReviewing(false);
+              setDone(false);
+            }}
+          >
+            {markets.map((m) => (
+              <option key={m.code} value={m.code}>
+                {marketName(m, lang)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>{t(lang, "dir_city")}</label>
+          <select
+            value={city}
+            onChange={(e) => {
+              setCity(e.target.value);
+              setReviewing(false);
+              setDone(false);
+            }}
+          >
+            <option value="">{t(lang, "choose_option")}</option>
+            {citiesOf(country).map((c) => (
+              <option key={c.key} value={c.key}>
+                {c[lang]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="field">
+        <label>{t(lang, "admin_reason")}</label>
+        <input
+          value={reason}
+          placeholder={t(lang, "admin_reason_ph")}
+          onChange={(e) => {
+            setReason(e.target.value);
+            setDone(false);
+          }}
+        />
+      </div>
+      {reviewing && target && (
+        <p className="admin-confirm">
+          {t(lang, "admin_confirm_move", {
+            clinic: clinic.name,
+            country: marketName(target, lang),
+            city: city ? cityLabel(city, lang) : "—",
+            currency: target.currency,
+          })}
+          {country !== clinic.country && clinic.autoRenew && ` ${t(lang, "admin_move_card_note")}`}
+        </p>
+      )}
+      {error && <p className="error-text">{t(lang, error)}</p>}
+      {done && <p className="hint">{t(lang, "admin_done")}</p>}
+      <div className="toolbar">
+        {!reviewing ? (
+          <button
+            type="button"
+            className="btn sm"
+            disabled={unchanged}
             onClick={() => {
               setDone(false);
               if (!reasonOk(reason)) {

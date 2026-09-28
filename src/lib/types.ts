@@ -19,6 +19,10 @@ export type OrgContext = {
   wizardDone: boolean;
   role: Role;
   deletedAt: string | null;
+  /** The clinic's country and its currency (0056). Every price the
+   *  clinic sets or is charged is in this currency. */
+  country: string;
+  currency: string;
 };
 
 export type Service = {

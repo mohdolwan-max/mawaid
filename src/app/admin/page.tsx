@@ -3,6 +3,8 @@ import { getLang } from "@/lib/lang";
 import { t, type Lang } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
 import { getAdminOverview } from "@/lib/adminServer";
+import { getAdminCountry } from "@/lib/adminCountry";
+import { getMarkets } from "@/lib/marketsServer";
 import { ADMIN_TZ, changePct, primaryCurrency } from "@/lib/admin";
 import { bucketSeries, bucketSize, parsePeriod, periodSearch } from "@/lib/period";
 import { currencyLabel, formatPrice } from "@/lib/billing";
@@ -29,7 +31,8 @@ export default async function AdminOverviewPage({
   const [lang, params] = await Promise.all([getLang(), searchParams]);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: ADMIN_TZ }).format(new Date());
   const period = parsePeriod(params, today);
-  const o = await getAdminOverview(period.from, period.to);
+  const country = await getAdminCountry(await getMarkets());
+  const o = await getAdminOverview(period.from, period.to, country);
 
   const picker = <PeriodPicker lang={lang} path="/admin" period={period} today={today} />;
   if (!o) {

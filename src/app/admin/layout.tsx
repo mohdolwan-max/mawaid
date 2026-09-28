@@ -5,6 +5,9 @@ import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { isPlatformAdmin } from "@/lib/adminServer";
 import { AdminNav } from "./AdminNav";
+import { CountrySwitcher } from "./CountrySwitcher";
+import { getMarkets } from "@/lib/marketsServer";
+import { getAdminCountry } from "@/lib/adminCountry";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -22,6 +25,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!(await isPlatformAdmin())) notFound();
 
   const lang = await getLang();
+  const markets = await getMarkets();
+  const country = await getAdminCountry(markets);
 
   return (
     <div className="admin-shell">
@@ -38,6 +43,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </a>
         </div>
       </header>
+      <CountrySwitcher lang={lang} markets={markets} current={country} />
       {children}
     </div>
   );

@@ -1,5 +1,6 @@
 import { addDaysYMD } from "@/lib/date";
 import { bookHref } from "@/lib/serviceSelection";
+import { currencyDecimals } from "@/lib/taxReport";
 
 // Offer banners (0045): the rules and arithmetic the dashboard shows
 // BEFORE an order is placed. create_offer_order re-checks every one of
@@ -21,7 +22,9 @@ export type OfferSetup = {
   /** "YYYY-MM-DD" in the offer timezone. */
   today: string;
   timezone: string;
-  pricePerDayJod: number;
+  /** In `currency`, the clinic's country's (0056). */
+  pricePerDay: number;
+  currency: string;
   slotsPerDay: number;
   maxDays: number;
   maxAdvanceDays: number;
@@ -82,8 +85,9 @@ export type MyOffer = {
   startDate: string;
   endDate: string;
   days: number;
-  pricePerDayJod: number;
-  totalJod: number;
+  pricePerDay: number;
+  total: number;
+  currency: string;
   state: OfferState;
   holdExpiresAt: string;
   paidAt: string | null;
@@ -113,12 +117,19 @@ export function offerTitleLength(raw: string): number {
   return [...normalizeOfferTitle(raw)].length;
 }
 
-/** null when either input cannot make a real price. Rounded to fils the
- *  way the database rounds the stored total. */
-export function offerTotalJod(days: number, pricePerDayJod: number): number | null {
+/** null when either input cannot make a real price. Rounded to the
+ *  currency's decimals the way create_offer_order rounds the stored total
+ *  (0056): fils for dinars, halalas for riyals. */
+export function offerTotal(days: number, pricePerDay: number, currency: string): number | null {
   if (!Number.isInteger(days) || days < 1) return null;
-  if (!Number.isFinite(pricePerDayJod) || pricePerDayJod <= 0) return null;
-  return Math.round(days * pricePerDayJod * 100) / 100;
+  if (!Number.isFinite(pricePerDay) || pricePerDay <= 0) return null;
+  // In thousandths, which the stored price (numeric(10,3)) always is, so
+  // the product is exact. Multiplying the float directly made 3 x 3.335
+  // come out as 10.00499..., which rounded to 10.00 on screen while the
+  // database, in exact decimals, charges 10.01.
+  const milli = Math.round(pricePerDay * 1000) * days;
+  const f = 10 ** currencyDecimals(currency);
+  return Math.round(milli / (1000 / f)) / f;
 }
 
 export function offerEndDate(start: string, days: number): string {

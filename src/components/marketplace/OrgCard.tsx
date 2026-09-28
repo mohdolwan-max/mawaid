@@ -2,6 +2,7 @@ import Link from "next/link";
 import { t, type Lang } from "@/lib/i18n";
 import { categoryLabel, cityLabel, distanceLabel, priceTierLabel, type DirectoryOrg } from "@/lib/directory";
 import { PinIcon } from "@/components/icons";
+import { formatPrice } from "@/lib/billing";
 
 export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
   // distanceLabel returns "" when distance_km is absent, so cards from
@@ -45,9 +46,11 @@ export function OrgCard({ org, lang }: { org: DirectoryOrg; lang: Lang }) {
             {category && <span className="chip neutral">{category}</span>}
             {tier && <span className="price-tier">{tier}</span>}
           </span>
-          {fromPrice != null && (
+          {/* In the clinic's own currency (0056); no currency, no price line
+              rather than a guessed one. */}
+          {fromPrice != null && org.currency && (
             <span className="oc-price">
-              {t(lang, "card_from")} {fromPrice} {t(lang, "currency")}
+              {t(lang, "card_from")} {formatPrice(fromPrice, org.currency, lang)}
             </span>
           )}
         </div>

@@ -118,6 +118,7 @@ export default async function CalendarPage({
         view={view}
         businessHours={ctx.businessHours}
         bookings={bookings}
+        currency={ctx.currency}
         staff={staffList.map((m) => ({
           id: m.membership_id ?? "",
           name: staffOwnerLabel(m, ctx.lang),

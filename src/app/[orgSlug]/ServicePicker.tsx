@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { t, type Lang } from "@/lib/i18n";
+import { currencyLabel } from "@/lib/billing";
 import type { PublicService } from "@/lib/publicOrg";
 import { bookHref } from "@/lib/serviceSelection";
 
@@ -33,7 +34,15 @@ function useSelection(): Selection {
   return ctx;
 }
 
-export function SelectableServiceList({ services, lang }: { services: PublicService[]; lang: Lang }) {
+export function SelectableServiceList({
+  services,
+  lang,
+  currency,
+}: {
+  services: PublicService[];
+  lang: Lang;
+  currency: string;
+}) {
   const { selected, toggle } = useSelection();
 
   return (
@@ -76,7 +85,7 @@ export function SelectableServiceList({ services, lang }: { services: PublicServ
             </div>
             {s.price != null && (
               <span className="num">
-                {s.price} {t(lang, "currency")}
+                {s.price} {currencyLabel(currency, lang)}
               </span>
             )}
           </div>

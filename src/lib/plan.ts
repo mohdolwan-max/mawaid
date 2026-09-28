@@ -18,8 +18,10 @@ export type Plan = {
   /** null = unlimited */
   maxStaff: number | null;
   smsPerMonth: number;
-  priceMonthJod: number;
-  priceYearJod: number;
+  /** In `currency`, the country's own price list (0056). */
+  priceMonth: number;
+  priceYear: number;
+  currency: string;
   featured: boolean;
 };
 
@@ -70,19 +72,12 @@ export function planName(id: PlanId, lang: Lang): string {
   return NAMES[id]?.[lang] ?? id;
 }
 
-/** Whole dinars print bare ("19"); fractions keep two places ("18.50").
- *  Western digits, matching every other price in the app. */
-export function formatJod(n: number): string {
-  if (!Number.isFinite(n)) return "";
-  return Number.isInteger(n) ? String(n) : n.toFixed(2);
-}
-
 /** How many monthly payments the yearly price saves — the "two months
  *  free" line. Derived from the two prices, never typed, so it follows
  *  the table. null when there is no saving to state. */
-export function freeMonthsOnYearly(p: Pick<Plan, "priceMonthJod" | "priceYearJod">): number | null {
-  const m = p.priceMonthJod;
-  const y = p.priceYearJod;
+export function freeMonthsOnYearly(p: Pick<Plan, "priceMonth" | "priceYear">): number | null {
+  const m = p.priceMonth;
+  const y = p.priceYear;
   if (!Number.isFinite(m) || !Number.isFinite(y) || m <= 0 || y <= 0) return null;
   const months = Math.round((m * 12 - y) / m);
   return months > 0 ? months : null;

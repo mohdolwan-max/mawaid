@@ -67,12 +67,14 @@ export interface PaymentProvider {
   }): Promise<MandateCharge>;
 }
 
-/** Each returns null when its own keys are missing. */
-const ADAPTERS: Record<string, () => PaymentProvider | null> = {
+/** Each returns null when that country's keys are missing. */
+const ADAPTERS: Record<string, (country: string) => PaymentProvider | null> = {
   paytabs: paytabsProvider,
 };
 
-export function getPaymentProvider(): PaymentProvider | null {
+/** The gateway account of one country (0056). A clinic pays through its
+ *  own country's account and no other. */
+export function getPaymentProvider(country: string): PaymentProvider | null {
   // Case-insensitive: "PayTabs" typed into a dashboard is not a different gateway.
   const id = process.env.PAYMENT_PROVIDER?.trim().toLowerCase();
   if (!id) return null;
@@ -81,8 +83,8 @@ export function getPaymentProvider(): PaymentProvider | null {
     console.error(`PAYMENT_PROVIDER=${id} has no adapter`);
     return null;
   }
-  const provider = make();
-  if (!provider) console.error(`PAYMENT_PROVIDER=${id} is missing its keys`);
+  const provider = make(country);
+  if (!provider) console.error(`PAYMENT_PROVIDER=${id} is missing its keys for ${country}`);
   return provider;
 }
 
@@ -90,8 +92,8 @@ export function paymentsSecret(): string | null {
   return process.env.PAYMENTS_SECRET?.trim() || null;
 }
 
-export function paymentsReady(): boolean {
-  return getPaymentProvider() !== null && paymentsSecret() !== null;
+export function paymentsReady(country: string): boolean {
+  return getPaymentProvider(country) !== null && paymentsSecret() !== null;
 }
 
 /** A session-free client for the secret-gated payment functions (0047):

@@ -1,7 +1,7 @@
 import "server-only";
 import type { PaymentProvider, WebhookEvent } from "@/lib/payments";
 import {
-  PAYTABS_JORDAN_BASE,
+  PAYTABS_REGION_BASE,
   classify,
   isPaymentId,
   packMandate,
@@ -13,15 +13,19 @@ import {
 // PayTabs adapter (hosted payment page). Chosen 2026-09: serves Jordan
 // directly, charges in JOD, and gives a test profile at signup, so the
 // flow runs against the sandbox until the company is registered.
-// Environment:
-//   PAYTABS_PROFILE_ID   profile id (test profile first)
-//   PAYTABS_SERVER_KEY   that profile's server key
-//   PAYTABS_BASE_URL     the profile's region endpoint; defaults to Jordan.
-//                        The owner's test profile was opened in the KSA
-//                        region (https://secure.paytabs.sa).
 //
-// One profile, so one country, today. Several countries later means one
-// profile per country, chosen by the clinic's country (0048's note).
+// One PayTabs profile PER COUNTRY (0056): a Saudi clinic's money goes to
+// the Saudi merchant account, a Jordanian's to the Jordanian one, and a
+// payment is only ever charged, verified and queried with its own
+// country's keys. Environment, per country code CC:
+//   PAYTABS_CC_PROFILE_ID   profile id (test profile first)
+//   PAYTABS_CC_SERVER_KEY   that profile's server key
+//   PAYTABS_CC_BASE_URL     optional; defaults to the country's region
+//                           (secure-jordan.paytabs.com, secure.paytabs.sa)
+// Jordan also reads the unsuffixed PAYTABS_PROFILE_ID / _SERVER_KEY /
+// _BASE_URL, the names used before countries existed, so the deployment's
+// current settings keep working. (The owner's first test profile was
+// opened in the KSA region, so those currently point at secure.paytabs.sa.)
 //
 // Not verified against a live sandbox yet: the "authorization: <server
 // key>" header, sending no customer_details (the hosted page collects
@@ -30,12 +34,37 @@ import {
 
 type Config = { profileId: number; serverKey: string; base: string };
 
-function config(): Config | null {
-  const profileId = Number(process.env.PAYTABS_PROFILE_ID?.trim());
-  const serverKey = process.env.PAYTABS_SERVER_KEY?.trim();
+function env(country: string, name: "PROFILE_ID" | "SERVER_KEY" | "BASE_URL"): string | undefined {
+  const own = process.env[`PAYTABS_${country}_${name}`]?.trim();
+  if (own) return own;
+  return country === "JO" ? process.env[`PAYTABS_${name}`]?.trim() || undefined : undefined;
+}
+
+function config(country: string): Config | null {
+  const profileId = Number(env(country, "PROFILE_ID"));
+  const serverKey = env(country, "SERVER_KEY");
   if (!Number.isInteger(profileId) || profileId <= 0 || !serverKey) return null;
-  const base = (process.env.PAYTABS_BASE_URL?.trim() || PAYTABS_JORDAN_BASE).replace(/\/+$/, "");
+  const base = (env(country, "BASE_URL") || PAYTABS_REGION_BASE[country] || "").replace(/\/+$/, "");
+  if (!base) return null;
   return { profileId, serverKey, base };
+}
+
+/** Which of a country's settings are present, never their values. */
+export function paytabsConfigReport(country: string): Record<string, string> {
+  const profileId = env(country, "PROFILE_ID") ?? "";
+  let base: string;
+  try {
+    const raw = env(country, "BASE_URL");
+    const region = PAYTABS_REGION_BASE[country];
+    base = raw ? new URL(raw).host : region ? `default (${new URL(region).host})` : "missing";
+  } catch {
+    base = "unparseable";
+  }
+  return {
+    profile_id: profileId === "" ? "missing" : /^\d+$/.test(profileId) ? "ok" : "not a number",
+    server_key: env(country, "SERVER_KEY") ? "present" : "missing",
+    base_url: base,
+  };
 }
 
 async function call(cfg: Config, path: string, body: Record<string, unknown>): Promise<PaytabsTxn & { redirect_url?: string }> {
@@ -58,8 +87,8 @@ async function call(cfg: Config, path: string, body: Record<string, unknown>): P
   return json;
 }
 
-export function paytabsProvider(): PaymentProvider | null {
-  const cfg = config();
+export function paytabsProvider(country: string): PaymentProvider | null {
+  const cfg = config(country);
   if (!cfg) return null;
 
   return {

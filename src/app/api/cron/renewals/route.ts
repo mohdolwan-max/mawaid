@@ -21,6 +21,8 @@ type DueRow = {
   period: string;
   amount: number | string;
   currency: string;
+  /** The country whose price and gateway account this renewal uses (0056). */
+  country: string;
 };
 
 export const dynamic = "force-dynamic";
@@ -31,9 +33,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const provider = getPaymentProvider();
   const secret = paymentsSecret();
-  if (!provider || !secret) {
+  if (!process.env.PAYMENT_PROVIDER?.trim() || !secret) {
     // Nothing is claimed, so nothing is left half-charged.
     return NextResponse.json({ skipped: "payments_not_configured" });
   }
@@ -47,13 +48,27 @@ export async function POST(request: NextRequest) {
   const rows = (data as DueRow[] | null) ?? [];
   // The origin the job was called on (pg_cron targets www, 0038), not the
   // configured apex: that one redirects, and a gateway callback must not.
-  const webhookUrl = `${request.nextUrl.origin}/api/payments/webhook`;
+  const webhookBase = `${request.nextUrl.origin}/api/payments/webhook`;
   let paid = 0;
   let failed = 0;
   let pending = 0;
 
   for (const row of rows) {
     const amount = Number(row.amount);
+    // Each clinic is charged through its own country's account (0056).
+    const provider = getPaymentProvider(row.country);
+    const webhookUrl = `${webhookBase}?country=${row.country}`;
+
+    if (!provider) {
+      await db.rpc("fail_payment", {
+        p_secret: secret,
+        p_payment_id: row.payment_id,
+        p_provider: row.provider,
+        p_reason: `no gateway account configured for ${row.country}`,
+      });
+      failed++;
+      continue;
+    }
 
     // A card saved with another gateway cannot be charged by this one.
     if (row.provider !== provider.id) {

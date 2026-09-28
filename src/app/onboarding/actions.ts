@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { BusinessHours } from "@/lib/types";
+import { countryOfCity } from "@/lib/directory";
 
 export async function createOrgAction(input: {
   name: string;
@@ -11,15 +12,26 @@ export async function createOrgAction(input: {
   phone: string;
   category: string;
   city: string;
+  country: string;
 }): Promise<{ orgId: string } | { error: string }> {
+  // Checked before the clinic is created: the database refuses a city
+  // outside the country (0056), and a refusal after creation would leave a
+  // clinic with no city.
+  if (!input.country) return { error: "org_country_required" };
+  if (input.city && countryOfCity(input.city) !== input.country) return { error: "org_city_invalid" };
+
   const supabase = await createClient();
 
   const { data: orgId, error } = await supabase.rpc("create_organization", {
     p_name: input.name,
     p_slug: input.slug,
+    p_country: input.country,
   });
 
   if (error) {
+    if (error.message.includes("country_not_open")) {
+      return { error: "org_country_closed" };
+    }
     if (error.message.includes("slug_taken") || error.message.includes("slug_reserved")) {
       return { error: "org_slug_taken" };
     }

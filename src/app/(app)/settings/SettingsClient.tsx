@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import type { OrgContext, BusinessHours } from "@/lib/types";
-import { CATEGORIES, CITIES, PRICE_TIERS, parseMapsLink } from "@/lib/directory";
+import { CATEGORIES, PRICE_TIERS, citiesOf, parseMapsLink } from "@/lib/directory";
 import { createClient } from "@/lib/supabase/client";
 import { validateImageFile, downscaleImage, MAX_DIM } from "@/lib/imageUpload";
 import { BusinessHoursGrid } from "@/components/BusinessHoursGrid";
@@ -241,7 +241,7 @@ export function SettingsClient({
             <label htmlFor="d_city">{t(lang, "dir_city")}</label>
             <select id="d_city" disabled={!canManage} value={city} onChange={(e) => setCity(e.target.value)}>
               <option value="">{t(lang, "choose_option")}</option>
-              {CITIES.map((c) => (
+              {citiesOf(ctx.country).map((c) => (
                 <option key={c.key} value={c.key}>
                   {c[lang]}
                 </option>

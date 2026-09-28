@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { t, type Lang } from "@/lib/i18n";
+import { currencyLabel, formatAmount } from "@/lib/billing";
 import {
   planName,
-  formatJod,
   freeMonthsOnYearly,
   monthsLabel,
   daysLabel,
@@ -34,8 +34,6 @@ export function PlansGrid({
   /** null = unknown, and no trial length is shown. */
   trialDays: number | null;
 }) {
-  const currency = t(lang, "currency");
-
   return (
     <div className="plans-grid">
       {plans.map((p) => {
@@ -44,6 +42,7 @@ export function PlansGrid({
         // free" on pro would promise a pro trial nobody gets.
         const trial = p.id === "basic" ? trialDays : null;
         const months = freeMonthsOnYearly(p);
+        const currency = currencyLabel(p.currency, lang);
         const staff =
           p.maxStaff == null
             ? t(lang, "plan_feat_staff_unlimited")
@@ -55,7 +54,7 @@ export function PlansGrid({
           <div key={p.id} className={`plan-card${p.id === "basic" ? " mid" : ""}`}>
             <p className="plan-name">{planName(p.id, lang)}</p>
             <div className="plan-price">
-              <strong>{formatJod(p.priceMonthJod)}</strong>
+              <strong>{formatAmount(p.priceMonth)}</strong>
               <span>
                 {currency} / {t(lang, "plan_per_month")}
               </span>
@@ -63,7 +62,7 @@ export function PlansGrid({
             <p className="plan-yearly">
               {months
                 ? t(lang, "plan_yearly_note", {
-                    price: formatJod(p.priceYearJod),
+                    price: formatAmount(p.priceYear),
                     currency,
                     months: monthsLabel(months, lang),
                   })

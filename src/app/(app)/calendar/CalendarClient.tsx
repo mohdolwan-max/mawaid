@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
+import { currencyLabel } from "@/lib/billing";
 import {
   addDaysYMD,
   dateFromYMD,
@@ -52,6 +53,7 @@ export function CalendarClient({
   businessHours,
   bookings,
   staff,
+  currency,
 }: {
   lang: Lang;
   timezone: string;
@@ -61,6 +63,8 @@ export function CalendarClient({
   businessHours: BusinessHours;
   bookings: CalendarBooking[];
   staff: { id: string; name: string }[];
+  /** The clinic's currency (0056). */
+  currency: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<CalendarBooking | null>(null);
@@ -147,7 +151,7 @@ export function CalendarClient({
           <Stat label={t(lang, "cal_stat_cancelled")} value={cancelled.length.toLocaleString(locale)} tone={cancelled.length ? "bad" : undefined} />
           <Stat
             label={t(lang, "cal_stat_value")}
-            value={`${total.toLocaleString(locale, { maximumFractionDigits: 2 })} ${t(lang, "currency")}`}
+            value={`${total.toLocaleString(locale, { maximumFractionDigits: 2 })} ${currencyLabel(currency, lang)}`}
             hint={unpriced > 0 ? t(lang, "cal_unpriced", { n: unpriced.toLocaleString(locale) }) : undefined}
           />
         </div>

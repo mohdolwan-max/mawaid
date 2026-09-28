@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import { DateField } from "@/components/DateTimeField";
 import { OfferBanner } from "@/components/marketplace/OfferBanner";
-import { daysLabel, formatJod } from "@/lib/plan";
+import { daysLabel } from "@/lib/plan";
+import { currencyLabel, formatAmount } from "@/lib/billing";
 import { dateFromYMD, intlLocale } from "@/lib/date";
 import {
   OFFER_STATE_TONE,
@@ -17,7 +18,7 @@ import {
   normalizeOfferTitle,
   offerEndDate,
   offerTitleLength,
-  offerTotalJod,
+  offerTotal,
   type ActiveBanner,
   type DayAvailability,
   type MyOffer,
@@ -108,10 +109,10 @@ export function OffersClient({
 
   const rangeOk = Number.isInteger(days) && days >= 1 && days <= setup.maxDays;
   const end = rangeOk ? offerEndDate(start, days) : null;
-  const total = offerTotalJod(days, setup.pricePerDayJod);
+  const total = offerTotal(days, setup.pricePerDay, setup.currency);
   const titleLen = offerTitleLength(title);
   const service = services?.find((s) => s.id === serviceId) ?? null;
-  const currency = t(lang, "currency");
+  const currency = currencyLabel(setup.currency, lang);
 
   // The preview is the real banner component fed the draft, so what the
   // clinic sees here is exactly what visitors will get.
@@ -285,12 +286,12 @@ export function OffersClient({
           )}
           <p className="os-line">
             <span>
-              {t(lang, "offer_price_per_day", { price: `${formatJod(setup.pricePerDayJod)} ${currency}` })}
+              {t(lang, "offer_price_per_day", { price: `${formatAmount(setup.pricePerDay)} ${currency}` })}
             </span>
           </p>
           <p className="os-line os-total-line">
             <span>{t(lang, "offer_total")}</span>
-            <span className="os-total">{total === null ? "—" : `${formatJod(total)} ${currency}`}</span>
+            <span className="os-total">{total === null ? "—" : `${formatAmount(total)} ${currency}`}</span>
           </p>
 
           {shownError && <p className="error-text">{t(lang, shownError, errorVars)}</p>}
@@ -354,7 +355,7 @@ function OrderRow({
           {" · "}
           {daysLabel(offer.days, lang)}
           {" · "}
-          {formatJod(offer.totalJod)} {t(lang, "currency")}
+          {formatAmount(offer.total)} {currencyLabel(offer.currency, lang)}
           {offer.serviceName ? ` · ${offer.serviceName}` : ""}
         </p>
         {awaiting && <p className="oo-meta">{t(lang, "offer_hold_until", { time: holdUntil })}</p>}

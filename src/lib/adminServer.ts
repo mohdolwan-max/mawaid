@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import {
+  countryCodeOrNull,
   currencyCodeOrNull,
   isClinicPhase,
   num,
@@ -13,6 +14,7 @@ import {
   type MoneyByCurrency,
 } from "@/lib/admin";
 import { parseRegistrations, parseTaxReport, type TaxRegistration, type TaxReport, type UnassignedSales } from "@/lib/taxReport";
+import { parseAdminMarkets, type AdminMarket } from "@/lib/adminMarkets";
 
 function logRpcError(name: string, error: { code?: string }, migration = "0049") {
   if (error.code === "PGRST202") {
@@ -35,10 +37,11 @@ export const isPlatformAdmin = cache(async (): Promise<boolean> => {
   return data === true;
 });
 
-/** from/to: "YYYY-MM-DD", both included (lib/period.ts). */
-export async function getAdminOverview(from: string, to: string): Promise<AdminOverview | null> {
+/** from/to: "YYYY-MM-DD", both included (lib/period.ts). country null =
+ *  all countries (0056). */
+export async function getAdminOverview(from: string, to: string, country: string | null): Promise<AdminOverview | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_overview", { p_from: from, p_to: to });
+  const { data, error } = await supabase.rpc("admin_overview", { p_from: from, p_to: to, p_country: country });
   if (error) {
     logRpcError("admin_overview", error, "0050");
     return null;
@@ -61,6 +64,7 @@ type ClinicRow = {
   id: string;
   name: string;
   slug: string;
+  country: string;
   city: string | null;
   category: string | null;
   plan: string;
@@ -78,11 +82,12 @@ type ClinicRow = {
   paid_totals: unknown;
   auto_renew: boolean;
   card_label: string | null;
+  has_invoice: boolean;
 };
 
-export async function listAdminClinics(): Promise<AdminClinic[] | null> {
+export async function listAdminClinics(country: string | null): Promise<AdminClinic[] | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_clinics");
+  const { data, error } = await supabase.rpc("admin_clinics", { p_country: country });
   if (error) {
     logRpcError("admin_clinics", error);
     return null;
@@ -93,6 +98,7 @@ export async function listAdminClinics(): Promise<AdminClinic[] | null> {
       id: r.id,
       name: r.name,
       slug: r.slug,
+      country: r.country,
       city: r.city,
       category: r.category,
       plan: r.plan,
@@ -110,6 +116,7 @@ export async function listAdminClinics(): Promise<AdminClinic[] | null> {
       paidTotals: moneyMap(r.paid_totals),
       autoRenew: r.auto_renew,
       cardLabel: r.card_label,
+      hasInvoice: r.has_invoice === true,
     }));
 }
 
@@ -122,6 +129,7 @@ type PaymentRow = {
   org_id: string | null;
   org_name: string;
   org_slug: string | null;
+  country: string;
   kind: string;
   plan_id: string | null;
   period: string | null;
@@ -143,9 +151,9 @@ type PaymentRow = {
 /** The payment list's own row cap (0050 admin_payments). */
 export const ADMIN_PAYMENTS_LIMIT = 1000;
 
-export async function listAdminPayments(from: string, to: string): Promise<AdminPayment[] | null> {
+export async function listAdminPayments(from: string, to: string, country: string | null): Promise<AdminPayment[] | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_payments", { p_from: from, p_to: to });
+  const { data, error } = await supabase.rpc("admin_payments", { p_from: from, p_to: to, p_country: country });
   if (error) {
     logRpcError("admin_payments", error, "0050");
     return null;
@@ -153,10 +161,12 @@ export async function listAdminPayments(from: string, to: string): Promise<Admin
   const out: AdminPayment[] = [];
   for (const r of (data as PaymentRow[]) ?? []) {
     const currency = currencyCodeOrNull(r.currency);
+    const country = countryCodeOrNull(r.country);
     const amount = num(r.amount);
-    if (!currency || amount === null || !PAYMENT_STATUSES.has(r.status) || (r.kind !== "plan" && r.kind !== "offer")) continue;
+    if (!currency || !country || amount === null || !PAYMENT_STATUSES.has(r.status) || (r.kind !== "plan" && r.kind !== "offer")) continue;
     out.push({
       id: r.id,
+      country,
       createdAt: r.created_at,
       paidAt: r.paid_at,
       orgId: r.org_id,
@@ -188,27 +198,30 @@ type OfferRow = {
   org_id: string;
   org_name: string;
   org_slug: string;
+  country: string;
   title: string;
   city: string;
   start_date: string;
   end_date: string;
-  total_jod: number | string;
+  total: number | string;
+  currency: string;
   status: string;
   paid_at: string | null;
   removed_reason: string | null;
 };
 
-export async function listAdminOffers(): Promise<AdminOffer[] | null> {
+export async function listAdminOffers(country: string | null): Promise<AdminOffer[] | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("admin_offers");
+  const { data, error } = await supabase.rpc("admin_offers", { p_country: country });
   if (error) {
     logRpcError("admin_offers", error);
     return null;
   }
   const out: AdminOffer[] = [];
   for (const r of (data as OfferRow[]) ?? []) {
-    const total = num(r.total_jod);
-    if (total === null || (r.status !== "paid" && r.status !== "removed" && r.status !== "needs_refund")) continue;
+    const total = num(r.total);
+    const currency = currencyCodeOrNull(r.currency);
+    if (total === null || !currency || (r.status !== "paid" && r.status !== "removed" && r.status !== "needs_refund")) continue;
     out.push({
       id: r.id,
       orgId: r.org_id,
@@ -216,9 +229,11 @@ export async function listAdminOffers(): Promise<AdminOffer[] | null> {
       orgSlug: r.org_slug,
       title: r.title,
       city: r.city,
+      country: r.country,
       startDate: r.start_date,
       endDate: r.end_date,
-      totalJod: total,
+      total,
+      currency,
       status: r.status,
       paidAt: r.paid_at,
       removedReason: r.removed_reason,
@@ -252,5 +267,17 @@ export async function getTaxReport(registrationId: string, from: string, to: str
   }
   const parsed = parseTaxReport(data);
   if (!parsed) console.error("admin_tax_report returned an unreadable payload");
+  return parsed;
+}
+
+export async function getAdminMarkets(): Promise<AdminMarket[] | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_markets");
+  if (error) {
+    logRpcError("admin_markets", error, "0056");
+    return null;
+  }
+  const parsed = parseAdminMarkets(data);
+  if (!parsed) console.error("admin_markets returned an unreadable payload");
   return parsed;
 }

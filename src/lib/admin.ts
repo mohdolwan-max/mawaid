@@ -6,14 +6,18 @@
 // did not return is null and prints "—", never 0; money is kept per
 // currency and never added across currencies.
 
-/** The calendar the admin pages count days and months in. Matches
- *  _admin_tz() in 0049, which reads offer_settings with this default. */
+/** The calendar the admin pages count days and months in: _admin_tz()
+ *  (0056), Jordan's. A country's own pages are counted by the database in
+ *  that country's timezone; Jordan and Saudi Arabia share UTC+3, so the
+ *  dates the period picker offers are the same days in both. */
 export const ADMIN_TZ = "Asia/Amman";
 
 export type MoneyByCurrency = { currency: string; amount: number }[];
 
-/** Money for the chosen period (0050), per currency. */
+/** Money for the chosen period (0050), per country and currency (0056). */
 export type RevenueRow = {
+  /** null from a database before 0056. */
+  country: string | null;
   currency: string;
   period: number;
   /** The period just before, of the same length. */
@@ -42,6 +46,8 @@ export type SeriesDay = {
 export type AdminOverview = {
   generatedAt: string;
   timezone: string;
+  /** The country the figures are limited to; null = all countries. */
+  country: string | null;
   from: string;
   to: string;
   clinics: {
@@ -64,7 +70,7 @@ export type AdminOverview = {
     autoRenewOn: number | null;
   };
   revenue: RevenueRow[];
-  mrr: (MoneyByCurrency[number] & { clinics: number })[];
+  mrr: (MoneyByCurrency[number] & { clinics: number; country: string | null })[];
   attention: { needsRefund: number | null; failed: number | null; renewalFailures: number | null };
   offers: { liveToday: number | null; scheduled: number | null; removed: number | null };
   activity: {
@@ -102,6 +108,12 @@ function currencyCode(v: unknown): string | null {
   return /^[A-Z]{3}$/.test(c) ? c : null;
 }
 
+function countryCode(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const c = v.trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(c) ? c : null;
+}
+
 function section(root: Obj, key: string): Obj {
   const s = root[key];
   return isObj(s) ? s : {};
@@ -126,6 +138,7 @@ export function parseOverview(raw: unknown): AdminOverview | null {
     const allTime = num(r.all_time);
     if (!currency || period === null || previous === null || allTime === null) continue;
     revenue.push({
+      country: countryCode(r.country),
       currency,
       period,
       previous,
@@ -144,7 +157,7 @@ export function parseOverview(raw: unknown): AdminOverview | null {
     const currency = currencyCode(r.currency);
     const amount = num(r.amount);
     if (!currency || amount === null) continue;
-    mrr.push({ currency, amount, clinics: num(r.clinics) ?? 0 });
+    mrr.push({ currency, amount, clinics: num(r.clinics) ?? 0, country: countryCode(r.country) });
   }
 
   const series: SeriesDay[] = [];
@@ -164,6 +177,7 @@ export function parseOverview(raw: unknown): AdminOverview | null {
   return {
     generatedAt: raw.generated_at,
     timezone: typeof raw.timezone === "string" ? raw.timezone : "Asia/Amman",
+    country: countryCode(raw.country),
     from: typeof raw.from === "string" ? raw.from.slice(0, 10) : "",
     to: typeof raw.to === "string" ? raw.to.slice(0, 10) : "",
     clinics: {
@@ -245,6 +259,7 @@ export type AdminClinic = {
   id: string;
   name: string;
   slug: string;
+  country: string;
   city: string | null;
   category: string | null;
   plan: string;
@@ -262,6 +277,8 @@ export type AdminClinic = {
   paidTotals: MoneyByCurrency;
   autoRenew: boolean;
   cardLabel: string | null;
+  /** Its country is locked (0056): only an admin move changes it. */
+  hasInvoice: boolean;
 };
 
 /** The subscription bucket a clinic is listed under on the page. */
@@ -292,6 +309,8 @@ export function reasonOk(reason: string): boolean {
 
 export type AdminPayment = {
   id: string;
+  /** The country the payment was priced and charged in (0056). */
+  country: string;
   createdAt: string;
   paidAt: string | null;
   /** null once the clinic row is gone: the payment outlives it (0050). */
@@ -325,9 +344,11 @@ export type AdminOffer = {
   orgSlug: string;
   title: string;
   city: string;
+  country: string;
   startDate: string;
   endDate: string;
-  totalJod: number;
+  total: number;
+  currency: string;
   status: "paid" | "removed" | "needs_refund";
   paidAt: string | null;
   removedReason: string | null;
@@ -344,4 +365,8 @@ export function offerTiming(o: Pick<AdminOffer, "status" | "startDate" | "endDat
 
 export function currencyCodeOrNull(v: unknown): string | null {
   return currencyCode(v);
+}
+
+export function countryCodeOrNull(v: unknown): string | null {
+  return countryCode(v);
 }

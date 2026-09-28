@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getPaymentProvider, paymentsDb, paymentsSecret } from "@/lib/payments";
+import { isCountryCode } from "@/lib/payments/paytabsCore";
 
 // The gateway's server-to-server result for a payment. The only place a
 // payment becomes paid: the adapter verifies the gateway's signature and
@@ -14,7 +15,16 @@ import { getPaymentProvider, paymentsDb, paymentsSecret } from "@/lib/payments";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const provider = getPaymentProvider();
+  // Which country's gateway account sent this: the checkout put it on the
+  // callback URL (0056), so the signature is checked with that account's
+  // key and the transaction re-read from it. A callback without it was
+  // created before countries existed, and every payment then was Jordan's.
+  const raw = request.nextUrl.searchParams.get("country");
+  const country = raw === null ? "JO" : raw.toUpperCase();
+  if (!isCountryCode(country)) {
+    return NextResponse.json({ error: "bad_country" }, { status: 400 });
+  }
+  const provider = getPaymentProvider(country);
   const secret = paymentsSecret();
   if (!provider || !secret) {
     return NextResponse.json({ error: "payments_not_configured" }, { status: 503 });

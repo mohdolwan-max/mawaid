@@ -69,7 +69,7 @@ function OfferRow({ lang, offer: o, today }: { lang: Lang; offer: AdminOffer; to
           <span className="hint">{o.orgName}</span>
         </span>
         <span className="ar-chips">
-          <span className="num">{formatPrice(o.totalJod, "JOD", lang)}</span>
+          <span className="num">{formatPrice(o.total, o.currency, lang)}</span>
           <span className={`chip ${chip.tone}`}>{t(lang, chip.key)}</span>
         </span>
       </div>

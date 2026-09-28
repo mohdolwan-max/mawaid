@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { t, type Lang, type TKey } from "@/lib/i18n";
+import { currencyLabel } from "@/lib/billing";
 import type { PublicService, PublicStaff } from "@/lib/publicOrg";
 import { staffPublicLabel } from "@/lib/staffLabel";
 import { DateField } from "@/components/DateTimeField";
@@ -50,11 +51,14 @@ export function BookingClient({
   defaults,
   timezone,
   orgPhone,
+  currency,
   initialServiceIds = [],
 }: {
   lang: Lang;
   orgSlug: string;
   services: PublicService[];
+  /** The clinic's currency (0056). */
+  currency: string;
   /** The CLINIC's timezone: every time on this screen is its clock. */
   timezone: string;
   /** Shown on the confirmation, so the customer has a way to reach the
@@ -353,7 +357,7 @@ export function BookingClient({
                 </div>
                 {s.price != null && (
                   <span className="num">
-                    {s.price} {t(lang, "currency")}
+                    {s.price} {currencyLabel(currency, lang)}
                   </span>
                 )}
               </div>
@@ -458,7 +462,7 @@ export function BookingClient({
             <p className="hint" style={{ marginTop: 10, fontWeight: 700 }}>
               {t(lang, "book_total_price", {
                 p: chosen.reduce((sum, c) => sum + Number(c.price), 0),
-                currency: t(lang, "currency"),
+                currency: currencyLabel(currency, lang),
               })}
             </p>
           )}
@@ -520,7 +524,7 @@ export function BookingClient({
                       directory already treats 0 that way (0037). */}
                   {chosen.reduce((sum, c) => sum + Number(c.price), 0) === 0
                     ? t(lang, "book_free_visit")
-                    : `${chosen.reduce((sum, c) => sum + Number(c.price), 0).toLocaleString(intlLocale(lang))} ${t(lang, "currency")}`}
+                    : `${chosen.reduce((sum, c) => sum + Number(c.price), 0).toLocaleString(intlLocale(lang))} ${currencyLabel(currency, lang)}`}
                 </span>
                 <span />
               </div>

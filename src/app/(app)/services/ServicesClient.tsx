@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { t, type Lang, type TKey } from "@/lib/i18n";
+import { currencyLabel } from "@/lib/billing";
 import type { Service } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { validateImageFile, downscaleImage, MAX_DIM } from "@/lib/imageUpload";
@@ -14,11 +15,14 @@ export function ServicesClient({
   services,
   orgId,
   canManage,
+  currency,
 }: {
   lang: Lang;
   services: Service[];
   orgId: string;
   canManage: boolean;
+  /** The clinic's currency (0056). */
+  currency: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -59,7 +63,7 @@ export function ServicesClient({
       ) : (
         <div className="services-grid">
           {services.map((s) => (
-            <ServiceCard key={s.id} lang={lang} service={s} orgId={orgId} canManage={canManage} />
+            <ServiceCard key={s.id} lang={lang} service={s} orgId={orgId} canManage={canManage} currency={currency} />
           ))}
         </div>
       )}
@@ -72,11 +76,13 @@ function ServiceCard({
   service,
   orgId,
   canManage,
+  currency,
 }: {
   lang: Lang;
   service: Service;
   orgId: string;
   canManage: boolean;
+  currency: string;
 }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -233,7 +239,7 @@ function ServiceCard({
         </p>
         {uploadError && <p className="error-text">{uploadError}</p>}
         <div className="toolbar" style={{ justifyContent: "space-between", marginTop: 8 }}>
-          <span className="num">{service.price != null ? `${service.price} ${t(lang, "currency")}` : "—"}</span>
+          <span className="num">{service.price != null ? `${service.price} ${currencyLabel(currency, lang)}` : "—"}</span>
           <span className={`chip ${service.active ? "good" : "neutral"}`}>
             {t(lang, service.active ? "active" : "inactive")}
           </span>

@@ -29,6 +29,7 @@ const cachedListDirectoryOrgs = unstable_cache(
     order?: "rating" | "newest";
     district?: string | null;
     planFeaturedOnly?: boolean;
+    country?: string | null;
   }): Promise<DirectoryOrg[]> => {
     const { data, error } = await publicSupabase.rpc("list_directory_orgs", {
       p_city: filters.city ?? null,
@@ -48,6 +49,8 @@ const cachedListDirectoryOrgs = unstable_cache(
       // Pro featuring (0044), sent only when asked for — a database still
       // on 0043 keeps every other listing working.
       ...(filters.planFeaturedOnly ? { p_plan_featured_only: true } : {}),
+      // "All cities" within one country (0056).
+      ...(filters.country ? { p_country: filters.country } : {}),
     });
 
     // Not `data ?? []`. An empty marketplace and a broken query look
@@ -83,6 +86,7 @@ export async function listDirectoryOrgs(filters: {
   order?: "rating" | "newest";
   district?: string | null;
   planFeaturedOnly?: boolean;
+  country?: string | null;
 }): Promise<DirectoryOrg[]> {
   try {
     return await cachedListDirectoryOrgs(filters);

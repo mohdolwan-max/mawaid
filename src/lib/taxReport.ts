@@ -33,7 +33,8 @@ export type TaxRegistration = {
   invoices: number;
 };
 
-export type UnassignedSales = { currency: string; count: number; amount: number };
+/** Sales of one country with no invoice yet (0056: per country). */
+export type UnassignedSales = { country: string; currency: string; count: number; amount: number };
 
 function parseRegistration(r: unknown): TaxRegistration | null {
   if (!isObj(r)) return null;
@@ -78,10 +79,11 @@ export function parseRegistrations(raw: unknown): { registrations: TaxRegistrati
   for (const u of raw.unassigned) {
     if (!isObj(u)) return null;
     const currency = currencyCodeOrNull(u.currency);
+    const country = typeof u.country === "string" && /^[A-Z]{2}$/.test(u.country) ? u.country : null;
     const count = num(u.count);
     const amount = num(u.amount);
-    if (!currency || count === null || amount === null) return null;
-    unassigned.push({ currency, count, amount });
+    if (!currency || !country || count === null || amount === null) return null;
+    unassigned.push({ country, currency, count, amount });
   }
   return { registrations, unassigned };
 }

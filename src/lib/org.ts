@@ -22,6 +22,8 @@ type MyContextRow = {
   wizard_done: boolean;
   role: "owner" | "staff";
   deleted_at: string | null;
+  country: string;
+  currency: string;
 };
 
 // Loads the signed-in user's organization + settings + role in a single
@@ -96,6 +98,8 @@ export const requireOrgContext = cache(async (): Promise<OrgContext> => {
     wizardDone: row.wizard_done,
     role: row.role,
     deletedAt: row.deleted_at,
+    country: row.country,
+    currency: row.currency,
   };
 
   if (!ctx.wizardDone) {

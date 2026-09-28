@@ -22,6 +22,8 @@ export type PublicOrg = {
   cover_image_url: string | null;
   price_tier: number | null;
   maps_url: string | null;
+  /** The clinic's currency (0056): its service prices are in it. */
+  currency: string;
 };
 
 export type PublicService = {

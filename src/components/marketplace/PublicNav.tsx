@@ -5,13 +5,15 @@ import { CitySelector } from "./CitySelector";
 import { LangToggle } from "./LangToggle";
 import { HeaderMenu } from "./HeaderMenu";
 import { NotificationBell } from "./NotificationBell";
+import { getMarkets } from "@/lib/marketsServer";
 
 // The bottom tab bar (BottomNav) covers /search, /my, /account, but it
 // only renders under 700px — above that there was no way at all to
 // reach those pages except by typing the URL. header-nav-links fills
 // that gap (hidden under 700px via CSS, same breakpoint BottomNav
 // appears at, so the two never show at once).
-export function PublicNav({ lang, city }: { lang: Lang; city: string }) {
+export async function PublicNav({ lang, city }: { lang: Lang; city: string }) {
+  const markets = await getMarkets();
   return (
     <header className="market-header">
       <div className="mh-start">
@@ -48,7 +50,7 @@ export function PublicNav({ lang, city }: { lang: Lang; city: string }) {
             sits beside the greeting on the home page, the one page whose
             lists depend on it (/search has its own city filter). */}
         <div className="mh-desk">
-          <CitySelector lang={lang} city={city} />
+          <CitySelector lang={lang} city={city} markets={markets} />
           <LangToggle lang={lang} />
         </div>
       </div>

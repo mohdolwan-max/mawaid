@@ -36,6 +36,7 @@ export default async function BookPage({
         services={services}
         timezone={org.timezone ?? "Asia/Amman"}
         orgPhone={org.phone ?? null}
+        currency={org.currency}
         initialServiceIds={initialServiceIds}
         defaults={
           customer

@@ -12,16 +12,17 @@ type PlanRow = {
   sort: number;
   max_staff: number | null;
   sms_per_month: number;
-  price_month_jod: number | string;
-  price_year_jod: number | string;
+  price_month: number | string | null;
+  price_year: number | string | null;
+  currency: string;
   featured: boolean;
 };
 
 // The same for every visitor and changed by hand in SQL, so five minutes
 // of cache is plenty — a price edit shows within that window.
 const cachedPlans = unstable_cache(
-  async (): Promise<Plan[]> => {
-    const { data, error } = await publicSupabase.rpc("list_plans");
+  async (country: string): Promise<Plan[]> => {
+    const { data, error } = await publicSupabase.rpc("list_plans", { p_country: country });
     if (error) {
       if (error.code === "PGRST202") {
         console.error("list_plans missing (0043 unapplied)");
@@ -32,15 +33,18 @@ const cachedPlans = unstable_cache(
       // "there are no plans".
       throw error;
     }
+    // A plan the country does not sell has no price (null, 0056) and is
+    // left off the page, never shown at 0.
     return ((data as PlanRow[]) ?? [])
-      .filter((r) => isPlanId(r.id))
+      .filter((r) => isPlanId(r.id) && r.price_month != null && r.price_year != null)
       .map((r) => ({
         id: r.id as Plan["id"],
         sort: r.sort,
         maxStaff: r.max_staff,
         smsPerMonth: r.sms_per_month,
-        priceMonthJod: Number(r.price_month_jod),
-        priceYearJod: Number(r.price_year_jod),
+        priceMonth: Number(r.price_month),
+        priceYear: Number(r.price_year),
+        currency: r.currency,
         featured: r.featured,
       }));
   },
@@ -48,11 +52,12 @@ const cachedPlans = unstable_cache(
   { revalidate: 300, tags: [PLANS_TAG] }
 );
 
-/** null when the plans cannot be loaded — the pricing section then shows
- *  no prices at all rather than invented ones. */
-export async function listPlans(): Promise<Plan[] | null> {
+/** One country's plans and prices. null when they cannot be loaded, or
+ *  the country sells none — the pricing section then shows no prices at
+ *  all rather than invented ones. */
+export async function listPlans(country: string): Promise<Plan[] | null> {
   try {
-    const plans = await cachedPlans();
+    const plans = await cachedPlans(country);
     return plans.length > 0 ? plans : null;
   } catch {
     return null;

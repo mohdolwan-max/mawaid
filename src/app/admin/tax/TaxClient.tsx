@@ -15,6 +15,7 @@ import {
   type UnassignedSales,
 } from "@/lib/taxReport";
 import { adminInvoiceUnassigned, adminSaveTaxRegistration } from "./actions";
+import type { AdminMarket } from "@/lib/adminMarkets";
 
 const FIELD_ERROR: Record<RegistrationField, TKey> = {
   country: "tax_err_country",
@@ -42,10 +43,13 @@ export function TaxClient({
   lang,
   registrations,
   unassigned,
+  markets,
 }: {
   lang: Lang;
   registrations: TaxRegistration[];
   unassigned: UnassignedSales[];
+  /** A registration's country is one of these, in its currency (0056). */
+  markets: AdminMarket[];
 }) {
   const [editing, setEditing] = useState<string | "new" | null>(registrations.length === 0 ? "new" : null);
 
@@ -53,16 +57,16 @@ export function TaxClient({
     <div className="tax-regs">
       {unassigned.map((u) => (
         <UnassignedRow
-          key={u.currency}
+          key={`${u.country}_${u.currency}`}
           lang={lang}
           sales={u}
-          registration={registrations.find((r) => r.active && r.currency === u.currency) ?? null}
+          registration={registrations.find((r) => r.active && r.country === u.country) ?? null}
         />
       ))}
 
       {registrations.map((r) =>
         editing === r.id ? (
-          <RegistrationForm key={r.id} lang={lang} registration={r} onClose={() => setEditing(null)} />
+          <RegistrationForm key={r.id} lang={lang} registration={r} markets={markets} onClose={() => setEditing(null)} />
         ) : (
           <div key={r.id} className="card tax-reg">
             <div className="tax-reg-head">
@@ -90,7 +94,7 @@ export function TaxClient({
       )}
 
       {editing === "new" ? (
-        <RegistrationForm lang={lang} registration={null} onClose={() => setEditing(null)} />
+        <RegistrationForm lang={lang} registration={null} markets={markets} onClose={() => setEditing(null)} />
       ) : (
         <div>
           <button type="button" className="btn sm" onClick={() => setEditing("new")}>
@@ -105,10 +109,12 @@ export function TaxClient({
 function RegistrationForm({
   lang,
   registration: r,
+  markets,
   onClose,
 }: {
   lang: Lang;
   registration: TaxRegistration | null;
+  markets: AdminMarket[];
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -188,23 +194,33 @@ function RegistrationForm({
           "tax_rate",
           <input dir="ltr" inputMode="decimal" placeholder="16" value={values.taxRate} onChange={(e) => set("taxRate", e.target.value)} />
         )}
+        {/* The country decides the currency (0056): a registration
+            invoices in its own country's currency and no other. */}
         {field(
           "country",
           "tax_country",
-          <input dir="ltr" maxLength={2} placeholder="JO" value={values.country} onChange={(e) => set("country", e.target.value.toUpperCase())} />
-        )}
-        {field(
-          "currency",
-          "tax_currency",
-          <input
-            dir="ltr"
-            maxLength={3}
-            placeholder="JOD"
+          <select
             disabled={locked}
-            value={values.currency}
-            onChange={(e) => set("currency", e.target.value.toUpperCase())}
-          />
+            value={values.country}
+            onChange={(e) => {
+              const m = markets.find((x) => x.code === e.target.value);
+              setValues((v) => ({
+                ...v,
+                country: e.target.value,
+                currency: m?.currency ?? v.currency,
+                timezone: m?.timezone || v.timezone,
+              }));
+              setReviewing(false);
+            }}
+          >
+            {markets.map((m) => (
+              <option key={m.code} value={m.code}>
+                {lang === "ar" ? m.nameAr : m.nameEn}
+              </option>
+            ))}
+          </select>
         )}
+        {field("currency", "tax_currency", <input dir="ltr" disabled value={values.currency} readOnly />)}
         {field(
           "invoicePrefix",
           "tax_prefix",
@@ -284,7 +300,7 @@ function UnassignedRow({
   function apply() {
     setError(null);
     startTransition(async () => {
-      const res = await adminInvoiceUnassigned({ currency: sales.currency, reason });
+      const res = await adminInvoiceUnassigned({ country: sales.country, reason });
       if (res.error) {
         setError(res.error);
         setReviewing(false);

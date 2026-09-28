@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { t } from "@/lib/i18n";
 import { getTaxRegistrations, getTaxReport } from "@/lib/adminServer";
+import { getAdminCountry } from "@/lib/adminCountry";
+import { getMarkets } from "@/lib/marketsServer";
 import { ADMIN_TZ } from "@/lib/admin";
 import { parsePeriod, periodSearch } from "@/lib/period";
 import { PeriodPicker } from "@/components/PeriodPicker";
@@ -23,9 +25,12 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
   const [lang, params] = await Promise.all([getLang(), searchParams]);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: ADMIN_TZ }).format(new Date());
   const period = parsePeriod(params, today);
-  const regs = await getTaxRegistrations();
+  const [all, country] = await Promise.all([getTaxRegistrations(), getMarkets().then(getAdminCountry)]);
 
-  if (!regs) return <div className="empty">{t(lang, "admin_load_failed")}</div>;
+  if (!all) return <div className="empty">{t(lang, "admin_load_failed")}</div>;
+  // A report belongs to one tax registration, and a registration to one
+  // country (0056): with a country chosen, only its registrations.
+  const regs = { ...all, registrations: all.registrations.filter((r) => country === null || r.country === country) };
   if (regs.registrations.length === 0) {
     return (
       <div className="admin-page">

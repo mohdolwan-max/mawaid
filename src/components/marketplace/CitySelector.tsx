@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import type { Lang } from "@/lib/i18n";
 import { CITIES } from "@/lib/directory";
+import { marketName, type Market } from "@/lib/markets";
 import { setCityAction } from "./actions";
 import { ChevronDownIcon, PinIcon } from "@/components/icons";
 
@@ -18,10 +19,13 @@ import { ChevronDownIcon, PinIcon } from "@/components/icons";
 export function CitySelector({
   lang,
   city,
+  markets,
   variant = "header",
 }: {
   lang: Lang;
   city: string;
+  /** Every country (0056); only those shown to customers are offered. */
+  markets: Market[];
   variant?: "header" | "inline";
 }) {
   const router = useRouter();
@@ -46,6 +50,7 @@ export function CitySelector({
   }, [open]);
 
   const current = CITIES.find((c) => c.key === city);
+  const shown = markets.filter((m) => m.listed);
 
   function pick(next: string) {
     setOpen(false);
@@ -71,16 +76,26 @@ export function CitySelector({
       </button>
       {open && (
         <ul className="dd-panel" role="listbox" aria-label={lang === "ar" ? "المدينة" : "City"}>
-          {CITIES.map((c) => (
-            <li
-              key={c.key}
-              role="option"
-              aria-selected={c.key === city}
-              className={c.key === city ? "dd-option on" : "dd-option"}
-              onClick={() => pick(c.key)}
-            >
-              {c[lang]}
-            </li>
+          {shown.map((m) => (
+            <Fragment key={m.code}>
+              {/* A country heading only once there is more than one. */}
+              {shown.length > 1 && (
+                <li role="presentation" className="dd-group">
+                  {marketName(m, lang)}
+                </li>
+              )}
+              {CITIES.filter((c) => c.country === m.code).map((c) => (
+                <li
+                  key={c.key}
+                  role="option"
+                  aria-selected={c.key === city}
+                  className={c.key === city ? "dd-option on" : "dd-option"}
+                  onClick={() => pick(c.key)}
+                >
+                  {c[lang]}
+                </li>
+              ))}
+            </Fragment>
           ))}
         </ul>
       )}

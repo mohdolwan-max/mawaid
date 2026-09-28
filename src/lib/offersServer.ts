@@ -29,7 +29,8 @@ type SetupRow = {
   is_listed: boolean;
   today: string;
   timezone: string;
-  price_per_day_jod: number | string;
+  price_per_day: number | string;
+  currency: string;
   slots_per_day: number;
   max_days: number;
   max_advance_days: number;
@@ -39,8 +40,9 @@ type SetupRow = {
 };
 
 /** null when it cannot be read — the page then says so instead of
- *  showing a price or free days it does not have. */
-export async function getOfferSetup(): Promise<OfferSetup | null> {
+ *  showing a price or free days it does not have. "unavailable" when the
+ *  clinic's country sells no offers yet (no offer settings, 0056). */
+export async function getOfferSetup(): Promise<OfferSetup | null | "unavailable"> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("offer_setup").maybeSingle();
   if (error) {
@@ -48,8 +50,8 @@ export async function getOfferSetup(): Promise<OfferSetup | null> {
     return null;
   }
   const r = data as SetupRow | null;
-  if (!r) return null;
-  const price = Number(r.price_per_day_jod);
+  if (!r) return "unavailable";
+  const price = Number(r.price_per_day);
   if (!Number.isFinite(price)) return null;
   return {
     orgName: r.org_name,
@@ -60,7 +62,8 @@ export async function getOfferSetup(): Promise<OfferSetup | null> {
     isListed: r.is_listed,
     today: r.today,
     timezone: r.timezone,
-    pricePerDayJod: price,
+    pricePerDay: price,
+    currency: r.currency,
     slotsPerDay: r.slots_per_day,
     maxDays: r.max_days,
     maxAdvanceDays: r.max_advance_days,
@@ -91,8 +94,9 @@ type MyOfferRow = {
   start_date: string;
   end_date: string;
   days: number;
-  price_per_day_jod: number | string;
-  total_jod: number | string;
+  price_per_day: number | string;
+  total: number | string;
+  currency: string;
   state: string;
   hold_expires_at: string;
   paid_at: string | null;
@@ -116,8 +120,9 @@ export async function listMyOffers(): Promise<MyOffer[] | null> {
       startDate: r.start_date,
       endDate: r.end_date,
       days: r.days,
-      pricePerDayJod: Number(r.price_per_day_jod),
-      totalJod: Number(r.total_jod),
+      pricePerDay: Number(r.price_per_day),
+      total: Number(r.total),
+      currency: r.currency,
       state: r.state as MyOffer["state"],
       holdExpiresAt: r.hold_expires_at,
       paidAt: r.paid_at,

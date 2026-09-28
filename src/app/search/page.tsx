@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { getCity } from "@/lib/city";
 import { t } from "@/lib/i18n";
-import { CATEGORIES, CITIES, FEATURED_CATEGORIES } from "@/lib/directory";
+import { CATEGORIES, FEATURED_CATEGORIES, citiesOf, countryOfCity } from "@/lib/directory";
 import { listDirectoryOrgs } from "@/lib/directoryServer";
 import { PublicNav } from "@/components/marketplace/PublicNav";
 import { BottomNav } from "@/components/marketplace/BottomNav";
@@ -20,7 +20,11 @@ export default async function SearchPage({
   const [lang, cookieCity] = await Promise.all([getLang(), getCity()]);
 
   const q = params.q?.trim() || null;
-  const city = CITIES.some((c) => c.key === params.city) ? params.city! : null;
+  // Search stays inside the visitor's country (0056): its cities are the
+  // choices, and "all cities" means all of that country's.
+  const country = countryOfCity(cookieCity);
+  const countryCities = country ? citiesOf(country) : [];
+  const city = countryCities.some((c) => c.key === params.city) ? params.city! : null;
   const category = CATEGORIES.some((c) => c.key === params.category) ? params.category! : null;
   // District is owner-typed free text (the zone tiles link here with it),
   // so unlike city/category there is no allowlist to check against — the
@@ -34,6 +38,7 @@ export default async function SearchPage({
     category,
     district,
     search: q,
+    country,
     limit: PAGE_SIZE + 1, // +1 to know whether a next page exists
     offset,
     // Tiebreaker only (featuredOnly defaults to false) — search stays
@@ -66,7 +71,7 @@ export default async function SearchPage({
         <input type="search" name="q" defaultValue={q ?? ""} placeholder={t(lang, "market_search_placeholder")} />
         <select name="city" defaultValue={city ?? ""}>
           <option value="">{t(lang, "filter_all_cities")}</option>
-          {CITIES.map((c) => (
+          {countryCities.map((c) => (
             <option key={c.key} value={c.key}>
               {c[lang]}
             </option>

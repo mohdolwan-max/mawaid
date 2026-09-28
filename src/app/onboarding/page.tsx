@@ -6,6 +6,9 @@ import { t } from "@/lib/i18n";
 import { getCustomerProfile } from "@/lib/customer";
 import type { BusinessHours } from "@/lib/types";
 import { OnboardingWizard } from "./OnboardingWizard";
+import { headers } from "next/headers";
+import { pricingMarket, signupMarkets } from "@/lib/markets";
+import { getMarkets } from "@/lib/marketsServer";
 
 export default async function OnboardingPage() {
   const lang = await getLang();
@@ -48,12 +51,19 @@ export default async function OnboardingPage() {
     redirect("/dashboard");
   }
 
+  // The countries a clinic may sign up in (0056), starting on the one the
+  // owner is connecting from when it is open.
+  const markets = await getMarkets();
+  const initialCountry = pricingMarket(markets, (await headers()).get("x-vercel-ip-country"))?.code ?? null;
+
   return (
     <div className="center-shell" style={{ alignItems: "flex-start", paddingTop: 48 }}>
       <OnboardingWizard
         lang={lang}
         existingOrgId={ctx?.org_id ?? null}
         existingBusinessHours={ctx?.business_hours ?? null}
+        markets={signupMarkets(markets)}
+        initialCountry={initialCountry}
       />
     </div>
   );
