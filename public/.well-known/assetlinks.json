@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "me.maw3ed.app",
+      "sha256_cert_fingerprints": [
+        "C0:9E:F9:F1:F9:9E:DA:75:D4:3D:57:77:AC:0E:DE:84:CD:5C:6C:57:87:8B:68:50:10:DD:73:A6:1D:52:FD:01"
+      ]
+    }
+  }
+]
