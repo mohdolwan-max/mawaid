@@ -16,16 +16,17 @@ export function PublicNav({ lang, city }: { lang: Lang; city: string }) {
     <header className="market-header">
       <div className="mh-start">
         <HeaderMenu lang={lang} />
-        {/* The real lockup — the designed Arabic wordmark from the brand
-            artwork beside a full-size mark — not a small icon next to
-            font-rendered text, which read as an afterthought at this
-            size (owner: "اللوجو صغير و غبي شكله"). Built at 4x into
-            /public/brand-lockup.png so it stays crisp on any phone.
-            eslint-disable: a fixed-size brand asset gains nothing from
-            the image optimiser and must never be deferred. */}
+        {/* Symbol and Arabic wordmark from the approved brand kit, as two
+            images rather than the kit's stacked lockup: its "MAW3ED" line
+            would render about 7px tall at header size. Both are at least
+            3x their displayed size, so they stay crisp on any phone.
+            eslint-disable: fixed-size brand assets gain nothing from the
+            image optimiser and must never be deferred. */}
         <Link href="/" className="mh-brand" aria-label={t(lang, "brand")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand-lockup.png" alt={t(lang, "brand")} width={537} height={136} />
+          <img className="mh-symbol" src="/brand/symbol-128.png" alt="" width={128} height={128} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="mh-word" src="/brand/wordmark-ar-320.png" alt={t(lang, "brand")} width={320} height={74} />
         </Link>
       </div>
       <nav className="header-nav-links">

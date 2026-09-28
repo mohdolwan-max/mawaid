@@ -39,16 +39,13 @@ export function Sidebar({
     <aside className="sidebar">
       <div className="brand">
         <h1>{orgName}</h1>
-        {/* The same lockup the public header uses. A 13px mark beside
-            10px text was the same "afterthought" problem in miniature. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand-lockup.png"
-          alt={t(lang, "brand")}
-          width={537}
-          height={136}
-          style={{ height: 20, width: "auto", display: "block", marginTop: 5 }}
-        />
+        {/* The same symbol and wordmark the public header uses, smaller. */}
+        <div className="brand-lockup">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/symbol-128.png" alt="" width={22} height={22} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/wordmark-ar-320.png" alt={t(lang, "brand")} width={61} height={14} />
+        </div>
       </div>
       <nav className="nav">
         {LINKS.map((link) => (

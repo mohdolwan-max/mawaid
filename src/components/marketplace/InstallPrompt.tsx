@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { t, type Lang } from "@/lib/i18n";
-import { BrandMark } from "@/components/icons";
 
 // "How would someone who doesn't know install this?" — the owner,
 // installing it himself. Browsers bury Add-to-Home-Screen in a menu, so
@@ -90,7 +89,8 @@ export function InstallPrompt({ lang }: { lang: Lang }) {
 
   return (
     <div className="install-prompt" role="dialog" aria-label={t(lang, "install_title")}>
-      <BrandMark size={34} className="ip-mark" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="ip-mark" src="/brand/symbol-128.png" alt="" width={34} height={34} />
       <div className="ip-text">
         <strong>{t(lang, "install_title")}</strong>
         <span>{mode === "ios" ? t(lang, "install_ios_hint") : t(lang, "install_sub")}</span>

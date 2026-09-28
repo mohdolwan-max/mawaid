@@ -1,64 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BrandMark } from "@/components/icons";
+import { useEffect, useRef, useState } from "react";
 
-// The animated opening the installed app shows the moment it launches.
+// The installed app's opening (owner: "صفحة البداية اهم شي اول ما افتح
+// التطبيق"). Launch goes: Android's native splash -> this overlay -> the
+// app, and the handoff is meant to be invisible. So the overlay repeats the
+// native splash exactly: the same #F7F6F2 ground and the same splash-symbol
+// image at the same 210px, centred. Only then does it move. The Arabic
+// wordmark rises in beneath and a soft ring pulses, then everything fades
+// into the page.
 //
-// Android's own splash (background colour + icon + name, composed from
-// the manifest) CANNOT be animated or resized — no web API touches it.
-// What can be owned is the first frame after it: this overlay renders
-// the mark large with a soft pulse for ~1.5s, then fades into the app.
-// Owner's ask, verbatim: "اول صفحة بس افتح التطبيق و تكون دايناميك
-// و كبيرة و متحركة".
-//
-// Standalone-only: in a browser tab a splash is just an obstacle — the
-// marketplace's own no-motion rule stands there. Opening the INSTALLED
-// app is the one moment motion is expected. `#splash` in the URL forces
-// a preview from any browser (how this gets reviewed without a phone).
+// It is in the server HTML, so it is on screen from the page's first
+// paint. When it waited for hydration, the page flashed between the native
+// splash and the intro. Whether it shows at all is decided before paint by
+// CSS (display-mode: standalone) and by the inline script in the root
+// layout: once per session, and "#splash" in the URL forces a preview in
+// any browser. In a normal browser tab it is display:none, and this
+// component removes it on mount. The pictures are CSS backgrounds, not
+// <img>: a browser downloads a hidden <img> anyway, which would cost every
+// ordinary visitor the intro's images for a screen they never see.
 export function SplashIntro() {
-  const [phase, setPhase] = useState<"hidden" | "showing" | "leaving">("hidden");
+  const ref = useRef<HTMLDivElement>(null);
+  const [leaving, setLeaving] = useState(false);
+  const [gone, setGone] = useState(false);
 
   useEffect(() => {
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    const preview = window.location.hash === "#splash";
-    if (!standalone && !preview) return;
-    // Once per session: a soft client-side navigation or reload while
-    // using the app must not replay the intro — only a fresh launch.
-    try {
-      if (sessionStorage.getItem("maw3ed_splash") && !preview) return;
-      sessionStorage.setItem("maw3ed_splash", "1");
-    } catch {
-      // Storage blocked: still show it — worst case a reload replays.
+    const el = ref.current;
+    if (!el || getComputedStyle(el).display === "none") {
+      setGone(true);
+      return;
     }
-    setPhase("showing");
-    // Preview holds until tapped (tapping plays the exit fade) so a
-    // human — or a screenshot taken seconds later — can actually look
-    // at it; the real launch stays snappy and dismisses itself.
-    if (preview) return;
-    const leave = window.setTimeout(() => setPhase("leaving"), 1500);
-    const gone = window.setTimeout(() => setPhase("hidden"), 1950);
+    // The preview holds until tapped, so it can actually be looked at.
+    if (document.documentElement.classList.contains("splash-preview")) return;
+    const leave = window.setTimeout(() => setLeaving(true), 1600);
+    const end = window.setTimeout(() => setGone(true), 2050);
     return () => {
       window.clearTimeout(leave);
-      window.clearTimeout(gone);
+      window.clearTimeout(end);
     };
   }, []);
 
-  if (phase === "hidden") return null;
+  if (gone) return null;
 
   return (
     <div
-      className={`splash-intro${phase === "leaving" ? " leaving" : ""}`}
+      ref={ref}
+      className={`splash-intro${leaving ? " leaving" : ""}`}
       aria-hidden="true"
       onClick={() => {
-        setPhase("leaving");
-        window.setTimeout(() => setPhase("hidden"), 450);
+        setLeaving(true);
+        window.setTimeout(() => setGone(true), 450);
       }}
     >
-      <div className="si-pulse" />
-      <BrandMark size={220} className="si-mark" />
+      <div className="si-stage">
+        <div className="si-pulse" />
+        <div className="si-mark" />
+        <div className="si-word" />
+      </div>
     </div>
   );
 }

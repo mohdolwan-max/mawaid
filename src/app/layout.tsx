@@ -20,6 +20,16 @@ const poppins = Poppins({
   weight: ["400", "600", "700", "800", "900"],
 });
 
+// Runs before first paint so SplashIntro's server-rendered overlay is
+// decided without a flash: shown once per session in the installed app,
+// hidden after that, and forced on by "#splash" for previewing in a browser.
+const SPLASH_GATE = `(function(){var d=document.documentElement;try{
+if(location.hash==="#splash"){d.classList.add("splash-preview");return;}
+if(!matchMedia("(display-mode: standalone)").matches)return;
+if(sessionStorage.getItem("maw3ed_splash")){d.classList.add("splash-seen");return;}
+sessionStorage.setItem("maw3ed_splash","1");
+}catch(e){}})();`;
+
 export const metadata: Metadata = {
   // www, not the apex: the apex answers 308 and some link-preview
   // crawlers refuse to follow redirects when fetching og:image —
@@ -53,7 +63,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const lang = await getLang();
 
   return (
-    <html lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} className={`${cairo.variable} ${poppins.variable}`}>
+    // suppressHydrationWarning: SPLASH_GATE adds a class to <html> before
+    // React hydrates, which would otherwise be reported as a mismatch.
+    <html
+      lang={lang}
+      dir={lang === "ar" ? "rtl" : "ltr"}
+      className={`${cairo.variable} ${poppins.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_GATE }} />
+        {/* Only the installed app shows the intro, so only it pays for
+            these; a browser tab skips the preload. */}
+        <link rel="preload" as="image" href="/brand/splash-symbol.webp" media="(display-mode: standalone)" />
+        <link rel="preload" as="image" href="/brand/wordmark-ar-320.png" media="(display-mode: standalone)" />
+      </head>
       <body>
         <SplashIntro />
         <RegisterServiceWorker />
