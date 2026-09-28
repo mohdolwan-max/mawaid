@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>موعد</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #F7F6F2;
+    color: #23272F;
+    font-family: -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+  }
+  .wrap {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    gap: 12px;
+  }
+  .mark {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: #146C63;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  h1 { font-size: 19px; margin: 0; }
+  p { font-size: 14px; color: #6B7280; margin: 0; max-width: 320px; line-height: 1.6; }
+  button {
+    margin-top: 8px;
+    padding: 10px 28px;
+    border: 0;
+    border-radius: 10px;
+    background: #146C63;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+  }
+</style>
+</head>
+<body>
+  <!--
+    Served by sw.js when a navigation fails with no network (TWA best
+    practice: https://developer.chrome.com/docs/android/trusted-web-activity/
+    "Handling network failures" — without this, an offline tap on the app
+    icon shows Chrome's bare dinosaur page, which reads as a broken app
+    rather than a missed connection. Fully self-contained: no external
+    request can succeed here anyway.
+  -->
+  <div class="wrap">
+    <div class="mark">م</div>
+    <h1>ما في اتصال بالإنترنت</h1>
+    <p>تأكد من اتصالك وحاول مرة ثانية.</p>
+    <button onclick="location.reload()">إعادة المحاولة</button>
+  </div>
+</body>
+</html>
