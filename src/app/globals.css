@@ -450,7 +450,13 @@ tbody tr:hover {
 }
 
 /* ---------- buttons & inputs ---------- */
+/* inline-block: a <Link className="btn"> is an inline element otherwise,
+   whose padding takes no room and whose top margin is ignored, so under a
+   line of text it was drawn over that line (owner's screenshot of the
+   empty tax report). A <button> already behaves this way. */
 .btn {
+  display: inline-block;
+  text-decoration: none;
   background: var(--brand);
   color: #fff;
   border: none;

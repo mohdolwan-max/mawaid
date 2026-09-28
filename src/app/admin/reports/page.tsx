@@ -5,6 +5,7 @@ import { t } from "@/lib/i18n";
 import { getTaxRegistrations, getTaxReport } from "@/lib/adminServer";
 import { getAdminCountry } from "@/lib/adminCountry";
 import { getMarkets } from "@/lib/marketsServer";
+import { marketByCode, marketName } from "@/lib/markets";
 import { ADMIN_TZ } from "@/lib/admin";
 import { parsePeriod, periodSearch } from "@/lib/period";
 import { PeriodPicker } from "@/components/PeriodPicker";
@@ -25,7 +26,9 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
   const [lang, params] = await Promise.all([getLang(), searchParams]);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: ADMIN_TZ }).format(new Date());
   const period = parsePeriod(params, today);
-  const [all, country] = await Promise.all([getTaxRegistrations(), getMarkets().then(getAdminCountry)]);
+  const [all, markets] = await Promise.all([getTaxRegistrations(), getMarkets()]);
+  const country = await getAdminCountry(markets);
+  const chosenMarket = marketByCode(markets, country);
 
   if (!all) return <div className="empty">{t(lang, "admin_load_failed")}</div>;
   // A report belongs to one tax registration, and a registration to one
@@ -35,7 +38,11 @@ export default async function AdminReportsPage({ searchParams }: { searchParams:
     return (
       <div className="admin-page">
         <div className="empty">
-          <p>{t(lang, "report_no_registration")}</p>
+          <p>
+            {chosenMarket
+              ? t(lang, "report_no_registration_country", { country: marketName(chosenMarket, lang) })
+              : t(lang, "report_no_registration")}
+          </p>
           <Link href="/admin/tax" className="btn sm" style={{ marginTop: 10 }}>
             {t(lang, "report_add_registration")}
           </Link>
