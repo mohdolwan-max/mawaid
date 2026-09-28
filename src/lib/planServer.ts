@@ -48,7 +48,10 @@ const cachedPlans = unstable_cache(
         featured: r.featured,
       }));
   },
-  ["list-plans"],
+  // The key names the migration whose row shape it holds (0056 added the
+  // currency). A cache entry outlives a deploy, and an old entry read by
+  // new code crashed the clinic page when its currency was missing.
+  ["list-plans-0056"],
   { revalidate: 300, tags: [PLANS_TAG] }
 );
 

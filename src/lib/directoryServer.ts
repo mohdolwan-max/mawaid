@@ -71,7 +71,10 @@ const cachedListDirectoryOrgs = unstable_cache(
     }
     return (data as DirectoryOrg[]) ?? [];
   },
-  ["list-directory-orgs"],
+  // The key names the migration whose row shape it holds (0056 added the
+  // currency). A cache entry outlives a deploy, and an old entry read by
+  // new code crashed the clinic page when its currency was missing.
+  ["list-directory-orgs-0056"],
   { revalidate: 60, tags: [DIRECTORY_TAG] }
 );
 

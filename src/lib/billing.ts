@@ -100,6 +100,8 @@ const CURRENCY_LABELS: Record<string, Record<Lang, string>> = {
 
 /** The code itself for a currency without a local label, never blank. */
 export function currencyLabel(code: string, lang: Lang): string {
+  // Never a crash over a label: a row missing its currency prints none.
+  if (typeof code !== "string" || code === "") return "";
   return CURRENCY_LABELS[code.toUpperCase()]?.[lang] ?? code.toUpperCase();
 }
 
