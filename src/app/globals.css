@@ -505,6 +505,16 @@ tbody tr:hover {
 .btn.block {
   width: 100%;
 }
+/* A checkbox is not a text field: under the rule below it stretched to the
+   full row, far from its own label (owner's screenshot of the countries
+   page). */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  padding: 0;
+  flex: none;
+  accent-color: var(--brand);
+}
 input,
 select,
 textarea {
@@ -1078,6 +1088,13 @@ label {
   color: var(--warn-ink);
   font-size: 13px;
   line-height: 1.7;
+}
+.market-env {
+  display: block;
+  width: fit-content;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink2);
 }
 .dd-panel .dd-group {
   padding: 8px 10px 4px;
@@ -3903,7 +3920,10 @@ html.splash-seen .splash-intro {
   align-items: center;
   gap: 6px;
 }
-.admin-row .ar-meta {
+/* Every admin card's info line, not only the clinic rows': the countries
+   and tax registration cards used it too and printed their items run
+   together ("+962Asia/Amman3", owner's screenshot). */
+.ar-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 14px;

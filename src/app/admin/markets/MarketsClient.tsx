@@ -77,8 +77,6 @@ function MarketCard({ lang, market: m, gatewayReady }: { lang: Lang; market: Adm
       </div>
       <div className="ar-meta">
         <span>{t(lang, "markets_clinics", { n: m.clinics === null ? "—" : m.clinics.toLocaleString(intlLocale(lang)) })}</span>
-        <span dir="ltr">{m.timezone}</span>
-        <span dir="ltr">+{m.dialCode}</span>
         {m.taxRegistration && (
           <span>
             {t(lang, "markets_tax_reg", { name: m.taxRegistration.legalName, n: m.taxRegistration.taxNumber })}
@@ -92,7 +90,14 @@ function MarketCard({ lang, market: m, gatewayReady }: { lang: Lang; market: Adm
           {m.missing.map((x) => (
             <li key={x}>{t(lang, MISSING_KEY[x])}</li>
           ))}
-          {!gatewayReady && <li>{t(lang, "markets_missing_gateway", { code: m.code })}</li>}
+          {!gatewayReady && (
+            <li>
+              {t(lang, "markets_missing_gateway")}
+              <code className="market-env" dir="ltr">
+                PAYTABS_{m.code}_PROFILE_ID · PAYTABS_{m.code}_SERVER_KEY
+              </code>
+            </li>
+          )}
         </ul>
       )}
 
