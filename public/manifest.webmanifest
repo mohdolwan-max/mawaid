@@ -6,6 +6,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#F7F6F2",
   "theme_color": "#146C63",
   "lang": "ar",
