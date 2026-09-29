@@ -9,6 +9,7 @@ import { pricingMarket } from "@/lib/markets";
 import { getMarkets } from "@/lib/marketsServer";
 import { daysLabel, salesWhatsappDigits } from "@/lib/plan";
 import { PlansGrid } from "@/components/marketplace/PlansGrid";
+import { d7Configured } from "@/lib/d7";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
@@ -109,7 +110,7 @@ export default async function PartnersPage() {
 
       <section className="pt-section" id="plans">
         <h2>{t(lang, "pt_price_title")}</h2>
-        {plans && <PlansGrid plans={plans} lang={lang} salesWhatsapp={salesWhatsapp} trialDays={terms?.trialDays ?? null} />}
+        {plans && <PlansGrid plans={plans} lang={lang} salesWhatsapp={salesWhatsapp} trialDays={terms?.trialDays ?? null} smsLive={d7Configured()} />}
       </section>
 
       <section className="pt-final">

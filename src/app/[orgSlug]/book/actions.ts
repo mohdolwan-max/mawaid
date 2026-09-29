@@ -11,6 +11,14 @@ import { getLang } from "@/lib/lang";
 import { currentSourceHash } from "@/lib/sourceLimit";
 import { issueBookingTicket } from "@/lib/bookingTicket";
 import { createClient } from "@/lib/supabase/server";
+import { phoneGate, resendPhoneCode, type GateError } from "@/lib/phoneGate";
+
+/** The booking's answer. Beside BookResult: "a code was sent, ask for it"
+ *  — the booking has not happened yet, and happens on the next submit
+ *  that carries the code (0058). */
+export type SubmitResult =
+  | BookResult
+  | { ok: false; error: "verify_required"; verify: { id: string; resendAfter: number } };
 
 export async function fetchStaffAction(orgSlug: string, serviceId: string): Promise<PublicStaff[]> {
   return listPublicStaffForService(orgSlug, serviceId);
@@ -35,18 +43,41 @@ export async function submitBookingAction(input: {
   customerEmail: string;
   notes: string;
   allowOverlap?: boolean;
-}): Promise<BookResult> {
+  /** The code the customer typed, for the verification the previous
+   *  submit opened. */
+  verification?: { id: string; code: string } | null;
+}): Promise<SubmitResult> {
+  let sourceHash: string | null = null;
+  try {
+    sourceHash = await currentSourceHash();
+  } catch (e) {
+    console.error("currentSourceHash threw", e);
+  }
+
+  // The number must be a real one, proven by a code sent to it, once per
+  // device (owner, 2026-09-29; src/lib/phoneGate.ts). Before the source
+  // ceiling below: sending a code is not a booking attempt, and must not
+  // spend one of the customer's.
+  const gate = await phoneGate({
+    orgSlug: input.orgSlug,
+    phone: input.customerPhone,
+    sourceHash,
+    verification: input.verification ?? null,
+  });
+  if (!gate.pass) {
+    return "verify" in gate
+      ? { ok: false, error: "verify_required", verify: gate.verify }
+      : { ok: false, error: gate.error };
+  }
+
   // Bulk-abuse ceiling, before anything is written. Keyed on the request
   // source rather than on the phone, because the per-phone limit (0027)
-  // resets the moment a digit changes — see 0040. Nothing is asked of
-  // the customer, so the honest path is untouched.
+  // resets the moment a digit changes — see 0040.
   //
   // FAIL OPEN, deliberately: if the guard itself errors — RPC missing
   // because 0040 is not applied yet, a network blip — the booking still
   // goes through. A broken doorman must not close the shop.
-  let sourceHash: string | null = null;
   try {
-    sourceHash = await currentSourceHash();
     const supabase = await createClient();
     const { error } = await supabase.rpc("check_booking_source", {
       p_source_hash: sourceHash,
@@ -126,4 +157,16 @@ export async function submitBookingAction(input: {
   }
 
   return result;
+}
+
+export async function resendCodeAction(input: {
+  orgSlug: string;
+  customerPhone: string;
+  verificationId: string;
+}): Promise<{ ok: true; resendAfter: number } | { ok: false; error: GateError }> {
+  return resendPhoneCode({
+    orgSlug: input.orgSlug,
+    phone: input.customerPhone,
+    verificationId: input.verificationId,
+  });
 }

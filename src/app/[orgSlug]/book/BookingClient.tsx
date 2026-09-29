@@ -8,7 +8,8 @@ import type { PublicService, PublicStaff } from "@/lib/publicOrg";
 import { staffPublicLabel } from "@/lib/staffLabel";
 import { DateField } from "@/components/DateTimeField";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
-import { fetchStaffAction, fetchSlotsAction, submitBookingAction } from "./actions";
+import { fetchStaffAction, fetchSlotsAction, submitBookingAction, resendCodeAction } from "./actions";
+import { cleanCode, codeDigits, CODE_LENGTH } from "@/lib/phoneCode";
 import { intlLocale } from "@/lib/date";
 import { isValidPhone, formatPhoneForDisplay, normalizePhone } from "@/lib/phone";
 
@@ -109,6 +110,54 @@ export function BookingClient({
   // overlapping appointment. Not a hard block: one phone legitimately
   // books for a whole family, so they get to confirm and continue.
   const [conflictPending, setConflictPending] = useState(false);
+
+  // Phone verification (0058). Set once the server has sent a code; the
+  // next submit carries it. The server decides whether a code is needed
+  // at all (this device may have verified the number before), so the
+  // form never asks up front.
+  const [verifyId, setVerifyId] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [resendAt, setResendAt] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+  const resendIn = resendAt ? Math.max(0, Math.ceil((resendAt - nowMs) / 1000)) : 0;
+
+  useEffect(() => {
+    if (!resendAt) return;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [resendAt]);
+
+  function clearVerification() {
+    setVerifyId(null);
+    setCode("");
+    setResendAt(null);
+    setResent(false);
+  }
+
+  async function resendCode() {
+    if (!verifyId || resending) return;
+    setResending(true);
+    setError(null);
+    setResent(false);
+    try {
+      const r = await resendCodeAction({ orgSlug, customerPhone: phone, verificationId: verifyId });
+      if (r.ok) {
+        setResendAt(Date.now() + r.resendAfter * 1000);
+        setNowMs(Date.now());
+        setResent(true);
+      } else {
+        setError(r.error as TKey);
+        // No live code left to type: the next "confirm" sends a new one.
+        if (r.error === "verify_code_expired" || r.error === "verify_resend_limit") clearVerification();
+      }
+    } catch {
+      setError("verify_unavailable");
+    } finally {
+      setResending(false);
+    }
+  }
 
   // Times as the clinic keeps them, in the page's language.
   const fmtTime = (iso: string) =>
@@ -268,8 +317,14 @@ export function BookingClient({
       setStep("done");
       return;
     }
+    // Waiting for the code: not six digits yet means nothing to send.
+    if (verifyId && !cleanCode(code)) {
+      setError("verify_code_wrong");
+      return;
+    }
     setPending(true);
     setError(null);
+    setResent(false);
     setConflictPending(false);
     let result;
     try {
@@ -286,6 +341,7 @@ export function BookingClient({
         customerEmail: email,
         notes,
         allowOverlap,
+        verification: verifyId ? { id: verifyId, code } : null,
       });
     } catch {
       // Without this the button spun forever on any rejection (dropped
@@ -297,6 +353,24 @@ export function BookingClient({
       return;
     } finally {
       setPending(false);
+    }
+    if (!result.ok && "verify" in result) {
+      // A code is on its way; the booking happens on the next submit.
+      setVerifyId(result.verify.id);
+      setCode("");
+      setResendAt(Date.now() + result.verify.resendAfter * 1000);
+      setNowMs(Date.now());
+      return;
+    }
+    // Any other answer means the number passed (or the code did): the
+    // verification is spent, and "book anyway" or a new time must not
+    // send it again.
+    if (!result.ok && result.error.startsWith("verify_")) {
+      if (["verify_code_expired", "verify_too_many", "verify_rate_limited", "verify_phone_rejected"].includes(result.error)) {
+        clearVerification();
+      }
+    } else {
+      clearVerification();
     }
     if (!result.ok) {
       setError(result.error as TKey);
@@ -565,7 +639,11 @@ export function BookingClient({
               inputMode="tel"
               required
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                // The code was for the number as it was; a new number needs its own.
+                if (verifyId) clearVerification();
+              }}
             />
             {/* Read the number back before they commit. A booking on a
                 mistyped number is a slot the clinic loses and a customer
@@ -585,6 +663,50 @@ export function BookingClient({
                 </p>
               ))}
           </div>
+          {verifyId && (
+            <div className="field verify-box">
+              <label htmlFor="otp">{t(lang, "verify_code_label")}</label>
+              <p className="hint" style={{ marginBottom: 6 }}>
+                {/* The number is its own left-to-right run. Inside the
+                    Arabic sentence as plain text its groups came out
+                    reversed — measured "4567 123 079" for 079 123 4567. */}
+                {(() => {
+                  const [before, after = ""] = t(lang, "verify_sent", { phone: "⁣" }).split("⁣");
+                  return (
+                    <>
+                      {before}
+                      <bdi dir="ltr">{formatPhoneForDisplay(phone)}</bdi>
+                      {after}
+                    </>
+                  );
+                })()}
+              </p>
+              <input
+                id="otp"
+                className="otp-input"
+                dir="ltr"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                // Room for a pasted "482 913" or "482-913": codeDigits trims to six.
+                maxLength={CODE_LENGTH * 2}
+                autoFocus
+                value={code}
+                onChange={(e) => setCode(codeDigits(e.target.value))}
+              />
+              <div className="verify-row">
+                <span className="hint">{t(lang, "verify_once_note")}</span>
+                <button
+                  type="button"
+                  className="btn ghost sm"
+                  disabled={resendIn > 0 || resending || pending}
+                  onClick={() => void resendCode()}
+                >
+                  {resendIn > 0 ? t(lang, "verify_resend_in", { s: resendIn }) : t(lang, "verify_resend")}
+                </button>
+              </div>
+              {resent && <p className="hint" style={{ marginTop: 6 }}>{t(lang, "verify_resent")}</p>}
+            </div>
+          )}
           <div className="field">
             <label htmlFor="email">{t(lang, "customer_email")}</label>
             <input id="email" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -609,7 +731,11 @@ export function BookingClient({
             <button type="button" className="btn ghost" onClick={() => setStep("slot")}>
               {t(lang, "back")}
             </button>
-            <button type="submit" className="btn" disabled={pending || !isValidPhone(phone)}>
+            <button
+              type="submit"
+              className="btn"
+              disabled={pending || !isValidPhone(phone) || (verifyId !== null && !cleanCode(code))}
+            >
               {pending ? t(lang, "loading") : t(lang, "book_submit")}
             </button>
           </div>

@@ -55,7 +55,7 @@ function PrivacyAr() {
       <h2 style={sectionStyle}>من يصل إلى بياناتك</h2>
       <ul style={listStyle}>
         <li>المنشأة التي قمت بالحجز لديها ترى بيانات حجزك فقط — ولا ترى بيانات أي منشأة أخرى.</li>
-        <li>مزوّدو خدمات تقنية موثوقون نعتمد عليهم لتشغيل المنصة: استضافة قاعدة البيانات (Supabase)، استضافة الموقع (Vercel)، وإرسال رسائل تأكيد الحجز عبر البريد الإلكتروني.</li>
+        <li>مزوّدو خدمات تقنية موثوقون نعتمد عليهم لتشغيل المنصة: استضافة قاعدة البيانات (Supabase)، استضافة الموقع (Vercel)، وإرسال رسائل تأكيد الحجز عبر البريد الإلكتروني، وإرسال رمز تأكيد الحجز برسالة نصية إلى رقم جوالك (D7 Networks)، ولا تتسلّم منّا سوى الرقم ونص الرسالة.</li>
       </ul>
       <p style={{ marginBottom: 14 }}>
         بيانات كل منشأة معزولة تقنياً عن بيانات المنشآت الأخرى، بحيث لا يمكن لأي منشأة الوصول إلى حجوزات أو عملاء منشأة غيرها.
@@ -123,7 +123,7 @@ function PrivacyEn() {
       <h2 style={sectionStyle}>Who can access your data</h2>
       <ul style={listStyle}>
         <li>The business you booked with sees only your booking — never another business&apos;s data.</li>
-        <li>Trusted technical service providers we rely on to run the platform: database hosting (Supabase), site hosting (Vercel), and booking-confirmation email delivery.</li>
+        <li>Trusted technical service providers we rely on to run the platform: database hosting (Supabase), site hosting (Vercel), booking-confirmation email delivery, and the booking code sent by text message to your mobile number (D7 Networks), which receives nothing from us but the number and the message.</li>
       </ul>
       <p style={{ marginBottom: 14 }}>
         Each business&apos;s data is technically isolated from every other business — no business can access another&apos;s bookings or customers.

@@ -113,6 +113,20 @@ type UsageRow = {
  *  it cannot be read — the dashboard then hides the card and the notice
  *  rather than printing "0 of 1" or a wrong end date.
  *  cache(): the (app) layout and the dashboard ask in the same render. */
+/** Booking codes sent for the signed-in member's clinic this month, on its
+ *  own calendar (0058). null when it cannot be read — never 0 — so a card
+ *  never claims "0 used" for a count it did not get. */
+export const getMySmsUsage = cache(async (): Promise<number | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("my_sms_usage").maybeSingle();
+  if (error) {
+    if (error.code !== "PGRST202") console.error("my_sms_usage failed", error);
+    return null;
+  }
+  const n = (data as { used_this_month?: unknown } | null)?.used_this_month;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+});
+
 export const getMyPlanUsage = cache(async (): Promise<PlanUsage | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("my_plan_usage").maybeSingle();

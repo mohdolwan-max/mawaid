@@ -1,6 +1,6 @@
 import { requireOrgContext } from "@/lib/org";
 import { t } from "@/lib/i18n";
-import { getMyPlanUsage } from "@/lib/planServer";
+import { getMyPlanUsage, getMySmsUsage } from "@/lib/planServer";
 import { getMyMandate, getPurchaseOptions, listMyPayments } from "@/lib/billingServer";
 import { paymentsReady } from "@/lib/payments";
 import { PlanCard } from "../dashboard/PlanCard";
@@ -29,11 +29,12 @@ export default async function BillingPage() {
     );
   }
 
-  const [usage, options, payments, mandateRes] = await Promise.all([
+  const [usage, options, payments, mandateRes, smsUsed] = await Promise.all([
     getMyPlanUsage(),
     getPurchaseOptions(),
     listMyPayments(),
     getMyMandate(),
+    getMySmsUsage(),
   ]);
 
   // Without the prices and dates there is nothing honest to offer.
@@ -49,7 +50,7 @@ export default async function BillingPage() {
   return (
     <div>
       {head}
-      {usage && <PlanCard usage={usage} lang={lang} showAction={false} />}
+      {usage && <PlanCard usage={usage} lang={lang} showAction={false} smsUsed={smsUsed} />}
       <BillingClient
         lang={lang}
         timezone={ctx.timezone}

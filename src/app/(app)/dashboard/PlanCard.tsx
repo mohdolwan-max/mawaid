@@ -15,9 +15,12 @@ export function PlanCard({
   usage,
   lang,
   showAction = true,
+  smsUsed = null,
 }: {
   usage: PlanUsage;
   lang: Lang;
+  /** Booking codes sent this month (0058); null = not read, line hidden. */
+  smsUsed?: number | null;
   /** Off on /billing itself, where the payment form is right below. */
   showAction?: boolean;
 }) {
@@ -81,6 +84,13 @@ export function PlanCard({
         {over && (
           <p className="error-text" style={{ margin: "6px 0 0" }}>
             {t(lang, "plan_over_limit")}
+          </p>
+        )}
+        {smsUsed !== null && (
+          <p className="hint" style={{ margin: "6px 0 0" }}>
+            {usage.smsPerMonth > 0
+              ? t(lang, "plan_sms_used", { used: smsUsed, max: usage.smsPerMonth })
+              : t(lang, "plan_sms_used_plain", { used: smsUsed })}
           </p>
         )}
       </div>

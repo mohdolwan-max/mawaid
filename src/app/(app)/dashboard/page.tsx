@@ -6,7 +6,7 @@ import { CalendarIcon, ClockIcon } from "@/components/icons";
 import { PublicLinkCard } from "./PublicLinkCard";
 import { NotificationsCard, type OrgNotification } from "./NotificationsCard";
 import { PlanCard } from "./PlanCard";
-import { getMyPlanUsage } from "@/lib/planServer";
+import { getMyPlanUsage, getMySmsUsage } from "@/lib/planServer";
 
 export default async function DashboardPage() {
   const ctx = await requireOrgContext();
@@ -40,7 +40,8 @@ export default async function DashboardPage() {
     .gte("start_at", nowIso());
 
   // Plans are the owner's business; staff are not shown upgrade prompts.
-  const planUsage = ctx.role === "owner" ? await getMyPlanUsage() : null;
+  const [planUsage, smsUsed] =
+    ctx.role === "owner" ? await Promise.all([getMyPlanUsage(), getMySmsUsage()]) : [null, null];
 
   return (
     <div>
@@ -74,7 +75,7 @@ export default async function DashboardPage() {
         timezone={ctx.timezone}
       />
 
-      {planUsage && <PlanCard usage={planUsage} lang={ctx.lang} />}
+      {planUsage && <PlanCard usage={planUsage} lang={ctx.lang} smsUsed={smsUsed} />}
 
       <PublicLinkCard lang={ctx.lang} slug={ctx.slug} orgName={ctx.name} />
     </div>

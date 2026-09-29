@@ -4283,6 +4283,34 @@ html.splash-seen .splash-intro {
 /* What the customer is about to book, above the contact fields. The
    last step used to ask for a name and a phone with nothing on screen
    about the service, the day, the time or the price. */
+/* The booking code (0058): its own tinted box under the phone number, so
+   the step reads as "one more thing before the booking", not as another
+   ordinary field. */
+.verify-box {
+  padding: 12px 14px;
+  border: 1px solid var(--tint);
+  border-radius: 12px;
+  background: var(--cream);
+}
+/* Six digits, spaced, the size of the phone's own code prompt. Western
+   digits and left-to-right whatever the page's direction: a code is
+   typed and read digit by digit, left to right. */
+.verify-box .otp-input {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.verify-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .book-summary {
   display: grid;
   gap: 6px;

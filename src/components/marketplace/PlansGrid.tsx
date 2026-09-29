@@ -13,8 +13,9 @@ import {
 // The plans, every number read from the database (0043, 0046).
 //
 // Honesty rules for a page that sells:
-//  * SMS is listed with a "soon" marker — nothing sends SMS until OTP is
-//    built, and a clinic must not sign up believing otherwise.
+//  * SMS carries a "soon" marker until booking codes are switched on
+//    (0058, D7_API_TOKEN set): a clinic must not sign up believing it
+//    gets messages that nothing sends.
 //  * No "most popular" badge. With no customers yet it would be invented.
 //  * There is no free plan (0046); every clinic starts with a free trial.
 //    The trial is named with its length only when that length was read,
@@ -26,8 +27,11 @@ export function PlansGrid({
   lang,
   salesWhatsapp,
   trialDays,
+  smsLive,
 }: {
   plans: Plan[];
+  /** Booking codes are being sent (src/lib/d7.ts d7Configured). */
+  smsLive: boolean;
   lang: Lang;
   /** Sales WhatsApp number as digits, or null when not configured. */
   salesWhatsapp: string | null;
@@ -76,7 +80,7 @@ export function PlansGrid({
               {p.smsPerMonth > 0 ? (
                 <li>
                   {t(lang, "plan_feat_sms", { n: p.smsPerMonth })}
-                  <span className="plan-soon">{t(lang, "plan_soon")}</span>
+                  {!smsLive && <span className="plan-soon">{t(lang, "plan_soon")}</span>}
                 </li>
               ) : (
                 <li className="off">{t(lang, "plan_feat_no_sms")}</li>
