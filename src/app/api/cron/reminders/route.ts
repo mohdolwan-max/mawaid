@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "vapid_not_configured" }, { status: 500 });
   }
   try {
-    webpush.setVapidDetails("mailto:info@mawaid.app", vapidPublic, vapidPrivate);
+    webpush.setVapidDetails("mailto:support@maw3ed.me", vapidPublic, vapidPrivate);
   } catch (err) {
     return NextResponse.json(
       { error: "vapid_invalid", detail: err instanceof Error ? err.message : String(err) },

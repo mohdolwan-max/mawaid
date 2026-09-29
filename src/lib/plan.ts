@@ -123,10 +123,10 @@ export function upgradeWhatsappUrl(
   const text =
     intent === "subscribe"
       ? lang === "ar"
-        ? `مرحباً، بدي أشترك بباقة ${planLabel} لعيادتي على موعد`
+        ? `مرحباً، أرغب في الاشتراك في باقة ${planLabel} لعيادتي على موعد`
         : `Hi, I'd like to subscribe my clinic to the ${planLabel} plan on Maw3ed`
       : lang === "ar"
-        ? `مرحباً، بدي أرقّي عيادتي لباقة ${planLabel} على موعد`
+        ? `مرحباً، أرغب في ترقية عيادتي إلى باقة ${planLabel} على موعد`
         : `Hi, I'd like to upgrade my clinic to the ${planLabel} plan on Maw3ed`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }

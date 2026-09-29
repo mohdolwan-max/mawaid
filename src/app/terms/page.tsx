@@ -68,11 +68,7 @@ function TermsAr() {
 
       <h2 style={sectionStyle}>التواصل</h2>
       <p style={{ marginBottom: 6 }}>
-        لأي استفسار، راسلنا على <a href="mailto:info@mawaid.app">info@mawaid.app</a>.
-      </p>
-
-      <p className="hint" style={{ marginTop: 18 }}>
-        هذه شروط أولية عامة، ونوصي بمراجعة قانونية متخصصة قبل الإطلاق الرسمي الكامل.
+        لأي استفسار، راسلنا على <a href="mailto:support@maw3ed.me">support@maw3ed.me</a>.
       </p>
     </div>
   );
@@ -129,11 +125,7 @@ function TermsEn() {
 
       <h2 style={sectionStyle}>Contact</h2>
       <p style={{ marginBottom: 6 }}>
-        For any questions, email us at <a href="mailto:info@mawaid.app">info@mawaid.app</a>.
-      </p>
-
-      <p className="hint" style={{ marginTop: 18 }}>
-        This is an initial general set of terms; we recommend specialized legal review before a full official launch.
+        For any questions, email us at <a href="mailto:support@maw3ed.me">support@maw3ed.me</a>.
       </p>
     </div>
   );

@@ -79,7 +79,7 @@ function PrivacyAr() {
       <h2 style={sectionStyle}>التواصل</h2>
       <p style={{ marginBottom: 6 }}>
         لأي استفسار بخصوص الخصوصية، راسلنا على{" "}
-        <a href="mailto:privacy@mawaid.app">privacy@mawaid.app</a>.
+        <a href="mailto:support@maw3ed.me">support@maw3ed.me</a>.
       </p>
 
       <p className="hint" style={{ marginTop: 18 }}>
@@ -146,7 +146,7 @@ function PrivacyEn() {
 
       <h2 style={sectionStyle}>Contact</h2>
       <p style={{ marginBottom: 6 }}>
-        For privacy questions, email us at <a href="mailto:privacy@mawaid.app">privacy@mawaid.app</a>.
+        For privacy questions, email us at <a href="mailto:support@maw3ed.me">support@maw3ed.me</a>.
       </p>
 
       <p className="hint" style={{ marginTop: 18 }}>
