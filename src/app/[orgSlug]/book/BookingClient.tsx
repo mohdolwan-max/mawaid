@@ -10,6 +10,7 @@ import { DateField } from "@/components/DateTimeField";
 import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { fetchStaffAction, fetchSlotsAction, submitBookingAction, resendCodeAction } from "./actions";
 import { cleanCode, codeDigits, CODE_LENGTH } from "@/lib/phoneCode";
+import { decodeStoredSource, sourceStorageKey } from "@/lib/qr";
 import { intlLocale } from "@/lib/date";
 import { isValidPhone, formatPhoneForDisplay, normalizePhone } from "@/lib/phone";
 
@@ -342,6 +343,14 @@ export function BookingClient({
         notes,
         allowOverlap,
         verification: verifyId ? { id: verifyId, code } : null,
+        // Opened from the clinic's QR code in this tab (SourceCapture).
+        source: (() => {
+          try {
+            return decodeStoredSource(sessionStorage.getItem(sourceStorageKey(orgSlug)), Date.now());
+          } catch {
+            return null;
+          }
+        })(),
       });
     } catch {
       // Without this the button spun forever on any rejection (dropped

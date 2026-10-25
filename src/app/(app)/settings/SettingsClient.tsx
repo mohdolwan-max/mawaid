@@ -128,6 +128,9 @@ export function SettingsClient({
           >
             {copied ? t(lang, "confirm") : t(lang, "copy_link")}
           </button>
+          <a href={`/poster/${encodeURIComponent(ctx.slug)}`} className="btn ghost">
+            {t(lang, "qr_button")}
+          </a>
         </div>
       </div>
 

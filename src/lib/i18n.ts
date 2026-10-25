@@ -713,6 +713,14 @@ export const T = {
     close_org_confirm: "هل أنت متأكد؟ هذا الإجراء يوقف ظهور عيادتك فوراً.",
     close_org_confirm_cta: "نعم، أغلق عيادتي",
     public_link_label: "رابط الحجز العام",
+    // QR code and poster (0060).
+    qr_button: "رمز QR",
+    qr_print: "طباعة اللوحة",
+    qr_download: "تنزيل الرمز صورةً",
+    qr_hint: "اطبع اللوحة وضعها على طاولة الاستقبال أو الباب. كل حجز يأتي من مسح الرمز يظهر في تقاريرك.",
+    reports_kpi_qr: "حجوزات من رمز QR",
+    reports_qr_share: "{pct}% من حجوزات الفترة",
+    reports_qr_prev: "الفترة السابقة: {n}",
     copy_link: "نسخ الرابط",
 
     // ---------- landing / partners ----------
@@ -1670,6 +1678,14 @@ export const T = {
     close_org_confirm: "Are you sure? This stops your clinic from showing up immediately.",
     close_org_confirm_cta: "Yes, close my clinic",
     public_link_label: "Public booking link",
+    // QR code and poster (0060).
+    qr_button: "QR code",
+    qr_print: "Print poster",
+    qr_download: "Download code (image)",
+    qr_hint: "Print the poster and place it at reception or on the door. Every booking made by scanning it shows in your reports.",
+    reports_kpi_qr: "Bookings from the QR code",
+    reports_qr_share: "{pct}% of the period's bookings",
+    reports_qr_prev: "Previous period: {n}",
     copy_link: "Copy link",
 
     landing_cta: "Start your free trial and create your clinic's booking page",

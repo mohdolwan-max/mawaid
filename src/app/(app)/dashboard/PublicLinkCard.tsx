@@ -50,6 +50,10 @@ export function PublicLinkCard({
         >
           {copied ? t(lang, "confirm") : t(lang, "copy_link")}
         </button>
+        {/* The code and the printable poster for the reception (0060). */}
+        <Link href={`/poster/${encodeURIComponent(slug)}`} className="btn ghost sm">
+          {t(lang, "qr_button")}
+        </Link>
         {/* The owner is the person who most needs to spread this link. Copy
             already sits beside it, so the share menu leaves copy out. */}
         <ShareButton

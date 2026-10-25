@@ -173,6 +173,14 @@ function ClinicRow({
             <a href={`/${c.slug}`} target="_blank" rel="noopener noreferrer" dir="ltr">
               /{c.slug}
             </a>
+            {c.phase !== "closed" && (
+              <>
+                {" · "}
+                <a href={`/poster/${encodeURIComponent(c.slug)}`} target="_blank" rel="noopener noreferrer">
+                  {t(lang, "qr_button")}
+                </a>
+              </>
+            )}
           </p>
           {c.phase !== "closed" && <PlanTool lang={lang} clinic={c} />}
           {c.phase !== "closed" && c.isTrial && <TrialTool lang={lang} clinic={c} />}

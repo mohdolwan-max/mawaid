@@ -66,6 +66,9 @@ export type OrgReport = {
   byStaff: StaffRow[];
   customers: { people: number; new: number };
   series: ReportDay[];
+  /** Bookings from the clinic's QR code (0060), same rows as totals.
+   *  null before 0060 is applied — the tile hides rather than saying 0. */
+  sources: { qr: number; qrPrevious: number } | null;
 };
 
 export function parseOrgReport(raw: unknown): OrgReport | null {
@@ -135,7 +138,15 @@ export function parseOrgReport(raw: unknown): OrgReport | null {
     byStaff,
     customers: { people: n0(c.people), new: n0(c.new) },
     series,
+    sources: isObj(raw.sources) ? { qr: n0(raw.sources.qr), qrPrevious: n0(raw.sources.qr_previous) } : null,
   };
+}
+
+/** The QR code's share of the period's bookings, as a whole percent. null
+ *  when it cannot be said: no source data, or no bookings at all. */
+export function qrShare(r: Pick<OrgReport, "totals" | "sources">): number | null {
+  if (!r.sources || r.totals.total <= 0) return null;
+  return Math.round((r.sources.qr / r.totals.total) * 100);
 }
 
 /** Share of finished visits that the customer did not attend, as a whole

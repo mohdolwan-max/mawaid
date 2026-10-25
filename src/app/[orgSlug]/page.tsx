@@ -14,6 +14,7 @@ import { ServiceSelectionProvider, SelectableServiceList, BookNowLink } from "./
 import { canonicalSiteUrl } from "@/lib/siteUrl";
 import { clinicShareUrl } from "@/lib/share";
 import { intlLocale } from "@/lib/date";
+import { SourceCapture } from "@/components/marketplace/SourceCapture";
 
 // Every page previously shared the root layout's static title/description,
 // so sharing a clinic's link on WhatsApp (a primary growth channel for
@@ -76,6 +77,7 @@ export default async function OrgPublicPage({ params }: { params: Promise<{ orgS
 
   return (
     <div className="public-shell">
+      <SourceCapture slug={orgSlug} />
       <BackBar href="/" title="" />
       {/* 16:9, the same ratio the cards use. The old fixed 170px made this
           a 3.55:1 letterbox, so a cover framed for the card was cropped to

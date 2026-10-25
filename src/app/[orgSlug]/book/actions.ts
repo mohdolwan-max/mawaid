@@ -12,6 +12,8 @@ import { currentSourceHash } from "@/lib/sourceLimit";
 import { issueBookingTicket } from "@/lib/bookingTicket";
 import { createClient } from "@/lib/supabase/server";
 import { phoneGate, resendPhoneCode, type GateError } from "@/lib/phoneGate";
+import { markBookingSource } from "@/lib/bookingSource";
+import { isBookingSource } from "@/lib/qr";
 
 /** The booking's answer. Beside BookResult: "a code was sent, ask for it"
  *  — the booking has not happened yet, and happens on the next submit
@@ -46,6 +48,9 @@ export async function submitBookingAction(input: {
   /** The code the customer typed, for the verification the previous
    *  submit opened. */
   verification?: { id: string; code: string } | null;
+  /** Where the visit started (0060): "qr" when the clinic page was opened
+   *  from its QR code. Checked against the known sources, never trusted. */
+  source?: string | null;
 }): Promise<SubmitResult> {
   let sourceHash: string | null = null;
   try {
@@ -113,6 +118,11 @@ export async function submitBookingAction(input: {
     notes: input.notes || null,
     allowOverlap: input.allowOverlap,
   });
+
+  // Counted for the clinic's report; never able to fail the booking.
+  if (result.ok && isBookingSource(input.source)) {
+    await markBookingSource(result.cancelToken, input.source);
+  }
 
   if (result.ok && input.customerEmail) {
     // Everything below runs AFTER book_appointment() has already

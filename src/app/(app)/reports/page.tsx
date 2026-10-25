@@ -13,6 +13,7 @@ import {
   noShowRate,
   parseOrgReport,
   previousNoShowRate,
+  qrShare,
   topServices,
 } from "@/lib/orgReport";
 import { PeriodPicker } from "@/components/PeriodPicker";
@@ -165,6 +166,18 @@ export default async function ReportsPage({
           value={count(report.customers.people)}
           sub={t(lang, "reports_kpi_new_customers", { n: count(report.customers.new) })}
         />
+        {report.sources && (
+          <StatTile
+            label={t(lang, "reports_kpi_qr")}
+            value={count(report.sources.qr)}
+            sub={[
+              qrShare(report) === null ? "" : t(lang, "reports_qr_share", { pct: count(qrShare(report) as number) }),
+              t(lang, "reports_qr_prev", { n: count(report.sources.qrPrevious) }),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+        )}
         <StatTile
           label={t(lang, "reports_kpi_busiest")}
           value={busiest === null ? "—" : weekdayName(busiest.weekday)}

@@ -5,6 +5,7 @@ import { getCustomerProfile } from "@/lib/customer";
 import { BackBar } from "@/components/marketplace/BackBar";
 import { parseServiceSelection } from "@/lib/serviceSelection";
 import { BookingClient } from "./BookingClient";
+import { SourceCapture } from "@/components/marketplace/SourceCapture";
 
 export default async function BookPage({
   params,
@@ -29,6 +30,8 @@ export default async function BookPage({
 
   return (
     <div className="public-shell">
+      {/* A code may also point straight at the booking page. */}
+      <SourceCapture slug={orgSlug} />
       <BackBar href={`/${orgSlug}`} title={org.name} />
       <BookingClient
         lang={lang}

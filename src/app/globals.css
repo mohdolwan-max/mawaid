@@ -4612,3 +4612,137 @@ html.splash-seen .splash-intro {
     min-width: 0;
   }
 }
+
+/* ---------------------------------------------------------------------
+   The clinic's QR poster (0060): an A5 portrait sheet for the reception
+   desk. On screen it previews at the same proportions; on paper it is
+   exactly A5 with nothing else on the page.
+   --------------------------------------------------------------------- */
+.poster-shell {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 12px 48px;
+}
+.poster-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.poster-sheet {
+  background: #fff;
+  width: 100%;
+  aspect-ratio: 148 / 210;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 7% 8% 5%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2.2%;
+  color: var(--ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.poster-org {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.poster-org-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.poster-org h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.35;
+  color: var(--brand2);
+}
+.poster-headline {
+  margin: 4px 0 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--brand);
+}
+.poster-sub {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink2);
+}
+.poster-qr {
+  position: relative;
+  width: 64%;
+  aspect-ratio: 1;
+  padding: 3.5%;
+  border: 3px solid var(--brand);
+  border-radius: 18px;
+  background: #fff;
+}
+.poster-qr-code svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.poster-qr-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+  padding: 2.2%;
+  background: #fff;
+  border-radius: 18%;
+  display: flex;
+}
+.poster-qr-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.poster-link {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink2);
+}
+.poster-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink2);
+}
+.poster-foot-sym {
+  height: 26px;
+  width: auto;
+}
+.poster-foot-word {
+  height: 17px;
+  width: auto;
+  transform: translateY(13%);
+}
+@page poster {
+  size: A5 portrait;
+  margin: 0;
+}
+@media print {
+  .poster-shell {
+    max-width: none;
+    padding: 0;
+  }
+  .poster-sheet {
+    page: poster;
+    width: 148mm;
+    height: 210mm;
+    aspect-ratio: auto;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
