@@ -5,15 +5,22 @@ import type { Service } from "@/lib/types";
 import { ServicesClient } from "./ServicesClient";
 import { PackagesClient } from "./PackagesClient";
 import { parseCatalogue } from "@/lib/packages";
+import { ResourcesClient } from "./ResourcesClient";
+import { parseResources } from "@/lib/resources";
 
 export default async function ServicesPage() {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
 
-  const [{ data: services }, { data: pkgRows, error: pkgError }] = await Promise.all([
+  const [{ data: services }, { data: pkgRows, error: pkgError }, { data: resRows, error: resError }] = await Promise.all([
     supabase.from("services").select("*").eq("org_id", ctx.orgId).order("sort_order").order("created_at"),
     supabase.rpc("list_service_packages"),
+    supabase.rpc("list_resources"),
   ]);
+  // Same rule for rooms and devices (0068).
+  const resourcesMissing = resError?.code === "PGRST202";
+  if (resError && !resourcesMissing) console.error("list_resources failed", resError);
+  const resources = resError ? null : parseResources(resRows);
   // Before 0064 runs the function does not exist (PGRST202): the section
   // stays hidden. Any other failure is shown as one, never as "no packages".
   const packagesMissing = pkgError?.code === "PGRST202";
@@ -35,6 +42,14 @@ export default async function ServicesPage() {
         canManage={ctx.role === "owner"}
         currency={ctx.currency}
       />
+      {!resourcesMissing && (
+        <ResourcesClient
+          lang={ctx.lang}
+          resources={resources}
+          services={(services as Service[]) ?? []}
+          canManage={ctx.role === "owner"}
+        />
+      )}
       {!packagesMissing && (
         <PackagesClient
           lang={ctx.lang}

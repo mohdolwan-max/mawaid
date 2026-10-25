@@ -124,6 +124,8 @@ export async function bookAppointment(input: {
 function parseRpcError(message?: string): string {
   if (!message) return "error_generic";
   if (message.includes("slot_taken")) return "book_slot_taken";
+  // 0068: the room or device the service needs is full at that time.
+  if (message.includes("resource_busy")) return "book_resource_busy";
   if (message.includes("rate_limited")) return "book_rate_limited";
   if (message.includes("customer_time_conflict")) return "book_customer_conflict";
   // 0051. A spent or missing ticket means the page was left open too
@@ -317,6 +319,7 @@ export type RescheduleResult =
 function parseRescheduleError(message?: string): string {
   if (!message) return "error_generic";
   if (message.includes("slot_taken")) return "book_slot_taken";
+  if (message.includes("resource_busy")) return "book_resource_busy";
   if (message.includes("outside_business_hours")) return "resched_outside_hours";
   if (message.includes("too_soon")) return "resched_too_soon";
   if (message.includes("too_far_ahead")) return "resched_too_far";

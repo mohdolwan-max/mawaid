@@ -5035,3 +5035,15 @@ html.splash-seen .splash-intro {
 .series-list .chip {
   flex-shrink: 0;
 }
+
+/* Which services need a room or device (0068). */
+.res-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.res-services label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

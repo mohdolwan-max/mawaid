@@ -8,6 +8,7 @@ import { requireOrgContext } from "@/lib/org";
 import { parseServiceEdit, type ServiceEditError } from "@/lib/serviceEdit";
 import { isOrgMediaUrl } from "@/lib/url";
 import { parsePackageInput, type PackageInputError } from "@/lib/packages";
+import { checkResourceInput, parseResources, serviceNeedsAfter, type ResourceInputError, type ResourceKind } from "@/lib/resources";
 
 export async function addService(formData: FormData) {
   const ctx = await requireOrgContext();
@@ -159,4 +160,66 @@ export async function deletePackageAction(id: string): Promise<{ ok: true; outco
   }
   revalidatePath("/services");
   return { ok: true, outcome: data };
+}
+
+// ---- Rooms and devices (0068), owner only (the database refuses anyone
+// else; ctx.role only spares the round trip). ---------------------------------
+
+type ResourceSaveError = ResourceInputError | "error_generic";
+
+/** Saves a room or device and which services need it. The needs are
+ *  stored per service, so each service whose list changes is rewritten
+ *  from a fresh read, never from what the browser last saw. */
+export async function saveResourceAction(
+  id: string | null,
+  input: { name: string; kind: ResourceKind; capacity: string },
+  serviceIds: string[]
+): Promise<{ ok: true } | { ok: false; error: ResourceSaveError }> {
+  const ctx = await requireOrgContext();
+  if (ctx.role !== "owner") return { ok: false, error: "error_generic" };
+  const bad = checkResourceInput(input);
+  if (bad) return { ok: false, error: bad };
+  const supabase = await createClient();
+  const { data: savedId, error } = await supabase.rpc("save_resource", {
+    p_id: id,
+    p_name: input.name.trim(),
+    p_kind: input.kind === "room" ? "room" : "device",
+    p_capacity: Number(input.capacity),
+  });
+  if (error || typeof savedId !== "string") {
+    const m = error?.message ?? "";
+    if (m.includes("resource_name")) return { ok: false, error: "res_err_name" };
+    if (m.includes("resource_capacity")) return { ok: false, error: "res_err_capacity" };
+    console.error("save_resource failed", error);
+    return { ok: false, error: "error_generic" };
+  }
+
+  const { data: list, error: listError } = await supabase.rpc("list_resources");
+  if (listError) {
+    console.error("list_resources failed", listError);
+    return { ok: false, error: "error_generic" };
+  }
+  for (const change of serviceNeedsAfter(parseResources(list), savedId, serviceIds)) {
+    const { error: setError } = await supabase.rpc("set_service_resources", {
+      p_service_id: change.serviceId,
+      p_resource_ids: change.resourceIds,
+    });
+    if (setError) {
+      console.error("set_service_resources failed", setError);
+      return { ok: false, error: "error_generic" };
+    }
+  }
+  revalidatePath("/services");
+  return { ok: true };
+}
+
+export async function deleteResourceAction(id: string): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_resource", { p_id: id });
+  if (error) {
+    console.error("delete_resource failed", error);
+    return { ok: false };
+  }
+  revalidatePath("/services");
+  return { ok: true };
 }
