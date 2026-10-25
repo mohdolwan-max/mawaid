@@ -115,3 +115,84 @@ export async function rescheduleBookingAction(
   }
   return result;
 }
+
+// ---- Recurring appointments (0067) ----------------------------------------------
+
+export type SeriesBookingResult = {
+  /** One per requested time, in the order sent. */
+  results: { startAt: string; ok: boolean; error: string | null }[];
+  /** Whether the booked ones were tied into a series (false before 0067,
+   *  or when fewer than two were booked). */
+  linked: boolean;
+};
+
+/** Books each confirmed time of a series as an ordinary booking, through
+ *  the same checks as one booking, then ties the booked ones together. A
+ *  time that fails is reported back, never dropped silently. */
+export async function addManualSeries(input: {
+  serviceId: string;
+  staffId: string | null;
+  startAts: string[];
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  notes: string;
+}): Promise<SeriesBookingResult> {
+  const ctx = await requireOrgContext();
+  const startAts = [...new Set(input.startAts)].slice(0, 12);
+  const results: SeriesBookingResult["results"] = [];
+  const ids: string[] = [];
+  // One after another: each is checked against the diary as it stands,
+  // including the times this series has just taken.
+  for (const startAt of startAts) {
+    const r = await bookAppointment({
+      ticket: null,
+      orgSlug: ctx.slug,
+      serviceId: input.serviceId,
+      startAt,
+      staffId: input.staffId,
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      customerEmail: input.customerEmail || null,
+      notes: input.notes || null,
+    });
+    if (r.ok) {
+      ids.push(r.id);
+      results.push({ startAt, ok: true, error: null });
+    } else {
+      results.push({ startAt, ok: false, error: r.error });
+    }
+  }
+
+  let linked = false;
+  if (ids.length >= 2) {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("link_series", { p_appointment_ids: ids });
+    // The bookings stand either way; only "session 3 of 6" and
+    // "cancel the rest" need the link.
+    if (error && error.code !== "PGRST202") console.error("link_series failed", error);
+    linked = !error;
+  }
+
+  revalidatePath("/bookings");
+  revalidatePath("/calendar");
+  revalidatePath("/dashboard");
+  return { results, linked };
+}
+
+/** Cancels this appointment and every later booked one in its series. */
+export async function cancelSeriesFromAction(appointmentId: string): Promise<{ ok: true; count: number } | { ok: false }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("cancel_series_from", { p_appointment_id: appointmentId });
+  if (error) {
+    console.error("cancel_series_from failed", error);
+    return { ok: false };
+  }
+  // The freed times may be what the waitlist is waiting for (0066).
+  after(sendWaitlistNotices);
+  revalidatePath("/bookings");
+  revalidatePath("/calendar");
+  revalidatePath("/dashboard");
+  revalidatePath("/waitlist");
+  return { ok: true, count: Number(data ?? 0) };
+}

@@ -141,6 +141,11 @@ export default async function CustomerPage({ params }: { params: Promise<{ phone
                 {v.source && (
                   <span className="chip neutral">{t(lang, "cust_from_source", { name: t(lang, `source_${v.source}` as TKey) })}</span>
                 )}
+                {v.series && (
+                  <span className="chip neutral">
+                    {t(lang, "series_no_of", { no: count(v.series.no), total: count(v.series.total) })}
+                  </span>
+                )}
                 {v.packageName && <span className="chip good">{t(lang, "pkg_chip", { name: v.packageName })}</span>}
               </div>
               <VisitPackage lang={lang} phone={file.phone} visit={v} packages={file.packages} />

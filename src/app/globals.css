@@ -5007,3 +5007,31 @@ html.splash-seen .splash-intro {
 .wl-done .hint {
   color: var(--good-ink);
 }
+
+/* A recurring series in the manual booking form (0067). */
+.series-box {
+  margin: 6px 0 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--band);
+}
+.series-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+.series-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.series-list li:last-child {
+  border-bottom: 0;
+}
+.series-list .chip {
+  flex-shrink: 0;
+}

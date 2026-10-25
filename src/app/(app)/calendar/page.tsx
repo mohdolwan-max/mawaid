@@ -30,7 +30,7 @@ export default async function CalendarPage({
   const from = addDaysYMD(week[0], -1);
   const to = addDaysYMD(week[6], 2);
 
-  const [{ data: rows, error }, { data: staff }, valuesRes, holdersRes] = await Promise.all([
+  const [{ data: rows, error }, { data: staff }, valuesRes, holdersRes, seriesRes] = await Promise.all([
     supabase
       .from("appointments")
       .select(
@@ -49,7 +49,19 @@ export default async function CalendarPage({
     // a package, so the day's total agrees with the report.
     supabase.rpc("list_visit_values", { p_from: `${from}T00:00:00Z`, p_to: `${to}T00:00:00Z` }),
     supabase.rpc("list_package_holders"),
+    // Which visits belong to a series (0067). Its own query, so the
+    // calendar still loads before the column exists.
+    supabase
+      .from("appointments")
+      .select("id, series_id")
+      .eq("org_id", ctx.orgId)
+      .not("series_id", "is", null)
+      .gte("start_at", `${from}T00:00:00Z`)
+      .lt("start_at", `${to}T00:00:00Z`),
   ]);
+  if (seriesRes.error && seriesRes.error.code !== "42703") console.error("calendar: series query failed", seriesRes.error);
+  const seriesOf = new Map<string, string>();
+  for (const r of (seriesRes.error ? [] : (seriesRes.data as { id: string; series_id: string }[])) ?? []) seriesOf.set(r.id, r.series_id);
   // Before 0064 runs neither function exists: prices are the services'
   // own, as they always were. Any other failure leaves the total unknown
   // rather than quietly wrong.
@@ -117,6 +129,7 @@ export default async function CalendarPage({
       packageName: rec?.packageName ?? holder?.name ?? null,
       packageWillDraw: !rec?.packageName && !!holder,
       packageLeft: holder ? holder.remaining : null,
+      seriesId: seriesOf.get(r.id) ?? null,
       staffId: r.staff_id,
       staffName: r.staff_id ? (labelByMembership.get(r.staff_id) ?? null) : null,
       customerName: r.customer_name,

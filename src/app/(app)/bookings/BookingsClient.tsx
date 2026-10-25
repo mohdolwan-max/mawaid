@@ -9,7 +9,8 @@ import { todayYMD, intlLocale } from "@/lib/date";
 import type { Appointment, BookingStatus, Service, StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
 import { DateField } from "@/components/DateTimeField";
-import { setBookingStatus, addManualBooking, fetchOwnerSlotsAction } from "./actions";
+import { setBookingStatus, addManualBooking, fetchOwnerSlotsAction, addManualSeries, type SeriesBookingResult } from "./actions";
+import { SERIES_EVERY_WEEKS, SERIES_MAX, SERIES_MIN, proposeSeries, seriesDays, type SeriesProposal } from "@/lib/recurrence";
 import { holderKey, type Holder, type VisitPackageState } from "@/lib/packages";
 
 export function BookingsClient({
@@ -207,6 +208,72 @@ function ManualBookingForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<TKey | null>(null);
   const [conflictPending, setConflictPending] = useState(false);
+  // A series (0067): proposed in full, booked only once confirmed.
+  const [repeat, setRepeat] = useState(false);
+  const [everyWeeks, setEveryWeeks] = useState(2);
+  const [count, setCount] = useState(4);
+  const [proposal, setProposal] = useState<SeriesProposal[] | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [seriesResult, setSeriesResult] = useState<SeriesBookingResult | null>(null);
+  const locale = intlLocale(lang);
+  const dayName = (ymd: string) =>
+    new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(
+      new Date(`${ymd}T12:00:00Z`)
+    );
+  const clockOf = (iso: string) =>
+    new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit", timeZone: timezone });
+
+  // Any change to what the series is built from makes the proposal stale.
+  useEffect(() => {
+    setProposal(null);
+  }, [serviceId, staffId, date, startAt, everyWeeks, count, repeat]);
+
+  async function preview() {
+    if (!startAt) return;
+    setPreviewing(true);
+    setError(null);
+    try {
+      const days = seriesDays(date, everyWeeks, count);
+      const slotsByDay = await Promise.all(
+        days.map((d, i) => (i === 0 ? Promise.resolve([startAt]) : fetchOwnerSlotsAction(serviceId, d, staffId || null)))
+      );
+      setProposal(proposeSeries(days, startAt, slotsByDay, timezone));
+    } catch {
+      // "no time that day" and "the lookup failed" must not look the same.
+      setProposal(null);
+      setError("error_generic");
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
+  const chosenTimes = (proposal ?? []).filter((x) => x.include && x.startAt).map((x) => x.startAt as string);
+
+  async function submitSeries() {
+    if (chosenTimes.length === 0) return;
+    setPending(true);
+    setError(null);
+    try {
+      const r = await addManualSeries({
+        serviceId,
+        staffId: staffId || null,
+        startAts: chosenTimes,
+        customerName: name,
+        customerPhone: phone,
+        customerEmail: email,
+        notes,
+      });
+      if (r.results.every((x) => x.ok)) {
+        onDone();
+        return;
+      }
+      setSeriesResult(r);
+    } catch {
+      setError("error_generic");
+    } finally {
+      setPending(false);
+    }
+  }
 
   // Reload availability whenever the service, staff or day changes —
   // each of those changes which slots are actually bookable.
@@ -263,7 +330,37 @@ function ManualBookingForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    void submit(false);
+    if (repeat) void submitSeries();
+    else void submit(false);
+  }
+
+  // What happened to each time of the series, when not all were booked.
+  if (seriesResult) {
+    const booked = seriesResult.results.filter((x) => x.ok).length;
+    return (
+      <div className="card">
+        <p style={{ fontWeight: 700, marginBottom: 8 }}>
+          {t(lang, "series_result", { ok: booked.toLocaleString(locale), n: seriesResult.results.length.toLocaleString(locale) })}
+        </p>
+        <ul className="series-list">
+          {seriesResult.results.map((x) => (
+            <li key={x.startAt}>
+              <span>
+                {new Date(x.startAt).toLocaleString(locale, { timeZone: timezone, dateStyle: "full", timeStyle: "short" })}
+              </span>
+              {x.ok ? (
+                <span className="chip good">{t(lang, "series_booked")}</span>
+              ) : (
+                <span className="chip bad">{t(lang, (x.error ?? "error_generic") as TKey)}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+        <button type="button" className="btn" style={{ marginTop: 10 }} onClick={onDone}>
+          {t(lang, "series_done")}
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -324,6 +421,77 @@ function ManualBookingForm({
           ))}
         </div>
       )}
+      <div className="field" style={{ marginTop: 6 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <input type="checkbox" style={{ width: "auto" }} checked={repeat} onChange={(e) => setRepeat(e.target.checked)} />
+          {t(lang, "series_toggle")}
+        </label>
+      </div>
+      {repeat && (
+        <div className="series-box">
+          <div className="grid2">
+            <div className="field">
+              <label htmlFor="m_every">{t(lang, "series_every")}</label>
+              <select id="m_every" value={everyWeeks} onChange={(e) => setEveryWeeks(Number(e.target.value))}>
+                {SERIES_EVERY_WEEKS.map((w) => (
+                  <option key={w} value={w}>
+                    {t(lang, w === 1 ? "series_every_week" : w === 2 ? "series_every_two_weeks" : "series_every_n_weeks", {
+                      n: w.toLocaleString(locale),
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="m_count">{t(lang, "series_count")}</label>
+              <select id="m_count" value={count} onChange={(e) => setCount(Number(e.target.value))}>
+                {Array.from({ length: SERIES_MAX - SERIES_MIN + 1 }, (_, i) => i + SERIES_MIN).map((n) => (
+                  <option key={n} value={n}>
+                    {n.toLocaleString(locale)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <button type="button" className="btn ghost sm" disabled={!startAt || previewing} onClick={() => void preview()}>
+            {previewing ? t(lang, "loading") : t(lang, "series_preview")}
+          </button>
+          {!startAt && <p className="hint" style={{ marginTop: 6 }}>{t(lang, "series_pick_first")}</p>}
+          {proposal && (
+            <ul className="series-list">
+              {proposal.map((x, i) => (
+                <li key={x.day}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                    <input
+                      type="checkbox"
+                      style={{ width: "auto" }}
+                      checked={x.include}
+                      disabled={!x.startAt || i === 0}
+                      onChange={(e) =>
+                        setProposal((prev) =>
+                          prev ? prev.map((y, j) => (j === i ? { ...y, include: e.target.checked } : y)) : prev
+                        )
+                      }
+                    />
+                    <span>
+                      {dayName(x.day)}
+                      {x.startAt && <> · {clockOf(x.startAt)}</>}
+                    </span>
+                  </label>
+                  {!x.startAt ? (
+                    <span className="chip bad">{t(lang, "series_no_time")}</span>
+                  ) : x.exact ? (
+                    <span className="chip good">{t(lang, "series_same_time")}</span>
+                  ) : (
+                    <span className="chip warn">{t(lang, "series_other_time")}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="hint" style={{ marginTop: 6 }}>{t(lang, "series_hint")}</p>
+        </div>
+      )}
       <div className="grid2">
         <div className="field">
           <label htmlFor="m_name">{t(lang, "customer_name")}</label>
@@ -354,8 +522,14 @@ function ManualBookingForm({
           {t(lang, "book_anyway")}
         </button>
       )}
-      <button type="submit" className="btn" disabled={pending || !startAt}>
-        {pending ? t(lang, "loading") : t(lang, "save")}
+      <button type="submit" className="btn" disabled={pending || !startAt || (repeat && chosenTimes.length === 0)}>
+        {pending
+          ? t(lang, "loading")
+          : repeat
+            ? proposal
+              ? t(lang, "series_book_n", { n: chosenTimes.length.toLocaleString(locale) })
+              : t(lang, "series_preview_first")
+            : t(lang, "save")}
       </button>
     </form>
   );

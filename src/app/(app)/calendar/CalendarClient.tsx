@@ -14,7 +14,7 @@ import {
   weekYMDs,
 } from "@/lib/date";
 import type { BookingStatus, BusinessHours } from "@/lib/types";
-import { setBookingStatus, fetchOwnerSlotsAction, rescheduleBookingAction } from "../bookings/actions";
+import { setBookingStatus, fetchOwnerSlotsAction, rescheduleBookingAction, cancelSeriesFromAction } from "../bookings/actions";
 import { DateField } from "@/components/DateTimeField";
 import { todayYMD } from "@/lib/date";
 
@@ -31,6 +31,8 @@ export type CalendarBooking = {
   packageWillDraw: boolean;
   /** Sessions left across the customer's packages for this service. */
   packageLeft: number | null;
+  /** The series this visit belongs to (0067), if any. */
+  seriesId: string | null;
   staffId: string | null;
   staffName: string | null;
   customerName: string;
@@ -439,6 +441,20 @@ function BookingSheet({
     }
   }
 
+  // This visit and every later booked one of its series (0067).
+  async function cancelRest() {
+    if (!window.confirm(t(lang, "series_cancel_rest_confirm"))) return;
+    setPending(true);
+    setError(null);
+    const res = await cancelSeriesFromAction(booking.id);
+    setPending(false);
+    if (!res.ok) {
+      setError("error_generic");
+      return;
+    }
+    onChanged();
+  }
+
   async function mark(status: BookingStatus) {
     setPending(true);
     setError(null);
@@ -476,6 +492,7 @@ function BookingSheet({
           </p>
         )}
         {booking.staffName && <p className="hint">{booking.staffName}</p>}
+        {booking.seriesId && <p className="hint">{t(lang, "series_member")}</p>}
         <p dir="ltr" style={{ textAlign: "start" }}>
           <a href={`tel:${booking.customerPhone}`}>{booking.customerPhone}</a>
           {" · "}
@@ -518,8 +535,17 @@ function BookingSheet({
             <button className="btn danger sm" disabled={pending} onClick={() => mark("cancelled")}>
               {t(lang, "cancel")}
             </button>
+            {booking.seriesId && (
+              <button className="btn danger sm" disabled={pending} onClick={() => void cancelRest()}>
+                {t(lang, "series_cancel_rest")}
+              </button>
+            )}
           </div>
         )}
+        {/* A refused status change used to set an error only the move
+            panel displayed: from here the button looked like it did
+            nothing (how 0063's refused buttons went unseen). */}
+        {!moving && error && <p className="error-text">{t(lang, error)}</p>}
 
         {booking.status === "booked" && moving && (
           <div className="resched">

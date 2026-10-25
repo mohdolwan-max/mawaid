@@ -82,6 +82,9 @@ export type CustomerVisit = {
   packageAuto: boolean;
   /** The clinic took this visit off any package. */
   packageOff: boolean;
+  /** Place in its series (0067): "3 of 6"; null outside a series or
+   *  for a cancelled visit. */
+  series: { no: number; total: number } | null;
 };
 
 export type CustomerNote = {
@@ -125,6 +128,10 @@ export function parseCustomerFile(raw: unknown): CustomerFile | null {
       packageName: str(v.package_name),
       packageAuto: v.package_auto === true,
       packageOff: v.package_off === true,
+      series:
+        typeof v.series_no === "number" && typeof v.series_total === "number" && v.series_total > 0
+          ? { no: v.series_no, total: v.series_total }
+          : null,
     });
   }
   const notes: CustomerNote[] = [];
