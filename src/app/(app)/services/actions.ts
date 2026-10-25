@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import { parseServiceEdit, type ServiceEditError } from "@/lib/serviceEdit";
 import { isOrgMediaUrl } from "@/lib/url";
+import { parsePackageInput, type PackageInputError } from "@/lib/packages";
 
 export async function addService(formData: FormData) {
   const ctx = await requireOrgContext();
@@ -98,4 +99,64 @@ export async function saveServicePhoto(serviceId: string, url: string) {
   revalidatePath(`/${ctx.slug}`);
   revalidateTag(ORG_TAG);
   revalidateTag(DIRECTORY_TAG);
+}
+
+// ---- Session packages (0064): the catalogue, owner only (the database
+// refuses anyone else; ctx.role only spares the round trip). ----------------
+
+type PackageSaveError = PackageInputError | "error_generic";
+
+export async function savePackageAction(
+  id: string | null,
+  input: { serviceId: string; name: string; sessions: string; price: string; validityDays: string }
+): Promise<{ ok: true } | { ok: false; error: PackageSaveError }> {
+  const ctx = await requireOrgContext();
+  if (ctx.role !== "owner") return { ok: false, error: "error_generic" };
+  const parsed = parsePackageInput(input);
+  if (!parsed.ok) return parsed;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("save_service_package", {
+    p_id: id,
+    p_service_id: parsed.serviceId,
+    p_name: parsed.name,
+    p_sessions: parsed.sessions,
+    p_price: parsed.price,
+    p_validity_days: parsed.validityDays,
+  });
+  if (error) {
+    const m = error.message ?? "";
+    if (m.includes("package_name")) return { ok: false, error: "package_err_name" };
+    if (m.includes("package_sessions")) return { ok: false, error: "package_err_sessions" };
+    if (m.includes("package_price")) return { ok: false, error: "package_err_price" };
+    if (m.includes("package_validity")) return { ok: false, error: "package_err_validity" };
+    if (m.includes("service_not_found")) return { ok: false, error: "package_err_service" };
+    console.error("save_service_package failed", error);
+    return { ok: false, error: "error_generic" };
+  }
+  revalidatePath("/services");
+  return { ok: true };
+}
+
+export async function setPackageActiveAction(id: string, active: boolean): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_service_package_active", { p_id: id, p_active: active });
+  if (error) {
+    console.error("set_service_package_active failed", error);
+    return { ok: false };
+  }
+  revalidatePath("/services");
+  return { ok: true };
+}
+
+/** 'deleted', or 'archived' when the package was sold (its sales point at
+ *  it, so it is retired instead). */
+export async function deletePackageAction(id: string): Promise<{ ok: true; outcome: "deleted" | "archived" } | { ok: false }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("delete_service_package", { p_id: id });
+  if (error || (data !== "deleted" && data !== "archived")) {
+    if (error) console.error("delete_service_package failed", error);
+    return { ok: false };
+  }
+  revalidatePath("/services");
+  return { ok: true, outcome: data };
 }

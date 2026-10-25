@@ -55,12 +55,15 @@ export type OrgReport = {
   /** The period just before, of the same length. */
   previous: { total: number; completed: number; noShow: number };
   money: {
-    /** Price of the services on completed visits. */
+    /** Worth of completed visits: the service price, or the visit's share
+     *  of a package when drawn from one (0064). */
     completedValue: number;
     /** Completed visits whose service has a price, and those without one. */
     priced: number;
     unpriced: number;
     previousValue: number;
+    /** Completed visits drawn from a package (0064; 0 before it). */
+    fromPackages: number;
   };
   byService: ServiceRow[];
   byStaff: StaffRow[];
@@ -69,6 +72,15 @@ export type OrgReport = {
   /** Bookings from the clinic's QR code (0060), same rows as totals.
    *  null before 0060 is applied — the tile hides rather than saying 0. */
   sources: { qr: number; qrPrevious: number } | null;
+  /** Package money on the day it moved (0064): a different measure from
+   *  the value of completed visits, never added to it. null before 0064. */
+  packages: {
+    catalogue: number;
+    sold: number;
+    soldValue: number;
+    refunded: number;
+    previousSoldValue: number;
+  } | null;
 };
 
 export function parseOrgReport(raw: unknown): OrgReport | null {
@@ -133,12 +145,22 @@ export function parseOrgReport(raw: unknown): OrgReport | null {
       priced: n0(m.priced),
       unpriced: n0(m.unpriced),
       previousValue: n0(m.previous_value),
+      fromPackages: n0(m.from_packages),
     },
     byService,
     byStaff,
     customers: { people: n0(c.people), new: n0(c.new) },
     series,
     sources: isObj(raw.sources) ? { qr: n0(raw.sources.qr), qrPrevious: n0(raw.sources.qr_previous) } : null,
+    packages: isObj(raw.packages)
+      ? {
+          catalogue: n0(raw.packages.catalogue),
+          sold: n0(raw.packages.sold),
+          soldValue: n0(raw.packages.sold_value),
+          refunded: n0(raw.packages.refunded),
+          previousSoldValue: n0(raw.packages.previous_sold_value),
+        }
+      : null,
   };
 }
 

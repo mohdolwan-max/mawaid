@@ -3,6 +3,7 @@
 // (ENGINEERING-STANDARDS §4).
 
 import { toE164 } from "@/lib/phoneCode";
+import { parseCustomerPackages, parseSellable, type CataloguePackage, type CustomerPackage } from "@/lib/packages";
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -30,6 +31,8 @@ export type CustomerRow = {
   totalValue: number;
   tags: string[];
   notes: number;
+  /** Usable session packages (0064); 0 before 0064 is applied. */
+  packages: number;
 };
 
 /** list_org_customers rows; `total` is the count before paging. */
@@ -53,6 +56,7 @@ export function parseCustomerRows(raw: unknown): { rows: CustomerRow[]; total: n
       totalValue: num(r.total_value),
       tags: strArr(r.tags),
       notes: num(r.notes),
+      packages: num(r.packages),
     });
   }
   return { rows, total };
@@ -64,9 +68,18 @@ export type CustomerVisit = {
   status: "booked" | "completed" | "cancelled" | "no_show";
   notes: string | null;
   staffId: string | null;
+  serviceId: string | null;
   service: string | null;
-  price: number | null;
+  /** What the visit is worth: its share of a package when drawn from one,
+   *  else the service's price; null = unpriced (0064 _visit_values). */
+  value: number | null;
   fromQr: boolean;
+  /** The package this visit drew on, if any. */
+  packageId: string | null;
+  packageName: string | null;
+  packageAuto: boolean;
+  /** The clinic took this visit off any package. */
+  packageOff: boolean;
 };
 
 export type CustomerNote = {
@@ -78,10 +91,14 @@ export type CustomerNote = {
   canDelete: boolean;
 };
 
-export type CustomerFile = Omit<CustomerRow, "notes"> & {
+export type CustomerFile = Omit<CustomerRow, "notes" | "packages"> & {
   unpriced: number;
   visits: CustomerVisit[];
   notes: CustomerNote[];
+  packages: CustomerPackage[];
+  /** Active catalogue entries to sell from. */
+  catalogue: CataloguePackage[];
+  isOwner: boolean;
 };
 
 const STATUSES = new Set(["booked", "completed", "cancelled", "no_show"]);
@@ -98,9 +115,14 @@ export function parseCustomerFile(raw: unknown): CustomerFile | null {
       status: v.status as CustomerVisit["status"],
       notes: str(v.notes),
       staffId: str(v.staff_id),
+      serviceId: str(v.service_id),
       service: str(v.service),
-      price: v.price === null || v.price === undefined ? null : num(v.price),
+      value: v.value === null || v.value === undefined ? null : num(v.value),
       fromQr: v.booking_source === "qr",
+      packageId: str(v.package_id),
+      packageName: str(v.package_name),
+      packageAuto: v.package_auto === true,
+      packageOff: v.package_off === true,
     });
   }
   const notes: CustomerNote[] = [];
@@ -131,6 +153,9 @@ export function parseCustomerFile(raw: unknown): CustomerFile | null {
     tags: strArr(raw.tags),
     visits,
     notes,
+    packages: parseCustomerPackages(raw.packages),
+    catalogue: parseSellable(raw.catalogue),
+    isOwner: raw.is_owner === true,
   };
 }
 

@@ -5,6 +5,7 @@ import { hoursAgoIso } from "@/lib/date";
 import type { Appointment, Service, StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
 import { BookingsClient } from "./BookingsClient";
+import { parseHolders } from "@/lib/packages";
 
 export default async function BookingsPage({
   searchParams,
@@ -21,7 +22,7 @@ export default async function BookingsPage({
       : null;
   const supabase = await createClient();
 
-  const [{ data: rows, error }, { data: services }, { data: staff }] = await Promise.all([
+  const [{ data: rows, error }, { data: services }, { data: staff }, holdersRes] = await Promise.all([
     supabase
       .from("appointments")
       // The explicit foreign key matters: see the calendar page.
@@ -33,7 +34,12 @@ export default async function BookingsPage({
       .order("start_at"),
     supabase.from("services").select("*").eq("org_id", ctx.orgId).eq("active", true).order("sort_order"),
     supabase.rpc("list_org_staff", { p_org_id: ctx.orgId }),
+    // Who holds a usable package (0064), to mark their rows. Missing
+    // before the migration runs; a failure only drops the marks.
+    supabase.rpc("list_package_holders"),
   ]);
+  if (holdersRes.error && holdersRes.error.code !== "PGRST202") console.error("list_package_holders failed", holdersRes.error);
+  const holders = Object.fromEntries(holdersRes.error ? [] : parseHolders(holdersRes.data));
 
   // A failed query must not arrive as an empty day. This page used to
   // take only `data`, so PGRST201 (above) rendered as "no bookings" for a
@@ -104,6 +110,7 @@ export default async function BookingsPage({
         staff={((staff as StaffMember[]) ?? []).filter((m) => !m.pending)}
         timezone={ctx.timezone}
         prefill={prefill}
+        holders={holders}
       />
     </div>
   );

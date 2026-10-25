@@ -100,6 +100,9 @@ export default async function CustomersPage({
                             {t(lang, "cust_no_shows_chip", { n: r.noShows })}
                           </span>
                         )}
+                        {r.packages > 0 && (
+                          <span className="chip good">{t(lang, "pkg_list_chip", { n: r.packages.toLocaleString(locale) })}</span>
+                        )}
                       </td>
                       <td dir="ltr">{formatPhoneForDisplay(r.phone)}</td>
                       <td>{r.completed.toLocaleString(locale)}</td>

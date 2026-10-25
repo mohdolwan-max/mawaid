@@ -97,6 +97,10 @@ export default async function ReportsPage({
 
   const visitsPct = changePct(report.totals.total, report.previous.total);
   const valuePct = changePct(report.money.completedValue, report.money.previousValue);
+  const pk = report.packages;
+  // Shown once the clinic offers packages, or sold one in the period
+  // (a retired catalogue still has sales to report).
+  const showPackages = pk !== null && (pk.catalogue > 0 || pk.sold > 0 || pk.refunded > 0);
   const vs = (pct: number | null) =>
     pct === null ? t(lang, "reports_no_compare") : t(lang, "reports_vs_prev", { pct: `${pct > 0 ? "+" : ""}${pct}` });
 
@@ -146,6 +150,20 @@ export default async function ReportsPage({
             .filter(Boolean)
             .join(" · ")}
         />
+        {showPackages && pk && (
+          <StatTile
+            label={t(lang, "reports_kpi_packages")}
+            value={money(pk.soldValue)}
+            sub={[
+              t(lang, "reports_packages_sold", { n: count(pk.sold) }),
+              vs(changePct(pk.soldValue, pk.previousSoldValue)),
+              pk.refunded > 0 ? t(lang, "reports_packages_refunded", { amount: money(pk.refunded) }) : "",
+              t(lang, "reports_packages_used", { n: count(report.money.fromPackages) }),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+        )}
         <StatTile
           label={t(lang, "reports_kpi_no_show")}
           value={rate === null ? "—" : `${count(rate)}%`}
@@ -184,6 +202,8 @@ export default async function ReportsPage({
           sub={busiest === null ? t(lang, "reports_empty_period") : t(lang, "reports_busiest_count", { n: count(busiest.total) })}
         />
       </div>
+
+      {showPackages && <p className="hint" style={{ marginTop: 8 }}>{t(lang, "reports_packages_note")}</p>}
 
       <section className="admin-charts" style={{ marginTop: 16 }}>
         <DailyBars

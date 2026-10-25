@@ -4845,6 +4845,81 @@ html.splash-seen .splash-intro {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* Session packages (0064): the customer file's card, the catalogue on the
+   services page, and the per-visit choice. */
+.pkg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.pkg-sell,
+.pkg-cancel {
+  margin: 8px 0 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--band);
+}
+.pkg-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pkg-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.pkg-list li:last-child {
+  border-bottom: 0;
+}
+.pkg-list .link-btn {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--bad-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/* The button keeps its one line beside a long description. */
+.pkg-head .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+/* Sessions used, as a share of the package. */
+.pkg-meter {
+  height: 6px;
+  margin: 8px 0 4px;
+  border-radius: 999px;
+  background: var(--tint);
+  overflow: hidden;
+}
+.pkg-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+}
+.cv-pkg {
+  margin-top: 6px;
+}
+.cv-pkg select {
+  width: auto;
+  max-width: 100%;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+}
+.pkg-drawn {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--good-bg);
+  color: var(--good-ink);
+}
 @media (max-width: 700px) {
   .cust-grid {
     grid-template-columns: 1fr;

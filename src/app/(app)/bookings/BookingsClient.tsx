@@ -10,6 +10,7 @@ import type { Appointment, BookingStatus, Service, StaffMember } from "@/lib/typ
 import { staffOwnerLabel } from "@/lib/staffLabel";
 import { DateField } from "@/components/DateTimeField";
 import { setBookingStatus, addManualBooking, fetchOwnerSlotsAction } from "./actions";
+import { holderKey, type Holder, type VisitPackageState } from "@/lib/packages";
 
 export function BookingsClient({
   lang,
@@ -18,6 +19,7 @@ export function BookingsClient({
   staff,
   timezone,
   prefill = null,
+  holders = {},
 }: {
   lang: Lang;
   appointments: Appointment[];
@@ -26,6 +28,8 @@ export function BookingsClient({
   timezone: string;
   /** Opens the manual form filled for one customer (customer file). */
   prefill?: { name: string; phone: string; email: string } | null;
+  /** Usable packages by phone + service (0064 list_package_holders). */
+  holders?: Record<string, Holder>;
 }) {
   const [showForm, setShowForm] = useState(prefill !== null);
   const router = useRouter();
@@ -59,8 +63,8 @@ export function BookingsClient({
         />
       )}
 
-      <BookingSection title={t(lang, "bookings_today")} lang={lang} rows={todays} timezone={timezone} />
-      <BookingSection title={t(lang, "bookings_upcoming")} lang={lang} rows={upcoming} timezone={timezone} />
+      <BookingSection title={t(lang, "bookings_today")} lang={lang} rows={todays} timezone={timezone} holders={holders} />
+      <BookingSection title={t(lang, "bookings_upcoming")} lang={lang} rows={upcoming} timezone={timezone} holders={holders} />
     </div>
   );
 }
@@ -70,10 +74,12 @@ function BookingSection({
   lang,
   rows,
   timezone,
+  holders,
 }: {
   title: string;
   lang: Lang;
   rows: Appointment[];
+  holders: Record<string, Holder>;
   /** The CLINIC's timezone. Without it this renders UTC on the server and
    *  local time in the browser — a hydration mismatch that silently kills
    *  the status buttons in these same rows. */
@@ -81,14 +87,18 @@ function BookingSection({
 }) {
   const router = useRouter();
   const [error, setError] = useState<TKey | null>(null);
+  // Said once after "completed" drew a session: the row itself leaves the
+  // list, so this is the only place the desk sees it.
+  const [drawn, setDrawn] = useState<{ customer: string; pkg: VisitPackageState } | null>(null);
 
-  async function mark(id: string, status: BookingStatus) {
-    const res = await setBookingStatus(id, status);
+  async function mark(a: Appointment, status: BookingStatus) {
+    const res = await setBookingStatus(a.id, status);
     if (!res.ok) {
       setError("error_generic");
       return;
     }
     setError(null);
+    setDrawn(res.package ? { customer: a.customer_name, pkg: res.package } : null);
     router.refresh();
   }
 
@@ -96,6 +106,15 @@ function BookingSection({
     <div className="card">
       <p style={{ fontWeight: 700, marginBottom: 10 }}>{title}</p>
       {error && <p className="error-text">{t(lang, error)}</p>}
+      {drawn && (
+        <p className="pkg-drawn">
+          {t(lang, "pkg_drawn_notice", {
+            customer: drawn.customer,
+            name: drawn.pkg.name,
+            left: drawn.pkg.remaining.toLocaleString(intlLocale(lang)),
+          })}
+        </p>
+      )}
       {rows.length === 0 ? (
         <div className="empty">{t(lang, "bookings_empty")}</div>
       ) : (
@@ -118,7 +137,17 @@ function BookingSection({
                       {a.customer_name}
                     </Link>
                   </td>
-                  <td>{a.service_name}</td>
+                  <td>
+                    {a.service_name}
+                    {(() => {
+                      const h = holders[holderKey(normalizePhone(a.customer_phone), a.service_id)];
+                      return h ? (
+                        <span className="chip good" title={h.name}>
+                          {t(lang, "pkg_holder_chip", { left: h.remaining.toLocaleString(intlLocale(lang)) })}
+                        </span>
+                      ) : null;
+                    })()}
+                  </td>
                   <td dir="ltr">{a.customer_phone}</td>
                   <td dir="ltr">
                     {new Date(a.start_at).toLocaleString(intlLocale(lang), {
@@ -129,13 +158,13 @@ function BookingSection({
                   </td>
                   <td>
                     <div className="toolbar">
-                      <button className="btn ghost sm" onClick={() => mark(a.id, "completed")}>
+                      <button className="btn ghost sm" onClick={() => mark(a, "completed")}>
                         {t(lang, "booking_status_completed")}
                       </button>
-                      <button className="btn ghost sm" onClick={() => mark(a.id, "no_show")}>
+                      <button className="btn ghost sm" onClick={() => mark(a, "no_show")}>
                         {t(lang, "booking_status_no_show")}
                       </button>
-                      <button className="btn danger sm" onClick={() => mark(a.id, "cancelled")}>
+                      <button className="btn danger sm" onClick={() => mark(a, "cancelled")}>
                         {t(lang, "cancel")}
                       </button>
                     </div>

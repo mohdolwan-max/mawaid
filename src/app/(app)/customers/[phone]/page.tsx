@@ -11,6 +11,7 @@ import type { StaffMember } from "@/lib/types";
 import { StatTile } from "@/components/StatTile";
 import { bookingPrefillHref, noShowRate, parseCustomerFile, whatsappChatUrl } from "@/lib/customerFile";
 import { CustomerTags, CustomerNotes } from "./CustomerTools";
+import { CustomerPackages, VisitPackage } from "./PackageTools";
 
 // One customer's file at this clinic (0062): the figures, every visit, and
 // the clinic's private tags and notes. get_org_customer decides the clinic
@@ -106,6 +107,16 @@ export default async function CustomerPage({ params }: { params: Promise<{ phone
         <StatTile label={t(lang, "cust_next_visit")} value={day(file.nextVisit)} />
       </div>
 
+      <CustomerPackages
+        lang={lang}
+        phone={file.phone}
+        packages={file.packages}
+        catalogue={file.catalogue}
+        isOwner={file.isOwner}
+        currency={ctx.currency}
+        timezone={ctx.timezone}
+      />
+
       <div className="cust-grid">
         <CustomerTags lang={lang} phone={file.phone} initial={file.tags} />
         <CustomerNotes lang={lang} phone={file.phone} notes={file.notes} timezone={ctx.timezone} />
@@ -128,7 +139,9 @@ export default async function CustomerPage({ params }: { params: Promise<{ phone
                 {v.service ?? "—"}
                 {v.staffId && <> · {staffLabel.get(v.staffId) ?? t(lang, "reports_staff_gone")}</>}
                 {v.fromQr && <span className="chip neutral">{t(lang, "cust_from_qr")}</span>}
+                {v.packageName && <span className="chip good">{t(lang, "pkg_chip", { name: v.packageName })}</span>}
               </div>
+              <VisitPackage lang={lang} phone={file.phone} visit={v} packages={file.packages} />
               {v.notes && <p className="cv-note">{v.notes}</p>}
             </li>
           ))}

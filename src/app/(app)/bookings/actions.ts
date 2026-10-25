@@ -11,23 +11,36 @@ import {
   type RescheduleResult,
 } from "@/lib/availability";
 import type { BookingStatus } from "@/lib/types";
+import { parseVisitPackageState, type VisitPackageState } from "@/lib/packages";
 
 // Reports what happened. Firing the update and revalidating regardless
 // made a refused write (RLS, a closed clinic, a stale row) look like a
 // completed one: the row simply came back unchanged. Audit 2026-09-20.
+//
+// A visit marked completed may have drawn a session from the customer's
+// package (0064's trigger); the answer says which, so the desk can tell
+// the customer what is left. A failure to read that is not a failure of
+// the status change, so it only drops the note.
 export async function setBookingStatus(
   id: string,
   status: BookingStatus
-): Promise<{ ok: true } | { ok: false; message: string }> {
+): Promise<{ ok: true; package: VisitPackageState | null } | { ok: false; message: string }> {
   const supabase = await createClient();
   const { error } = await supabase.from("appointments").update({ status }).eq("id", id);
   if (error) {
     console.error("setBookingStatus failed", error);
     return { ok: false, message: error.message };
   }
+  let pkg: VisitPackageState | null = null;
+  if (status === "completed") {
+    const { data, error: pkgError } = await supabase.rpc("visit_package_state", { p_appointment_id: id });
+    if (pkgError && pkgError.code !== "PGRST202") console.error("visit_package_state failed", pkgError);
+    pkg = pkgError ? null : parseVisitPackageState(data);
+  }
   revalidatePath("/bookings");
   revalidatePath("/dashboard");
-  return { ok: true };
+  revalidatePath("/calendar");
+  return { ok: true, package: pkg };
 }
 
 // Same availability source the customer booking page uses, so the owner

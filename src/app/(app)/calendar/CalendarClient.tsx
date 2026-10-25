@@ -22,7 +22,15 @@ export type CalendarBooking = {
   id: string;
   serviceId: string;
   serviceName: string;
+  /** What the visit is worth (0064's rule): its package share when drawn
+   *  or about to be drawn from one, else the service price; null =
+   *  unpriced, or not known when the values failed to load. */
   price: number | null;
+  /** The package the visit drew on, or the one it will draw on. */
+  packageName: string | null;
+  packageWillDraw: boolean;
+  /** Sessions left across the customer's packages for this service. */
+  packageLeft: number | null;
   staffId: string | null;
   staffName: string | null;
   customerName: string;
@@ -52,6 +60,7 @@ export function CalendarClient({
   view,
   businessHours,
   bookings,
+  valuesOk,
   staff,
   currency,
 }: {
@@ -62,6 +71,8 @@ export function CalendarClient({
   view: "day" | "week";
   businessHours: BusinessHours;
   bookings: CalendarBooking[];
+  /** false when the visit values could not be read: the total says so. */
+  valuesOk: boolean;
   staff: { id: string; name: string }[];
   /** The clinic's currency (0056). */
   currency: string;
@@ -151,8 +162,14 @@ export function CalendarClient({
           <Stat label={t(lang, "cal_stat_cancelled")} value={cancelled.length.toLocaleString(locale)} tone={cancelled.length ? "bad" : undefined} />
           <Stat
             label={t(lang, "cal_stat_value")}
-            value={`${total.toLocaleString(locale, { maximumFractionDigits: 2 })} ${currencyLabel(currency, lang)}`}
-            hint={unpriced > 0 ? t(lang, "cal_unpriced", { n: unpriced.toLocaleString(locale) }) : undefined}
+            value={valuesOk ? `${total.toLocaleString(locale, { maximumFractionDigits: 2 })} ${currencyLabel(currency, lang)}` : "—"}
+            hint={
+              !valuesOk
+                ? t(lang, "error_generic")
+                : unpriced > 0
+                  ? t(lang, "cal_unpriced", { n: unpriced.toLocaleString(locale) })
+                  : undefined
+            }
           />
         </div>
       )}
@@ -448,6 +465,16 @@ function BookingSheet({
           {clock(booking.startAt, timezone, locale)} – {clock(booking.endAt, timezone, locale)}
         </p>
         <p>{booking.serviceName}</p>
+        {booking.packageName && (
+          <p className="hint">
+            {booking.packageWillDraw
+              ? t(lang, "pkg_will_draw", {
+                  name: booking.packageName,
+                  left: (booking.packageLeft ?? 0).toLocaleString(locale),
+                })
+              : t(lang, "pkg_chip", { name: booking.packageName })}
+          </p>
+        )}
         {booking.staffName && <p className="hint">{booking.staffName}</p>}
         <p dir="ltr" style={{ textAlign: "start" }}>
           <a href={`tel:${booking.customerPhone}`}>{booking.customerPhone}</a>

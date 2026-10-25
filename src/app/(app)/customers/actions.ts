@@ -50,3 +50,75 @@ export async function setCustomerTagsAction(phone: string, input: string): Promi
   revalidatePath("/customers");
   return { ok: true };
 }
+
+// ---- Session packages (0064) ------------------------------------------------
+
+export type PackageActionError =
+  | "package_err_price"
+  | "package_err_refund"
+  | "package_err_note"
+  | "package_err_gone"
+  | "package_err_used_up"
+  | "package_err_expired"
+  | "package_err_cancelled"
+  | "error_generic";
+
+type PackageResult = { ok: true } | { ok: false; error: PackageActionError };
+
+// The database's refusal, in words the desk can act on. Anything else is
+// logged and shown as the generic failure.
+function packageError(message: string | undefined, fallbackLog: string, error: unknown): PackageActionError {
+  const m = message ?? "";
+  if (m.includes("package_price")) return "package_err_price";
+  if (m.includes("package_refund")) return "package_err_refund";
+  if (m.includes("package_note")) return "package_err_note";
+  if (m.includes("package_used_up")) return "package_err_used_up";
+  if (m.includes("package_expired")) return "package_err_expired";
+  if (m.includes("package_cancelled")) return "package_err_cancelled";
+  if (m.includes("package_not_found") || m.includes("visit_not_found") || m.includes("visit_not_finished")) return "package_err_gone";
+  console.error(fallbackLog, error);
+  return "error_generic";
+}
+
+export async function sellPackageAction(phone: string, packageId: string, price: number, note: string): Promise<PackageResult> {
+  if (!Number.isFinite(price) || price < 0) return { ok: false, error: "package_err_price" };
+  if (note.length > 500) return { ok: false, error: "package_err_note" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("sell_customer_package", {
+    p_phone: phone,
+    p_package_id: packageId,
+    p_price: price,
+    p_note: note.trim() || null,
+  });
+  if (error) return { ok: false, error: packageError(error.message, "sell_customer_package failed", error) };
+  revalidatePath(fileUrl(phone));
+  revalidatePath("/customers");
+  return { ok: true };
+}
+
+export async function cancelPackageAction(phone: string, customerPackageId: string, refund: number): Promise<PackageResult> {
+  if (!Number.isFinite(refund) || refund < 0) return { ok: false, error: "package_err_refund" };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_customer_package", { p_id: customerPackageId, p_refund: refund });
+  if (error) return { ok: false, error: packageError(error.message, "cancel_customer_package failed", error) };
+  revalidatePath(fileUrl(phone));
+  revalidatePath("/customers");
+  return { ok: true };
+}
+
+/** customerPackageId null takes the visit off any package for good. */
+export async function setVisitPackageAction(
+  phone: string,
+  appointmentId: string,
+  customerPackageId: string | null
+): Promise<PackageResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_visit_package", {
+    p_appointment_id: appointmentId,
+    p_customer_package_id: customerPackageId,
+  });
+  if (error) return { ok: false, error: packageError(error.message, "set_visit_package failed", error) };
+  revalidatePath(fileUrl(phone));
+  revalidatePath("/customers");
+  return { ok: true };
+}
