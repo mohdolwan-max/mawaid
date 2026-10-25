@@ -4943,11 +4943,30 @@ html.splash-seen .splash-intro {
 
 /* Booking links per place (0065), folded under the public link. */
 .links-card summary {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 10px;
+  row-gap: 2px;
   cursor: pointer;
   list-style: none;
+}
+/* The fold must look like one: an arrow that turns when it opens. */
+.links-card summary::after {
+  content: "";
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  /* Physical, not inline-end: the chevron must point down in both
+     directions, and inline-end flips it sideways in Arabic. */
+  border-right: 2px solid var(--ink2);
+  border-bottom: 2px solid var(--ink2);
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+.links-card[open] summary::after {
+  transform: rotate(-135deg);
 }
 .links-card summary::-webkit-details-marker {
   display: none;
