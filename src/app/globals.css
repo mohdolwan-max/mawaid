@@ -4940,3 +4940,34 @@ html.splash-seen .splash-intro {
     font-size: 0.75rem;
   }
 }
+
+/* Booking links per place (0065), folded under the public link. */
+.links-card summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  list-style: none;
+}
+.links-card summary::-webkit-details-marker {
+  display: none;
+}
+.links-card-title {
+  font-weight: 700;
+}
+.links-list {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+}
+.links-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.links-url {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: var(--brand);
+  overflow-wrap: anywhere;
+  text-align: start;
+}

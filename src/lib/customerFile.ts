@@ -3,6 +3,7 @@
 // (ENGINEERING-STANDARDS §4).
 
 import { toE164 } from "@/lib/phoneCode";
+import { isBookingSource, type BookingSource } from "@/lib/qr";
 import { parseCustomerPackages, parseSellable, type CataloguePackage, type CustomerPackage } from "@/lib/packages";
 
 type Obj = Record<string, unknown>;
@@ -73,7 +74,8 @@ export type CustomerVisit = {
   /** What the visit is worth: its share of a package when drawn from one,
    *  else the service's price; null = unpriced (0064 _visit_values). */
   value: number | null;
-  fromQr: boolean;
+  /** Where the booking came from (0060/0065); null = not from a known one. */
+  source: BookingSource | null;
   /** The package this visit drew on, if any. */
   packageId: string | null;
   packageName: string | null;
@@ -118,7 +120,7 @@ export function parseCustomerFile(raw: unknown): CustomerFile | null {
       serviceId: str(v.service_id),
       service: str(v.service),
       value: v.value === null || v.value === undefined ? null : num(v.value),
-      fromQr: v.booking_source === "qr",
+      source: isBookingSource(v.booking_source) ? v.booking_source : null,
       packageId: str(v.package_id),
       packageName: str(v.package_name),
       packageAuto: v.package_auto === true,

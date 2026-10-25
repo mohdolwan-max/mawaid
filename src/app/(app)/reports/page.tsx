@@ -1,6 +1,6 @@
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
-import { t, type Lang } from "@/lib/i18n";
+import { t, type Lang, type TKey } from "@/lib/i18n";
 import { currencyLabel } from "@/lib/billing";
 import { intlLocale, todayYMD } from "@/lib/date";
 import type { StaffMember } from "@/lib/types";
@@ -13,8 +13,9 @@ import {
   noShowRate,
   parseOrgReport,
   previousNoShowRate,
-  qrShare,
+  sourceRows,
   topServices,
+  trackedBookings,
 } from "@/lib/orgReport";
 import { PeriodPicker } from "@/components/PeriodPicker";
 import { DailyBars } from "@/components/DailyBars";
@@ -115,6 +116,10 @@ export default async function ReportsPage({
     );
 
   const services = topServices(report.byService, 8);
+  // The QR code (0060) and the clinic's links for Google, Instagram and
+  // the rest (0065): which of them brought the bookings in.
+  const tracked = trackedBookings(report);
+  const sources = sourceRows(report);
   const staff = [...report.byStaff].sort((a, b) => b.total - a.total);
 
   return (
@@ -184,13 +189,15 @@ export default async function ReportsPage({
           value={count(report.customers.people)}
           sub={t(lang, "reports_kpi_new_customers", { n: count(report.customers.new) })}
         />
-        {report.sources && (
+        {tracked && (
           <StatTile
-            label={t(lang, "reports_kpi_qr")}
-            value={count(report.sources.qr)}
+            label={t(lang, "reports_kpi_links")}
+            value={count(tracked.count)}
             sub={[
-              qrShare(report) === null ? "" : t(lang, "reports_qr_share", { pct: count(qrShare(report) as number) }),
-              t(lang, "reports_qr_prev", { n: count(report.sources.qrPrevious) }),
+              report.totals.total > 0
+                ? t(lang, "reports_qr_share", { pct: count(Math.round((tracked.count / report.totals.total) * 100)) })
+                : "",
+              t(lang, "reports_qr_prev", { n: count(tracked.previous) }),
             ]
               .filter(Boolean)
               .join(" · ")}
@@ -291,6 +298,39 @@ export default async function ReportsPage({
           </div>
         )}
       </div>
+
+      {report.sources && (
+        <div className="card" style={{ marginTop: 12 }}>
+          <p style={{ fontWeight: 700, marginBottom: 4 }}>{t(lang, "reports_by_source")}</p>
+          <p className="hint" style={{ marginBottom: 10 }}>{t(lang, "reports_by_source_hint")}</p>
+          {sources.length === 0 ? (
+            <div className="empty">{t(lang, "reports_no_source")}</div>
+          ) : (
+            <div className="ac-table-wrap">
+              <table className="ac-table">
+                <thead>
+                  <tr>
+                    <th>{t(lang, "reports_col_source")}</th>
+                    <th className="num">{t(lang, "reports_col_visits")}</th>
+                    <th className="num">{t(lang, "reports_col_share")}</th>
+                    <th className="num">{t(lang, "reports_col_previous")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sources.map((r) => (
+                    <tr key={r.source}>
+                      <td>{t(lang, `source_${r.source}` as TKey)}</td>
+                      <td className="num">{count(r.count)}</td>
+                      <td className="num">{r.share === null ? "—" : `${count(r.share)}%`}</td>
+                      <td className="num">{count(r.previous)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { todayYMD, nowIso } from "@/lib/date";
 import { CalendarIcon, ClockIcon } from "@/components/icons";
 import { PublicLinkCard } from "./PublicLinkCard";
+import { BookingLinksCard } from "./BookingLinksCard";
 import { NotificationsCard, type OrgNotification } from "./NotificationsCard";
 import { PlanCard } from "./PlanCard";
 import { getMyPlanUsage, getMySmsUsage } from "@/lib/planServer";
@@ -78,6 +79,7 @@ export default async function DashboardPage() {
       {planUsage && <PlanCard usage={planUsage} lang={ctx.lang} smsUsed={smsUsed} />}
 
       <PublicLinkCard lang={ctx.lang} slug={ctx.slug} orgName={ctx.name} />
+      <BookingLinksCard lang={ctx.lang} slug={ctx.slug} />
     </div>
   );
 }

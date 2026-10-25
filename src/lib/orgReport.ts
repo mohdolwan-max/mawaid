@@ -7,6 +7,7 @@
 // (ENGINEERING-STANDARDS section 1).
 
 import { num } from "@/lib/admin";
+import { BOOKING_SOURCES, isBookingSource, type BookingSource } from "@/lib/qr";
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -69,9 +70,16 @@ export type OrgReport = {
   byStaff: StaffRow[];
   customers: { people: number; new: number };
   series: ReportDay[];
-  /** Bookings from the clinic's QR code (0060), same rows as totals.
-   *  null before 0060 is applied — the tile hides rather than saying 0. */
-  sources: { qr: number; qrPrevious: number } | null;
+  /** Bookings from the clinic's QR code (0060) and its links (0065), same
+   *  rows as totals. null before 0060 is applied — the section hides
+   *  rather than saying 0. Before 0065 only the QR count exists, and
+   *  bySource holds just that. */
+  sources: {
+    qr: number;
+    qrPrevious: number;
+    bySource: Partial<Record<BookingSource, number>>;
+    bySourcePrevious: Partial<Record<BookingSource, number>>;
+  } | null;
   /** Package money on the day it moved (0064): a different measure from
    *  the value of completed visits, never added to it. null before 0064. */
   packages: {
@@ -151,7 +159,7 @@ export function parseOrgReport(raw: unknown): OrgReport | null {
     byStaff,
     customers: { people: n0(c.people), new: n0(c.new) },
     series,
-    sources: isObj(raw.sources) ? { qr: n0(raw.sources.qr), qrPrevious: n0(raw.sources.qr_previous) } : null,
+    sources: isObj(raw.sources) ? parseSources(raw.sources) : null,
     packages: isObj(raw.packages)
       ? {
           catalogue: n0(raw.packages.catalogue),
@@ -164,11 +172,56 @@ export function parseOrgReport(raw: unknown): OrgReport | null {
   };
 }
 
+function sourceCounts(raw: unknown): Partial<Record<BookingSource, number>> {
+  const out: Partial<Record<BookingSource, number>> = {};
+  if (!isObj(raw)) return out;
+  for (const [k, v] of Object.entries(raw)) if (isBookingSource(k)) out[k] = n0(v);
+  return out;
+}
+
+function parseSources(s: Obj): NonNullable<OrgReport["sources"]> {
+  const qr = n0(s.qr);
+  const qrPrevious = n0(s.qr_previous);
+  // Before 0065 there is no breakdown: the QR count is the whole of it.
+  const has = isObj(s.by_source);
+  return {
+    qr,
+    qrPrevious,
+    bySource: has ? sourceCounts(s.by_source) : qr > 0 ? { qr } : {},
+    bySourcePrevious: has ? sourceCounts(s.by_source_previous) : qrPrevious > 0 ? { qr: qrPrevious } : {},
+  };
+}
+
 /** The QR code's share of the period's bookings, as a whole percent. null
  *  when it cannot be said: no source data, or no bookings at all. */
 export function qrShare(r: Pick<OrgReport, "totals" | "sources">): number | null {
   if (!r.sources || r.totals.total <= 0) return null;
   return Math.round((r.sources.qr / r.totals.total) * 100);
+}
+
+export type SourceRow = { source: BookingSource; count: number; previous: number; share: number | null };
+
+/** One row per source that brought a booking in either period, in the
+ *  fixed order of BOOKING_SOURCES, with its share of the period's
+ *  bookings (null when the period has none). */
+export function sourceRows(r: Pick<OrgReport, "totals" | "sources">): SourceRow[] {
+  if (!r.sources) return [];
+  const rows: SourceRow[] = [];
+  for (const source of BOOKING_SOURCES) {
+    const count = r.sources.bySource[source] ?? 0;
+    const previous = r.sources.bySourcePrevious[source] ?? 0;
+    if (count === 0 && previous === 0) continue;
+    rows.push({ source, count, previous, share: r.totals.total > 0 ? Math.round((count / r.totals.total) * 100) : null });
+  }
+  return rows;
+}
+
+/** All bookings that came through a code or a link, this period and the
+ *  one before. */
+export function trackedBookings(r: Pick<OrgReport, "sources">): { count: number; previous: number } | null {
+  if (!r.sources) return null;
+  const sum = (o: Partial<Record<BookingSource, number>>) => Object.values(o).reduce((a, b) => a + (b ?? 0), 0);
+  return { count: sum(r.sources.bySource), previous: sum(r.sources.bySourcePrevious) };
 }
 
 /** Share of finished visits that the customer did not attend, as a whole
