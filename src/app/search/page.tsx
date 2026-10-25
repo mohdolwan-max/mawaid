@@ -4,8 +4,7 @@ import { getCity } from "@/lib/city";
 import { t, type TKey } from "@/lib/i18n";
 import { CATEGORIES, FEATURED_CATEGORIES, citiesOf, countryOfCity } from "@/lib/directory";
 import { listDirectoryOrgs, searchOpenTimes } from "@/lib/directoryServer";
-import { DAY_OFFSETS, WINDOWS, countryTimezone, parseOpenTimes, parseWhen, type OpenTimesRow } from "@/lib/openTimes";
-import { waitlistBookHref } from "@/lib/waitlist";
+import { DAY_OFFSETS, WINDOWS, countryTimezone, openTimeHref, parseOpenTimes, parseWhen, type OpenTimesRow } from "@/lib/openTimes";
 import { formatPrice } from "@/lib/billing";
 import { intlLocale, addDaysYMD, todayYMD } from "@/lib/date";
 import { PublicNav } from "@/components/marketplace/PublicNav";
@@ -185,7 +184,7 @@ export default async function SearchPage({
                 </p>
                 <div className="ot-times">
                   {row.times.map((iso) => (
-                    <Link key={iso} href={waitlistBookHref(row.orgSlug, [row.serviceId], when.date)} className="slot-btn">
+                    <Link key={iso} href={openTimeHref(row.orgSlug, row.serviceId, when.date, iso)} className="slot-btn">
                       {clock(iso)}
                     </Link>
                   ))}

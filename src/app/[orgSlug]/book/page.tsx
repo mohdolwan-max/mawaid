@@ -7,6 +7,7 @@ import { parseServiceSelection } from "@/lib/serviceSelection";
 import { BookingClient } from "./BookingClient";
 import { SourceCapture } from "@/components/marketplace/SourceCapture";
 import { parseBookDate } from "@/lib/waitlist";
+import { parseBookAt } from "@/lib/openTimes";
 import { todayYMD } from "@/lib/date";
 
 export default async function BookPage({
@@ -14,9 +15,9 @@ export default async function BookPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string }>;
-  searchParams: Promise<{ services?: string | string[]; date?: string | string[] }>;
+  searchParams: Promise<{ services?: string | string[]; date?: string | string[]; at?: string | string[] }>;
 }) {
-  const [{ orgSlug }, { services: servicesParam, date: dateParam }] = await Promise.all([params, searchParams]);
+  const [{ orgSlug }, { services: servicesParam, date: dateParam, at: atParam }] = await Promise.all([params, searchParams]);
   const lang = await getLang();
 
   const org = await getPublicOrg(orgSlug);
@@ -46,6 +47,9 @@ export default async function BookPage({
         // The day a waitlist email points at (0066); a bad or past one is
         // ignored and the page starts on today.
         initialDate={parseBookDate(dateParam, todayYMD(org.timezone ?? "Asia/Amman"))}
+        // The time picked in the search by free time (0069), selected when
+        // the slot list still offers it.
+        initialSlot={parseBookAt(atParam, parseBookDate(dateParam, todayYMD(org.timezone ?? "Asia/Amman")), org.timezone ?? "Asia/Amman")}
         defaults={
           customer
             ? { name: customer.name, phone: customer.phone, email: customer.email ?? "" }

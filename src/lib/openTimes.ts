@@ -47,6 +47,23 @@ export function parseWhen(
   return { offset, date, window };
 }
 
+/** The booking page on that day with the service chosen and the time
+ *  picked in the search already selected (it is checked again there). */
+export function openTimeHref(slug: string, serviceId: string, day: string, iso: string): string {
+  return `/${encodeURIComponent(slug)}/book?services=${encodeURIComponent(serviceId)}&date=${encodeURIComponent(day)}&at=${encodeURIComponent(iso)}`;
+}
+
+/** ?at= for the booking page: an instant on the chosen day (in the
+ *  clinic's timezone), else null. Whether it is still free is the slot
+ *  list's business, not this one's. */
+export function parseBookAt(raw: string | string[] | undefined, day: string | null, timezone: string): string | null {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (!v || !day || v.length > 40) return null;
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  return ymdIn(timezone, d) === day ? d.toISOString() : null;
+}
+
 export type OpenTimesRow = {
   orgId: string;
   orgName: string;

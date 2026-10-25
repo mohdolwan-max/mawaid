@@ -57,6 +57,7 @@ export function BookingClient({
   currency,
   initialServiceIds = [],
   initialDate = null,
+  initialSlot = null,
 }: {
   lang: Lang;
   orgSlug: string;
@@ -73,6 +74,9 @@ export function BookingClient({
   initialServiceIds?: string[];
   /** The day to open on (a waitlist email's link), validated server-side. */
   initialDate?: string | null;
+  /** A time picked in the search by free time, selected once the slot
+   *  list offers it (an instant on initialDate, validated server-side). */
+  initialSlot?: string | null;
 }) {
   // Arriving with services picked on the clinic page: start with them
   // chosen and on the staff step, instead of asking for them again.
@@ -211,6 +215,22 @@ export function BookingClient({
           }, {})
         ).sort((a, b) => a.iso.localeCompare(b.iso))
       : slots.map((iso) => ({ iso, staffId: staffId }));
+
+  // Used once: the first slot list that loads selects the time picked in
+  // the search, if that time is still free. Taken already, nothing is
+  // selected and the customer picks another, as on any day.
+  const pendingSlot = useRef(initialSlot);
+  useEffect(() => {
+    if (!pendingSlot.current || step !== "slot" || slotsLoading) return;
+    if (slots.length === 0 && staffSlots.length === 0) return;
+    const want = new Date(pendingSlot.current).getTime();
+    pendingSlot.current = null;
+    const hit = offered.find((o) => new Date(o.iso).getTime() === want);
+    if (hit) {
+      setSelectedSlot(hit.iso);
+      setPickedStaffForSlot(hit.staffId);
+    }
+  }, [step, slotsLoading, slots, staffSlots, offered]);
 
   const pickedStaff =
     staffOptions.find((s) => s.membership_id === (pickedStaffForSlot ?? staffId)) ?? null;
