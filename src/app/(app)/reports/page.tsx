@@ -18,6 +18,8 @@ import {
   trackedBookings,
 } from "@/lib/orgReport";
 import { PeriodPicker } from "@/components/PeriodPicker";
+import { branchTotals, parseBranchSummary } from "@/lib/branches";
+import { formatPrice } from "@/lib/billing";
 import { DailyBars } from "@/components/DailyBars";
 import { StatTile } from "@/components/StatTile";
 
@@ -64,10 +66,14 @@ export default async function ReportsPage({
   }
 
   const supabase = await createClient();
-  const [{ data, error }, { data: staffRows }] = await Promise.all([
+  const [{ data, error }, { data: staffRows }, branchesRes] = await Promise.all([
     supabase.rpc("org_report", { p_from: period.from, p_to: period.to }),
     supabase.rpc("list_org_staff", { p_org_id: ctx.orgId }),
+    // Every clinic the owner has (0071), when more than one.
+    supabase.rpc("branches_summary", { p_from: period.from, p_to: period.to }),
   ]);
+  if (branchesRes.error && branchesRes.error.code !== "PGRST202") console.error("branches_summary failed", branchesRes.error);
+  const branches = branchesRes.error ? [] : parseBranchSummary(branchesRes.data);
 
   const report = error ? null : parseOrgReport(data);
   if (!report) {
@@ -126,6 +132,49 @@ export default async function ReportsPage({
     <div>
       {head}
       <PeriodPicker lang={lang} path="/reports" period={period} today={today} />
+
+      {branches.length > 1 && (
+        <div className="card" style={{ marginTop: 12 }}>
+          <p style={{ fontWeight: 700, marginBottom: 4 }}>{t(lang, "branch_report_title")}</p>
+          <p className="hint" style={{ marginBottom: 10 }}>{t(lang, "branch_report_hint")}</p>
+          <div className="ac-table-wrap">
+            <table className="ac-table">
+              <thead>
+                <tr>
+                  <th>{t(lang, "branch_col")}</th>
+                  <th className="num">{t(lang, "reports_col_visits")}</th>
+                  <th className="num">{t(lang, "reports_col_completed")}</th>
+                  <th className="num">{t(lang, "reports_col_no_show")}</th>
+                  <th className="num">{t(lang, "reports_col_value")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {branches.map((b) => (
+                  <tr key={b.orgId}>
+                    <td>
+                      {b.name}
+                      {b.orgId === ctx.orgId && <span className="chip good">{t(lang, "branch_current")}</span>}
+                    </td>
+                    <td className="num">{count(b.visits)}</td>
+                    <td className="num">{count(b.completed)}</td>
+                    <td className="num">{count(b.noShows)}</td>
+                    <td className="num">{formatPrice(b.value, b.currency, lang)}</td>
+                  </tr>
+                ))}
+                {branchTotals(branches).map((tot) => (
+                  <tr key={tot.currency} className="ac-total">
+                    <td>{t(lang, "branch_total")}</td>
+                    <td className="num">{count(tot.visits)}</td>
+                    <td className="num">{count(tot.completed)}</td>
+                    <td className="num"></td>
+                    <td className="num">{formatPrice(tot.value, tot.currency, lang)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="admin-tiles" style={{ marginTop: 12 }}>
         <StatTile

@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { t, type Lang } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
-import { toggleLang } from "./actions";
+import { toggleLang, switchOrgAction } from "./actions";
+import type { MyOrg } from "@/lib/branches";
 
 const LINKS = [
   { href: "/dashboard", key: "nav_dashboard" as const },
@@ -26,9 +27,14 @@ export function Sidebar({
   lang,
   orgName,
   unread,
+  orgs = [],
+  activeOrgId,
 }: {
   lang: Lang;
   orgName: string;
+  /** Every clinic the user belongs to (0071); a switcher when more than one. */
+  orgs?: MyOrg[];
+  activeOrgId?: string;
   /** null = the count could not be read. Deliberately not 0: an owner
    *  must never be shown "nothing new" because a query failed. */
   unread: number | null;
@@ -41,6 +47,29 @@ export function Sidebar({
     <aside className="sidebar">
       <div className="brand">
         <h1>{orgName}</h1>
+        {orgs.length > 1 && (
+          <select
+            className="org-switch"
+            aria-label={t(lang, "branch_switch")}
+            value={activeOrgId}
+            onChange={(e) => {
+              const id = e.target.value;
+              startTransition(async () => {
+                const r = await switchOrgAction(id);
+                // Every page of the dashboard belongs to one clinic: start
+                // the new one from its home rather than mid-page.
+                if (r.ok) router.push("/dashboard");
+                router.refresh();
+              });
+            }}
+          >
+            {orgs.map((o) => (
+              <option key={o.orgId} value={o.orgId}>
+                {o.name}
+              </option>
+            ))}
+          </select>
+        )}
         {/* The same symbol and wordmark the public header uses, smaller. */}
         <div className="brand-lockup">
           {/* eslint-disable-next-line @next/next/no-img-element */}

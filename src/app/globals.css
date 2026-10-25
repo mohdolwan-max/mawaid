@@ -5065,3 +5065,16 @@ html.splash-seen .splash-intro {
 .ot-times .slot-btn {
   text-decoration: none;
 }
+
+/* The clinic switcher under the clinic's name (0071). */
+.org-switch {
+  margin-top: 6px;
+  width: 100%;
+  font-size: 0.9rem;
+  padding: 6px 8px;
+}
+/* A totals row under a report table. */
+.ac-table tr.ac-total td {
+  font-weight: 700;
+  border-top: 2px solid var(--line);
+}

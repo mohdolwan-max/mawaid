@@ -1,3 +1,5 @@
+import { BranchesCard } from "./BranchesCard";
+import { parseMyOrgs } from "@/lib/branches";
 import { requireOrgContext } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 import { t } from "@/lib/i18n";
@@ -54,6 +56,11 @@ export default async function SettingsPage() {
     lng: dir.lng ?? null,
   };
 
+  // The owner's clinics (0071). Hidden before the migration runs.
+  const orgsRes = ctx.role === "owner" ? await supabase.rpc("my_orgs") : null;
+  if (orgsRes?.error && orgsRes.error.code !== "PGRST202") console.error("my_orgs failed", orgsRes.error);
+  const branchOrgs = orgsRes && !orgsRes.error ? parseMyOrgs(orgsRes.data) : null;
+
   return (
     <div>
       <div className="page-head">
@@ -68,6 +75,9 @@ export default async function SettingsPage() {
         mapsUrl={dir.maps_url ?? ""}
         compactSlots={compactSlots}
       />
+      {ctx.role === "owner" && branchOrgs !== null && (
+        <BranchesCard lang={ctx.lang} orgs={branchOrgs} activeOrgId={ctx.orgId} />
+      )}
       {ctx.role === "owner" && (
         <DeleteAccountCard lang={ctx.lang} pendingUntil={await getPendingDeletion()} />
       )}
