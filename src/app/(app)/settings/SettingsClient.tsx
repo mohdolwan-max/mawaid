@@ -41,11 +41,14 @@ export function SettingsClient({
   canManage,
   directory,
   mapsUrl: initialMapsUrl,
+  compactSlots: initialCompact,
 }: {
   ctx: OrgContext;
   canManage: boolean;
   directory: DirectoryProfile;
   mapsUrl: string;
+  /** 0061; null = not readable (migration not applied): hidden, not sent. */
+  compactSlots: boolean | null;
 }) {
   const lang = ctx.lang;
   const [name, setName] = useState(ctx.name);
@@ -59,6 +62,7 @@ export function SettingsClient({
   const [slotInterval, setSlotInterval] = useState(ctx.slotIntervalMinutes);
   const [minNotice, setMinNotice] = useState(ctx.minNoticeMinutes);
   const [maxAdvance, setMaxAdvance] = useState(ctx.maxAdvanceDays);
+  const [compact, setCompact] = useState(initialCompact ?? false);
   const [savingRules, setSavingRules] = useState(false);
   const [rulesSaved, setRulesSaved] = useState<"" | "ok" | "failed">("");
 
@@ -430,6 +434,8 @@ export function SettingsClient({
             slotIntervalMinutes: slotInterval,
             minNoticeMinutes: minNotice,
             maxAdvanceDays: maxAdvance,
+            // Only a value that was read is written back.
+            ...(initialCompact === null ? {} : { compactSlots: compact }),
           });
           setRulesSaved(r.ok ? "ok" : "failed");
           setSavingRules(false);
@@ -476,6 +482,22 @@ export function SettingsClient({
             />
           </div>
         </div>
+
+        {initialCompact !== null && (
+          <div className="field" style={{ marginTop: 6 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                style={{ width: "auto" }}
+                disabled={!canManage}
+                checked={compact}
+                onChange={(e) => setCompact(e.target.checked)}
+              />
+              {t(lang, "compact_slots_label")}
+            </label>
+            <p className="hint" style={{ marginTop: 4 }}>{t(lang, "compact_slots_hint")}</p>
+          </div>
+        )}
 
         {canManage && (
           <button type="submit" className="btn" disabled={savingRules}>

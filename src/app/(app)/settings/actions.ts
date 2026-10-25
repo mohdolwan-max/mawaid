@@ -139,6 +139,8 @@ export async function saveBookingRules(input: {
   slotIntervalMinutes: number;
   minNoticeMinutes: number;
   maxAdvanceDays: number;
+  /** 0061. Absent when the form could not read it: then it is not written. */
+  compactSlots?: boolean;
 }): Promise<SaveResult> {
   const ctx = await requireOrgContext();
   const supabase = await createClient();
@@ -149,6 +151,7 @@ export async function saveBookingRules(input: {
       slot_interval_minutes: input.slotIntervalMinutes,
       min_notice_minutes: input.minNoticeMinutes,
       max_advance_days: input.maxAdvanceDays,
+      ...(typeof input.compactSlots === "boolean" ? { compact_slots: input.compactSlots } : {}),
     })
     .eq("org_id", ctx.orgId);
   if (error) {

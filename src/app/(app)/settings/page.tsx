@@ -28,6 +28,17 @@ export default async function SettingsPage() {
     throw new Error(`settings read failed: ${dirError?.message ?? "no row"}`);
   }
 
+  // Compact scheduling (0061). Read on its own: before 0061 the column does
+  // not exist, and the switch is then not shown at all — never shown as
+  // "off" and never written back (ENGINEERING-STANDARDS §1).
+  const { data: rules, error: rulesError } = await supabase
+    .from("org_settings")
+    .select("compact_slots")
+    .eq("org_id", ctx.orgId)
+    .maybeSingle();
+  const compactSlots: boolean | null =
+    !rulesError && rules && typeof rules.compact_slots === "boolean" ? rules.compact_slots : null;
+
   const directory: DirectoryProfile = {
     isListed: dir.is_listed ?? false,
     category: dir.category ?? "",
@@ -55,6 +66,7 @@ export default async function SettingsPage() {
         canManage={ctx.role === "owner"}
         directory={directory}
         mapsUrl={dir.maps_url ?? ""}
+        compactSlots={compactSlots}
       />
       {ctx.role === "owner" && (
         <DeleteAccountCard lang={ctx.lang} pendingUntil={await getPendingDeletion()} />
