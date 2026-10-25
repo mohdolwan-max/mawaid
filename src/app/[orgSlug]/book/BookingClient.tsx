@@ -11,6 +11,7 @@ import { ReminderOptIn } from "@/components/marketplace/ReminderOptIn";
 import { fetchStaffAction, fetchSlotsAction, submitBookingAction, resendCodeAction } from "./actions";
 import { cleanCode, codeDigits, CODE_LENGTH } from "@/lib/phoneCode";
 import { decodeStoredSource, sourceStorageKey } from "@/lib/qr";
+import { WaitlistJoin } from "./WaitlistJoin";
 import { intlLocale } from "@/lib/date";
 import { isValidPhone, formatPhoneForDisplay, normalizePhone } from "@/lib/phone";
 
@@ -55,6 +56,7 @@ export function BookingClient({
   orgPhone,
   currency,
   initialServiceIds = [],
+  initialDate = null,
 }: {
   lang: Lang;
   orgSlug: string;
@@ -69,6 +71,8 @@ export function BookingClient({
   defaults: { name: string; phone: string; email: string } | null;
   /** Services already chosen on the clinic page, validated server-side. */
   initialServiceIds?: string[];
+  /** The day to open on (a waitlist email's link), validated server-side. */
+  initialDate?: string | null;
 }) {
   // Arriving with services picked on the clinic page: start with them
   // chosen and on the staff step, instead of asking for them again.
@@ -87,7 +91,7 @@ export function BookingClient({
   const [staffOptions, setStaffOptions] = useState<PublicStaff[]>([]);
   const [staffId, setStaffId] = useState<string | null>(null);
 
-  const [date, setDate] = useState(todayISO(timezone));
+  const [date, setDate] = useState(initialDate ?? todayISO(timezone));
   const [slots, setSlots] = useState<string[]>([]);
   // "Any staff" + a real roster renders the Wddk-style grouped view:
   // one block of times PER specialist instead of one anonymous grid.
@@ -504,7 +508,25 @@ export function BookingClient({
           {slotsLoading ? (
             <p className="hint">{t(lang, "loading")}</p>
           ) : offered.length === 0 ? (
-            <p className="hint">{t(lang, "book_no_slots")}</p>
+            <>
+              <p className="hint">{t(lang, "book_no_slots")}</p>
+              {/* No time that day: wait for one instead of leaving (0066).
+                  Keyed by the day so a new day starts a fresh form. */}
+              {!error && (
+                <WaitlistJoin
+                  key={`${date}|${staffId ?? "any"}`}
+                  lang={lang}
+                  orgSlug={orgSlug}
+                  serviceIds={chosen.map((c) => c.id)}
+                  staffId={staffId}
+                  day={date}
+                  dayLabel={new Intl.DateTimeFormat(intlLocale(lang), { dateStyle: "full", timeZone: "UTC" }).format(
+                    new Date(`${date}T12:00:00Z`)
+                  )}
+                  defaults={{ name, phone, email }}
+                />
+              )}
+            </>
           ) : (
             <>
               {/* Why the day starts when it starts. The clinic's own

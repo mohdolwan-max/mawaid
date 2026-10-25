@@ -6,15 +6,17 @@ import { BackBar } from "@/components/marketplace/BackBar";
 import { parseServiceSelection } from "@/lib/serviceSelection";
 import { BookingClient } from "./BookingClient";
 import { SourceCapture } from "@/components/marketplace/SourceCapture";
+import { parseBookDate } from "@/lib/waitlist";
+import { todayYMD } from "@/lib/date";
 
 export default async function BookPage({
   params,
   searchParams,
 }: {
   params: Promise<{ orgSlug: string }>;
-  searchParams: Promise<{ services?: string | string[] }>;
+  searchParams: Promise<{ services?: string | string[]; date?: string | string[] }>;
 }) {
-  const [{ orgSlug }, { services: servicesParam }] = await Promise.all([params, searchParams]);
+  const [{ orgSlug }, { services: servicesParam, date: dateParam }] = await Promise.all([params, searchParams]);
   const lang = await getLang();
 
   const org = await getPublicOrg(orgSlug);
@@ -41,6 +43,9 @@ export default async function BookPage({
         orgPhone={org.phone ?? null}
         currency={org.currency}
         initialServiceIds={initialServiceIds}
+        // The day a waitlist email points at (0066); a bad or past one is
+        // ignored and the page starts on today.
+        initialDate={parseBookDate(dateParam, todayYMD(org.timezone ?? "Asia/Amman"))}
         defaults={
           customer
             ? { name: customer.name, phone: customer.phone, email: customer.email ?? "" }

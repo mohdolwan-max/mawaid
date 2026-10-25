@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { sendWaitlistNotices } from "@/lib/waitlistNotify";
 import {
   cancelVisitByToken,
   getAvailableSlotsChain,
@@ -12,8 +14,13 @@ import { submitReview } from "@/lib/reviews";
 // Cancels every appointment in the visit. A guest booking three services
 // holds exactly one link, so cancelling only the row that link points at
 // left the other two on the clinic's calendar.
+//
+// A cancelled time may be what someone on the waitlist is waiting for
+// (0066): they are emailed after the answer has gone back.
 export async function cancelAction(token: string): Promise<boolean> {
-  return cancelVisitByToken(token);
+  const ok = await cancelVisitByToken(token);
+  if (ok) after(sendWaitlistNotices);
+  return ok;
 }
 
 export async function submitReviewAction(
@@ -46,5 +53,7 @@ export async function rescheduleAction(
   startAt: string
 ): Promise<RescheduleResult> {
   const result = await rescheduleByToken(token, startAt);
+  // The old time is free now (0066).
+  if (result.ok) after(sendWaitlistNotices);
   return result;
 }

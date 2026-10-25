@@ -4990,3 +4990,20 @@ html.splash-seen .splash-intro {
   overflow-wrap: anywhere;
   text-align: start;
 }
+
+/* The waitlist offer on the booking page (0066). */
+.wl-box {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--band);
+}
+.wl-done {
+  border-style: solid;
+  background: var(--good-bg);
+  color: var(--good-ink);
+}
+.wl-done .hint {
+  color: var(--good-ink);
+}

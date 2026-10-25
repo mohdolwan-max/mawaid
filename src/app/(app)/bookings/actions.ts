@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { sendWaitlistNotices } from "@/lib/waitlistNotify";
 import { createClient } from "@/lib/supabase/server";
 import { requireOrgContext } from "@/lib/org";
 import {
@@ -37,9 +39,12 @@ export async function setBookingStatus(
     if (pkgError && pkgError.code !== "PGRST202") console.error("visit_package_state failed", pkgError);
     pkg = pkgError ? null : parseVisitPackageState(data);
   }
+  // A cancelled time may be what the waitlist is waiting for (0066).
+  if (status === "cancelled") after(sendWaitlistNotices);
   revalidatePath("/bookings");
   revalidatePath("/dashboard");
   revalidatePath("/calendar");
+  revalidatePath("/waitlist");
   return { ok: true, package: pkg };
 }
 
@@ -101,6 +106,9 @@ export async function rescheduleBookingAction(
   await requireOrgContext();
   const result = await rescheduleById(appointmentId, startAt);
   if (result.ok) {
+    // The old time is free now (0066).
+    after(sendWaitlistNotices);
+    revalidatePath("/waitlist");
     revalidatePath("/calendar");
     revalidatePath("/bookings");
     revalidatePath("/dashboard");

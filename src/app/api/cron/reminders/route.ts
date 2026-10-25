@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { T } from "@/lib/i18n";
 import { AR_LOCALE } from "@/lib/date";
 import { bearerOk } from "@/lib/cronAuth";
+import { sendWaitlistNotices } from "@/lib/waitlistNotify";
 
 // Sends "your appointment is in ~30 minutes" Web Push notifications.
 // Invoked every 5 minutes by a Supabase pg_cron job (Vercel Hobby crons
@@ -36,6 +37,10 @@ export async function POST(request: NextRequest) {
   if (!bearerOk(authHeader, secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  // The waitlist's emails (0066), before anything push-related can return
+  // early: this is the net under every path that gives a time up.
+  const waitlistSent = await sendWaitlistNotices();
 
   // .trim(): Vercel's env-var UI (and copy/paste in general) can silently
   // include a trailing newline/space, which web-push's base64url validator
@@ -102,5 +107,5 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ claimed: rows.length, sent, pruned });
+  return NextResponse.json({ claimed: rows.length, sent, pruned, waitlistSent });
 }

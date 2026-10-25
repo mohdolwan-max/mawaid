@@ -20,8 +20,16 @@ export async function getAvailableSlots(
     p_date: date,
     p_staff_id: staffId,
   });
-  if (error || !data) return [];
-  return (data as { start_at: string }[]).map((r) => r.start_at);
+  // A failed lookup used to come back as [], which every screen shows as
+  // "no times this day": a fully booked clinic and a broken query looked
+  // the same (§1), and the waitlist page (0066) would have told the clinic
+  // nobody could be fitted in. Every caller already turns a rejection into
+  // a visible error, as get_available_slots_chain's do.
+  if (error) {
+    console.error("get_available_slots failed", error);
+    throw error;
+  }
+  return ((data as { start_at: string }[] | null) ?? []).map((r) => r.start_at);
 }
 
 export type BookSegment = {

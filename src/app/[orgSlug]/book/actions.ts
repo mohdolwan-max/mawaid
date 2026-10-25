@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { phoneGate, resendPhoneCode, type GateError } from "@/lib/phoneGate";
 import { markBookingSource } from "@/lib/bookingSource";
 import { isBookingSource } from "@/lib/qr";
+import { checkWaitlistForm } from "@/lib/waitlist";
 
 /** The booking's answer. Beside BookResult: "a code was sent, ask for it"
  *  — the booking has not happened yet, and happens on the next submit
@@ -179,4 +180,69 @@ export async function resendCodeAction(input: {
     phone: input.customerPhone,
     verificationId: input.verificationId,
   });
+}
+
+// ---- The waitlist (0066) ------------------------------------------------------
+
+export type WaitlistJoinError =
+  | "wl_err_name"
+  | "wl_err_phone"
+  | "wl_err_email"
+  | "wl_err_day"
+  | "wl_err_limit"
+  | "error_generic";
+
+/** No free time on the day the customer wants: leave a name and number,
+ *  and be emailed (or called by the clinic) when a time is given up. Only
+ *  this server can add to the list (booking secret), and the database
+ *  caps it per number and per visitor. */
+export async function joinWaitlistAction(input: {
+  orgSlug: string;
+  serviceIds: string[];
+  staffId: string | null;
+  day: string;
+  name: string;
+  phone: string;
+  email: string;
+  /** The booking form's honeypot field; a filled one is a bot. */
+  website?: string;
+}): Promise<{ ok: true } | { ok: false; error: WaitlistJoinError }> {
+  const formError = checkWaitlistForm(input);
+  if (formError) return { ok: false, error: formError };
+  // A bot is told it worked and nothing is stored.
+  if (input.website && input.website.trim() !== "") return { ok: true };
+  const secret = process.env.BOOKING_SECRET;
+  if (!secret) return { ok: false, error: "error_generic" };
+
+  let sourceHash: string | null = null;
+  try {
+    sourceHash = await currentSourceHash();
+  } catch (e) {
+    console.error("currentSourceHash threw", e);
+  }
+  const lang = await getLang();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("join_waitlist", {
+    p_secret: secret,
+    p_org_slug: input.orgSlug,
+    p_service_ids: input.serviceIds,
+    p_staff_id: input.staffId,
+    p_day: input.day,
+    p_name: input.name.trim(),
+    p_phone: input.phone,
+    p_email: input.email.trim() || null,
+    p_lang: lang,
+    p_source_hash: sourceHash,
+  });
+  if (error) {
+    const m = error.message ?? "";
+    if (m.includes("waitlist_bad_day")) return { ok: false, error: "wl_err_day" };
+    if (m.includes("waitlist_limit")) return { ok: false, error: "wl_err_limit" };
+    if (m.includes("waitlist_phone")) return { ok: false, error: "wl_err_phone" };
+    if (m.includes("waitlist_email")) return { ok: false, error: "wl_err_email" };
+    if (m.includes("waitlist_name")) return { ok: false, error: "wl_err_name" };
+    console.error("join_waitlist failed", error);
+    return { ok: false, error: "error_generic" };
+  }
+  return { ok: true };
 }
