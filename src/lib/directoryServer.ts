@@ -194,3 +194,40 @@ export async function countOpenNow(city: string | null): Promise<number | null> 
     return null;
   }
 }
+
+// Search by free time (0069). Cached for a minute per question, like the
+// listing: the same "laser, today, evening" asked by a crowd costs one
+// query, and a minute-old answer is still checked again at booking.
+const cachedSearchOpenTimes = unstable_cache(
+  async (filters: {
+    country: string | null;
+    city: string | null;
+    category: string | null;
+    query: string | null;
+    date: string;
+    from: string | null;
+    to: string | null;
+  }): Promise<unknown[]> => {
+    const { data, error } = await publicSupabase.rpc("search_open_times", {
+      p_country: filters.country,
+      p_city: filters.city,
+      p_category: filters.category,
+      p_query: filters.query,
+      p_date: filters.date,
+      p_from: filters.from,
+      p_to: filters.to,
+    });
+    // Thrown, so a failure is neither cached nor shown as "no times".
+    if (error) {
+      console.error("search_open_times failed", error);
+      throw error;
+    }
+    return (data as unknown[]) ?? [];
+  },
+  ["search-open-times-0069"],
+  { revalidate: 60, tags: [DIRECTORY_TAG] }
+);
+
+export async function searchOpenTimes(filters: Parameters<typeof cachedSearchOpenTimes>[0]): Promise<unknown[]> {
+  return cachedSearchOpenTimes(filters);
+}

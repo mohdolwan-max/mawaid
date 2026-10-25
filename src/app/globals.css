@@ -5047,3 +5047,21 @@ html.splash-seen .splash-intro {
   align-items: center;
   gap: 6px;
 }
+
+/* Search by free time (0069). */
+.open-times .ot-card {
+  margin-bottom: 10px;
+}
+.ot-org {
+  font-weight: 700;
+  color: var(--ink);
+}
+.ot-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ot-times .slot-btn {
+  text-decoration: none;
+}
