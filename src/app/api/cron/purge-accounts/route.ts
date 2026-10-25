@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { bearerOk } from "@/lib/cronAuth";
+import { recordJobRun } from "@/lib/jobRuns";
 
 // Permanently deletes accounts whose 15-day grace period has expired.
 // Same shape as /api/cron/reminders: driven by a Supabase pg_cron job,
@@ -29,8 +30,10 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error("purge_due_accounts failed", error);
+    await recordJobRun(supabase, secret!, "purge-accounts", false, `purge_due_accounts: ${error.message}`);
     return NextResponse.json({ error: "purge_failed" }, { status: 500 });
   }
 
+  await recordJobRun(supabase, secret!, "purge-accounts", true, `purged ${data ?? 0}`);
   return NextResponse.json({ purged: data ?? 0 });
 }

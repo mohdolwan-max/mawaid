@@ -281,3 +281,33 @@ export async function getAdminMarkets(): Promise<AdminMarket[] | null> {
   if (!parsed) console.error("admin_markets returned an unreadable payload");
   return parsed;
 }
+
+export type JobStatus = {
+  job: string;
+  lastOkAt: string | null;
+  lastFailAt: string | null;
+  lastError: string | null;
+  runs: number;
+  failures: number;
+  late: boolean;
+};
+
+/** The scheduled jobs' health (0072). null = could not be read (or the
+ *  migration is not applied): the card says so, never "all fine". */
+export async function getSystemStatus(): Promise<JobStatus[] | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_system_status");
+  if (error) {
+    logRpcError("admin_system_status", error, "0072");
+    return null;
+  }
+  return ((data as Record<string, unknown>[]) ?? []).map((r) => ({
+    job: String(r.job),
+    lastOkAt: typeof r.last_ok_at === "string" ? r.last_ok_at : null,
+    lastFailAt: typeof r.last_fail_at === "string" ? r.last_fail_at : null,
+    lastError: typeof r.last_error === "string" ? r.last_error : null,
+    runs: num(r.runs) ?? 0,
+    failures: num(r.failures) ?? 0,
+    late: r.late === true,
+  }));
+}

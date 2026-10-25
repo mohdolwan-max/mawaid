@@ -5,6 +5,7 @@ import { T } from "@/lib/i18n";
 import { AR_LOCALE } from "@/lib/date";
 import { bearerOk } from "@/lib/cronAuth";
 import { sendWaitlistNotices } from "@/lib/waitlistNotify";
+import { recordJobRun } from "@/lib/jobRuns";
 
 // Sends "your appointment is in ~30 minutes" Web Push notifications.
 // Invoked every 5 minutes by a Supabase pg_cron job (Vercel Hobby crons
@@ -42,6 +43,14 @@ export async function POST(request: NextRequest) {
   // early: this is the net under every path that gives a time up.
   const waitlistSent = await sendWaitlistNotices();
 
+  // Every exit below reports the run (0072). Created here, before the
+  // push set-up, so a missing key is reported as this job failing.
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  const report = (ok: boolean, detail: string | null) => recordJobRun(supabase, secret!, "reminders", ok, detail);
+
   // .trim(): Vercel's env-var UI (and copy/paste in general) can silently
   // include a trailing newline/space, which web-push's base64url validator
   // rejects with a synchronous throw — that previously crashed this route
@@ -49,24 +58,22 @@ export async function POST(request: NextRequest) {
   const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
   const vapidPrivate = process.env.VAPID_PRIVATE_KEY?.trim();
   if (!vapidPublic || !vapidPrivate) {
+    await report(false, "vapid_not_configured");
     return NextResponse.json({ error: "vapid_not_configured" }, { status: 500 });
   }
   try {
     webpush.setVapidDetails("mailto:support@maw3ed.me", vapidPublic, vapidPrivate);
   } catch (err) {
+    await report(false, `vapid_invalid: ${err instanceof Error ? err.message : String(err)}`);
     return NextResponse.json(
       { error: "vapid_invalid", detail: err instanceof Error ? err.message : String(err) },
       { status: 500 }
     );
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const { data, error } = await supabase.rpc("claim_due_reminders", { p_secret: secret });
   if (error) {
+    await report(false, `claim_due_reminders: ${error.message}`);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -107,5 +114,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  await report(true, `claimed ${rows.length}, sent ${sent}, pruned ${pruned}, waitlist ${waitlistSent}`);
   return NextResponse.json({ claimed: rows.length, sent, pruned, waitlistSent });
 }

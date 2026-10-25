@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLang } from "@/lib/lang";
 import { t, type Lang } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
-import { getAdminOverview } from "@/lib/adminServer";
+import { getAdminOverview, getSystemStatus } from "@/lib/adminServer";
 import { getAdminCountry } from "@/lib/adminCountry";
 import { getMarkets } from "@/lib/marketsServer";
 import { ADMIN_TZ, changePct, primaryCurrency } from "@/lib/admin";
@@ -32,7 +32,38 @@ export default async function AdminOverviewPage({
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: ADMIN_TZ }).format(new Date());
   const period = parsePeriod(params, today);
   const country = await getAdminCountry(await getMarkets());
-  const o = await getAdminOverview(period.from, period.to, country);
+  const [o, jobs] = await Promise.all([getAdminOverview(period.from, period.to, country), getSystemStatus()]);
+  const when = (iso: string | null) =>
+    iso ? new Intl.DateTimeFormat(intlLocale(lang), { timeZone: ADMIN_TZ, dateStyle: "short", timeStyle: "short" }).format(new Date(iso)) : "—";
+  // The scheduled jobs (0072): late ones first, in the warning colour.
+  const systemCard = (
+    <div className="card" style={{ marginTop: 12 }}>
+      <p style={{ fontWeight: 700, marginBottom: 6 }}>{t(lang, "sys_title")}</p>
+      {jobs === null ? (
+        <p className="error-text">{t(lang, "sys_unknown")}</p>
+      ) : (
+        <ul className="pkg-list">
+          {jobs.map((j) => (
+            <li key={j.job}>
+              <div className="cv-top">
+                <strong>{t(lang, j.job === "reminders" ? "sys_job_reminders" : j.job === "purge-accounts" ? "sys_job_purge" : "sys_job_other")}</strong>
+                <span className={`chip ${j.late ? "bad" : "good"}`}>{t(lang, j.late ? "sys_late" : "sys_ok")}</span>
+              </div>
+              <p className="hint">
+                {t(lang, "sys_last_ok", { at: when(j.lastOkAt) })} · {t(lang, "sys_runs", { runs: count(j.runs, lang), failures: count(j.failures, lang) })}
+              </p>
+              {j.lastError && j.lastFailAt && (
+                <p className="hint" dir="ltr" style={{ textAlign: "start" }}>
+                  {when(j.lastFailAt)}: {j.lastError}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="hint" style={{ marginTop: 6 }}>{t(lang, "sys_hint")}</p>
+    </div>
+  );
 
   const picker = <PeriodPicker lang={lang} path="/admin" period={period} today={today} />;
   if (!o) {
@@ -87,6 +118,7 @@ export default async function AdminOverviewPage({
         {picker}
         <p className="hint">{t(lang, "admin_updated", { time: updated })}</p>
       </div>
+      {systemCard}
 
       <section className="admin-section">
         <div className="admin-sec-head">
