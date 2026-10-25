@@ -4746,3 +4746,122 @@ html.splash-seen .splash-intro {
     box-shadow: none;
   }
 }
+
+/* ---------------------------------------------------------------------
+   The customer file (0062).
+   --------------------------------------------------------------------- */
+.cust-search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.cust-search input {
+  flex: 1;
+  min-width: 0;
+}
+.cust-link {
+  font-weight: 700;
+  color: var(--brand);
+}
+.cust-link + .chip {
+  margin-inline-start: 6px;
+}
+.cust-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 16px;
+  margin-top: 16px;
+  align-items: start;
+}
+.cust-grid .card {
+  margin: 0;
+}
+.cust-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+.cust-notes {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.cust-notes li {
+  padding: 10px 12px;
+  border: 1px solid var(--band-line);
+  border-radius: 10px;
+  background: var(--band);
+}
+.cust-note-body {
+  margin: 0 0 4px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cust-notes .link-btn {
+  margin-inline-start: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--bad-ink);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.cust-visits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cust-visits li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cust-visits li:last-child {
+  border-bottom: 0;
+}
+.cv-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.cv-when {
+  font-weight: 700;
+}
+.cv-what {
+  margin-top: 2px;
+  color: var(--ink2);
+}
+.cv-what .chip {
+  margin-inline-start: 6px;
+}
+.cv-note {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--ink2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .cust-grid {
+    grid-template-columns: 1fr;
+  }
+  /* Six figures as a compact two-column block on a phone: one tall card
+     each pushed the notes and visits a whole screen down. */
+  .cust-tiles {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .cust-tiles .admin-tile {
+    padding: 10px 12px;
+  }
+  .cust-tiles .at-value {
+    font-size: 1.2rem;
+  }
+  .cust-tiles .at-sub {
+    font-size: 0.75rem;
+  }
+}

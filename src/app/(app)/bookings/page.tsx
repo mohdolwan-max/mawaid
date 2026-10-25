@@ -6,8 +6,19 @@ import type { Appointment, Service, StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
 import { BookingsClient } from "./BookingsClient";
 
-export default async function BookingsPage() {
+export default async function BookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string; name?: string; phone?: string; email?: string }>;
+}) {
   const ctx = await requireOrgContext();
+  const sp = await searchParams;
+  // From a customer file (0062). Only prefills the form; the booking is
+  // checked by the database like any other.
+  const prefill =
+    sp.new === "1"
+      ? { name: (sp.name ?? "").slice(0, 80), phone: (sp.phone ?? "").slice(0, 20), email: (sp.email ?? "").slice(0, 120) }
+      : null;
   const supabase = await createClient();
 
   const [{ data: rows, error }, { data: services }, { data: staff }] = await Promise.all([
@@ -92,6 +103,7 @@ export default async function BookingsPage() {
         services={(services as Service[]) ?? []}
         staff={((staff as StaffMember[]) ?? []).filter((m) => !m.pending)}
         timezone={ctx.timezone}
+        prefill={prefill}
       />
     </div>
   );

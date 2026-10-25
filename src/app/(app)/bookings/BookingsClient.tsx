@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { normalizePhone } from "@/lib/phone";
 import { t, type Lang, type TKey } from "@/lib/i18n";
 import { todayYMD, intlLocale } from "@/lib/date";
 import type { Appointment, BookingStatus, Service, StaffMember } from "@/lib/types";
@@ -15,14 +17,17 @@ export function BookingsClient({
   services,
   staff,
   timezone,
+  prefill = null,
 }: {
   lang: Lang;
   appointments: Appointment[];
   services: Service[];
   staff: StaffMember[];
   timezone: string;
+  /** Opens the manual form filled for one customer (customer file). */
+  prefill?: { name: string; phone: string; email: string } | null;
 }) {
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(prefill !== null);
   const router = useRouter();
 
   const today = todayYMD(timezone);
@@ -43,6 +48,7 @@ export function BookingsClient({
           services={services}
           staff={staff}
           timezone={timezone}
+          prefill={prefill}
           onDone={() => {
             setShowForm(false);
             // revalidatePath() in the action does not repaint a route
@@ -107,7 +113,11 @@ function BookingSection({
             <tbody>
               {rows.map((a) => (
                 <tr key={a.id}>
-                  <td>{a.customer_name}</td>
+                  <td>
+                    <Link href={`/customers/${encodeURIComponent(normalizePhone(a.customer_phone))}`} className="cust-link">
+                      {a.customer_name}
+                    </Link>
+                  </td>
                   <td>{a.service_name}</td>
                   <td dir="ltr">{a.customer_phone}</td>
                   <td dir="ltr">
@@ -146,12 +156,14 @@ function ManualBookingForm({
   staff,
   timezone,
   onDone,
+  prefill = null,
 }: {
   lang: Lang;
   services: Service[];
   staff: StaffMember[];
   timezone: string;
   onDone: () => void;
+  prefill?: { name: string; phone: string; email: string } | null;
 }) {
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
   const [staffId, setStaffId] = useState("");
@@ -159,9 +171,9 @@ function ManualBookingForm({
   const [slots, setSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [startAt, setStartAt] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState(prefill?.name ?? "");
+  const [phone, setPhone] = useState(prefill?.phone ?? "");
+  const [email, setEmail] = useState(prefill?.email ?? "");
   const [notes, setNotes] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<TKey | null>(null);
