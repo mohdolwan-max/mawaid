@@ -35,6 +35,13 @@ export default async function CustomersPage({
         <h2>{t(lang, "customers_title")}</h2>
         <p className="sub">{t(lang, "customers_sub")}</p>
       </div>
+      {ctx.role === "owner" && (
+        <div className="toolbar">
+          <Link href="/customers/import" className="btn ghost sm">
+            {t(lang, "import_link")}
+          </Link>
+        </div>
+      )}
     </div>
   );
 

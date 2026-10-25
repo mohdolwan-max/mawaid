@@ -122,3 +122,27 @@ export async function setVisitPackageAction(
   revalidatePath("/customers");
   return { ok: true };
 }
+
+// ---- Importing customers (0073) ----------------------------------------------------
+
+export type ImportResult =
+  | { ok: true; added: number; updated: number; skipped: { row: number; reason: string }[] }
+  | { ok: false; error: "error_generic" | "import_err_too_many" };
+
+/** Sends the rows the preview accepted; the database checks each again
+ *  and returns, by position in this list, any it did not take and why. */
+export async function importCustomersAction(
+  rows: { name: string; phone: string; email: string; notes: string; tags: string[] }[]
+): Promise<ImportResult> {
+  if (rows.length > 2000) return { ok: false, error: "import_err_too_many" };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("import_customers", { p_rows: rows });
+  if (error) {
+    if (error.message?.includes("import_too_many")) return { ok: false, error: "import_err_too_many" };
+    console.error("import_customers failed", error);
+    return { ok: false, error: "error_generic" };
+  }
+  const d = (data ?? {}) as { added?: number; updated?: number; skipped?: { row: number; reason: string }[] };
+  revalidatePath("/customers");
+  return { ok: true, added: Number(d.added ?? 0), updated: Number(d.updated ?? 0), skipped: Array.isArray(d.skipped) ? d.skipped : [] };
+}
