@@ -3,6 +3,8 @@ import { getLang } from "@/lib/lang";
 import { t, type Lang } from "@/lib/i18n";
 import { intlLocale } from "@/lib/date";
 import { getAdminOverview, getSystemStatus } from "@/lib/adminServer";
+import { createClient } from "@/lib/supabase/server";
+import { SupportContactForm } from "./SupportContactForm";
 import { getAdminCountry } from "@/lib/adminCountry";
 import { getMarkets } from "@/lib/marketsServer";
 import { ADMIN_TZ, changePct, primaryCurrency } from "@/lib/admin";
@@ -32,7 +34,14 @@ export default async function AdminOverviewPage({
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: ADMIN_TZ }).format(new Date());
   const period = parsePeriod(params, today);
   const country = await getAdminCountry(await getMarkets());
-  const [o, jobs] = await Promise.all([getAdminOverview(period.from, period.to, country), getSystemStatus()]);
+  const supabase = await createClient();
+  const [o, jobs, supportRes] = await Promise.all([
+    getAdminOverview(period.from, period.to, country),
+    getSystemStatus(),
+    supabase.rpc("support_contact"),
+  ]);
+  // The support contact the clinics see (0074); hidden before it exists.
+  const support = supportRes.error ? null : ((supportRes.data ?? {}) as { whatsapp?: string | null; email?: string | null });
   const when = (iso: string | null) =>
     iso ? new Intl.DateTimeFormat(intlLocale(lang), { timeZone: ADMIN_TZ, dateStyle: "short", timeStyle: "short" }).format(new Date(iso)) : "—";
   // The scheduled jobs (0072): late ones first, in the warning colour.
@@ -119,6 +128,7 @@ export default async function AdminOverviewPage({
         <p className="hint">{t(lang, "admin_updated", { time: updated })}</p>
       </div>
       {systemCard}
+      {support && <SupportContactForm lang={lang} whatsapp={support.whatsapp ?? ""} email={support.email ?? ""} />}
 
       <section className="admin-section">
         <div className="admin-sec-head">

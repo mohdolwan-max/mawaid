@@ -233,3 +233,23 @@ export async function adminSaveOfferSettings(input: {
   });
   return error ? { error: toError("admin_save_offer_settings", error) } : done();
 }
+
+// ---- Support contact (0074) ----------------------------------------------------
+
+export async function adminSetSupportContact(
+  whatsapp: string,
+  email: string
+): Promise<{ ok: true; whatsapp: string | null; email: string | null } | { ok: false; error: "support_err_whatsapp" | "support_err_email" | "error_generic" }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_set_support_contact", { p_whatsapp: whatsapp, p_email: email });
+  if (error) {
+    const m = error.message ?? "";
+    if (m.includes("support_whatsapp")) return { ok: false, error: "support_err_whatsapp" };
+    if (m.includes("support_email")) return { ok: false, error: "support_err_email" };
+    console.error("admin_set_support_contact failed", error);
+    return { ok: false, error: "error_generic" };
+  }
+  const d = (data ?? {}) as { whatsapp?: string | null; email?: string | null };
+  revalidatePath("/help");
+  return { ok: true, whatsapp: d.whatsapp ?? null, email: d.email ?? null };
+}

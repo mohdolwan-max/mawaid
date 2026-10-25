@@ -5078,3 +5078,13 @@ html.splash-seen .splash-intro {
   font-weight: 700;
   border-top: 2px solid var(--line);
 }
+
+/* The guide on the Help page (item 14). */
+.help-points {
+  margin: 10px 0;
+  padding-inline-start: 20px;
+}
+.help-points li {
+  margin-bottom: 6px;
+  line-height: 1.7;
+}

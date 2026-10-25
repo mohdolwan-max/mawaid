@@ -21,6 +21,7 @@ const LINKS = [
   { href: "/waitlist", key: "nav_waitlist" as const },
   { href: "/reviews", key: "reviews_title" as const },
   { href: "/settings", key: "nav_settings" as const },
+  { href: "/help", key: "nav_help" as const },
 ];
 
 export function Sidebar({
