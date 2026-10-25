@@ -5,6 +5,7 @@ import { todayYMD, addDaysYMD, weekYMDs } from "@/lib/date";
 import type { Appointment, StaffMember } from "@/lib/types";
 import { staffOwnerLabel } from "@/lib/staffLabel";
 import { CalendarClient, type CalendarBooking } from "./CalendarClient";
+import { CalendarLinks } from "./CalendarLinks";
 import { normalizePhone } from "@/lib/phone";
 import { calendarVisitValue, holderKey, parseHolders } from "@/lib/packages";
 
@@ -149,6 +150,7 @@ export default async function CalendarPage({
           <p className="sub">{t(ctx.lang, "cal_sub")}</p>
         </div>
       </div>
+      <CalendarLinks lang={ctx.lang} isOwner={ctx.role === "owner"} />
       <CalendarClient
         lang={ctx.lang}
         timezone={ctx.timezone}
