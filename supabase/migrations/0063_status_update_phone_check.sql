@@ -1,0 +1,25 @@
+-- The clinic's status buttons (completed, no-show, cancel) on the bookings
+-- page and the calendar have been refused since 0039.
+--
+-- Found 2026-10-25 while testing session packages: as a signed-in owner,
+--   update appointments set status = 'completed' where id = …
+-- fails with "permission denied for function _norm_phone". 0039 added the
+-- CHECK appointments_phone_shape, which calls _norm_phone, and a CHECK runs
+-- on EVERY update of a row, not only when the phone changes; Postgres
+-- checks EXECUTE on functions inside a CHECK against the role doing the
+-- write. 0039's own note reasoned that the only writer was the SECURITY
+-- DEFINER book_appointment because 0034 removed INSERT, but 0034 kept
+-- UPDATE (status) for signed-in members, and 0028 had revoked _norm_phone
+-- from them. setBookingStatus reported the error, so the buttons showed
+-- "something went wrong" and the visit stayed booked.
+--
+-- _norm_phone is a pure text function and reveals nothing (0028 says so
+-- itself); signed-in roles may run it. anon stays closed: it writes no
+-- appointment directly.
+grant execute on function public._norm_phone(text) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- Verify after applying:
+-- ---------------------------------------------------------------------
+-- select has_function_privilege('authenticated', 'public._norm_phone(text)', 'execute');  -- true
+-- select has_function_privilege('anon', 'public._norm_phone(text)', 'execute');           -- false
